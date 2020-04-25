@@ -3,6 +3,7 @@ package fr.pierrezemb.recordstore;
 import static org.junit.Assert.assertEquals;
 
 import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocolTest;
@@ -82,7 +83,7 @@ public class MainVerticleTest {
   }
 
   @Test
-  public void testPut(Vertx vertx, VertxTestContext testContext) throws Exception {
+  public void testPut1(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     RecordStoreProtocolTest.Person person = RecordStoreProtocolTest.Person.newBuilder()
       .setId(1)
@@ -106,7 +107,7 @@ public class MainVerticleTest {
   }
 
   @Test
-  public void testCount(Vertx vertx, VertxTestContext testContext) throws Exception {
+  public void testPut2(Vertx vertx, VertxTestContext testContext) throws Exception {
     RecordStoreProtocol.CountRecordRequest recordRequest = RecordStoreProtocol.CountRecordRequest.newBuilder()
       .setTable("Person")
       .build();
@@ -116,6 +117,35 @@ public class MainVerticleTest {
         System.out.println("Got the server response: " + response.result().getResult());
         System.out.println("there is " + response.result().getSize() + " records");
         assertEquals(1, response.result().getSize());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    });
+  }
+  @Test
+  public void testPut3(Vertx vertx, VertxTestContext testContext) throws Exception {
+    RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
+      .setTable("Person")
+      .addQueryFilters(RecordStoreProtocol.QueryFilter.newBuilder()
+        .setField("id")
+        .setOperation(RecordStoreProtocol.QueryFilterOp.EQUALS)
+        .setInt64Value(1)
+        .build())
+      .build();
+    recordServiceVertxStub.query(request, response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println(response.result().getRecordsList());
+        assertEquals(1, response.result().getRecordsCount());
+        try {
+          RecordStoreProtocolTest.Person p = RecordStoreProtocolTest.Person.parseFrom(response.result().getRecords(0));
+          assertEquals("PierreZ", p.getName());
+          assertEquals("toto@example.com", p.getEmail());
+          assertEquals(1, p.getId());
+        } catch (InvalidProtocolBufferException e) {
+          testContext.failNow(e);
+        }
         testContext.completeNow();
       } else {
         testContext.failNow(response.cause());

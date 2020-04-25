@@ -30,7 +30,8 @@ service SchemaService {
 
 service RecordService {
   rpc Put (PutRecordRequest) returns (CreateSchemaResponse);
-  rpc Count (CountRecordRequest) returns (CountRecordResponse);
+  rpc Count(CountRecordRequest) returns (CountRecordResponse);
+  rpc Query(QueryRequest) returns (QueryResponse);
 }
 
 message CountRecordRequest {
@@ -60,3 +61,31 @@ message SelfDescribedMessage {
   // Set of FileDescriptorProtos which describe the type and its dependencies.
   google.protobuf.FileDescriptorSet descriptor_set = 1;
 }
+
+message QueryRequest {
+  string table = 1;
+  repeated QueryFilter query_filters = 2;
+  bytes continuation = 3;
+}
+
+message QueryResponse {
+  Result result = 1;
+  repeated bytes records = 2;
+  bytes continuation = 3;
+}
+
+message QueryFilter {
+  string field = 1;
+  QueryFilterOp operation = 2;
+  oneof value {
+    string string_value = 11;
+    int64 int64_value = 12;
+  }
+}
+
+enum QueryFilterOp {
+  GREATER_THAN_OR_EQUALS = 0;
+  LESS_THAN_OR_EQUALS = 1;
+  EQUALS = 2;
+}
+
