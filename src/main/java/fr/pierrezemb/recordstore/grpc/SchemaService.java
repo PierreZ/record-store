@@ -10,21 +10,25 @@ import com.apple.foundationdb.record.metadata.expressions.GroupingKeyExpression;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
+import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import fr.pierrezemb.recordstore.fdb.RSMetaDataStore;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import io.grpc.stub.StreamObserver;
+import java.util.Collections;
 
 public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   // Keep a global track of the number of records stored
   protected static final Index COUNT_INDEX = new Index(
     "globalRecordCount", new GroupingKeyExpression(EmptyKeyExpression.EMPTY, 0), IndexTypes.COUNT);
   private final FDBDatabase db;
+  private final FDBStoreTimer timer;
 
-  public SchemaService(FDBDatabase db) {
+  public SchemaService(FDBDatabase db, FDBStoreTimer fdbStoreTimer) {
     this.db = db;
+    this.timer = fdbStoreTimer;
   }
 
   /**
@@ -35,7 +39,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   public void create(RecordStoreProtocol.CreateSchemaRequest request, StreamObserver<RecordStoreProtocol.CreateSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
 
-    try (FDBRecordContext context = db.openContext()) {
+    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
       FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID);
 
       // retrieving protobuf descriptor

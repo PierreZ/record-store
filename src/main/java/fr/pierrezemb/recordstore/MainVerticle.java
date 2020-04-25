@@ -3,6 +3,7 @@ package fr.pierrezemb.recordstore;
 
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabaseFactory;
+import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
 import fr.pierrezemb.recordstore.grpc.RecordService;
 import fr.pierrezemb.recordstore.grpc.SchemaService;
@@ -20,14 +21,15 @@ public class MainVerticle extends AbstractVerticle {
     System.out.println("connecting to fdb@" + clusterFilePath);
 
     FDBDatabase db = FDBDatabaseFactory.instance().getDatabase(clusterFilePath);
+    FDBStoreTimer fdbStoreTimer = new FDBStoreTimer();
 
     VertxServerBuilder serverBuilder = VertxServerBuilder
       .forAddress(vertx,
         this.context.config().getString("listen-address", "localhost"),
         this.context.config().getInteger("listen-port", 8080))
       .intercept(new AuthInterceptor())
-      .addService(new SchemaService(db))
-      .addService(new RecordService(db));
+      .addService(new SchemaService(db, fdbStoreTimer))
+      .addService(new RecordService(db, fdbStoreTimer));
 
     VertxServer server = serverBuilder.build();
 

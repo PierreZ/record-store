@@ -11,6 +11,7 @@ import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
 import com.apple.foundationdb.record.provider.foundationdb.FDBRecordStore;
+import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -24,9 +25,11 @@ import java.util.function.Function;
 
 public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   private final FDBDatabase db;
+  private final FDBStoreTimer timer;
 
-  public RecordService(FDBDatabase db) {
+  public RecordService(FDBDatabase db, FDBStoreTimer fdbStoreTimer) {
     this.db = db;
+    this.timer = fdbStoreTimer;
   }
 
   /**
@@ -37,7 +40,8 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   public void put(RecordStoreProtocol.PutRecordRequest request, StreamObserver<RecordStoreProtocol.CreateSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
 
-    try (FDBRecordContext context = db.openContext()) {
+    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
+
       // create recordStoreProvider
       FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID);
 
@@ -69,6 +73,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   }
 
   /**
+   * Count is using directly the COUNT index
    * @param request
    * @param responseObserver
    */
@@ -79,7 +84,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     IndexAggregateFunction function = new IndexAggregateFunction(
       FunctionNames.COUNT, COUNT_INDEX.getRootExpression(), COUNT_INDEX.getName());
 
-    try (FDBRecordContext context = db.openContext()) {
+    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
       // create recordStoreProvider
       FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID);
 
