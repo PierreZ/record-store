@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option java_package = "fr.pierrezemb.recordstore.proto";
+option java_outer_classname = "RecordStoreProtocolTest";
+
+message Person {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+}
