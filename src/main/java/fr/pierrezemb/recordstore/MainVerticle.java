@@ -4,6 +4,7 @@ package fr.pierrezemb.recordstore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabaseFactory;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
+import fr.pierrezemb.recordstore.grpc.RecordService;
 import fr.pierrezemb.recordstore.grpc.SchemaService;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -25,7 +26,8 @@ public class MainVerticle extends AbstractVerticle {
         this.context.config().getString("listen-address", "localhost"),
         this.context.config().getInteger("listen-port", 8080))
       .intercept(new AuthInterceptor())
-      .addService(new SchemaService(db));
+      .addService(new SchemaService(db))
+      .addService(new RecordService(db));
 
     VertxServer server = serverBuilder.build();
 

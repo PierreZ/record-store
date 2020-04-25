@@ -1,8 +1,7 @@
-package fr.pierrezemb.recordstore.grpc;
+package fr.pierrezemb.recordstore;
 
 import com.google.protobuf.DescriptorProtos;
-import fr.pierrezemb.recordstore.FoundationDBContainer;
-import fr.pierrezemb.recordstore.MainVerticle;
+import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocolTest;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
@@ -21,15 +20,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-/**
- * Taken from https://github.com/etcd-io/jetcd/blob/jetcd-0.5.0/jetcd-core/src/test/java/io/etcd/jetcd/KVTest.java
- */
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class SchemaServiceTest {
+public class MainVerticleTest {
 
   private final FoundationDBContainer container = new FoundationDBContainer();
-  SchemaServiceGrpc.SchemaServiceVertxStub stub;
+  private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
+  private RecordServiceGrpc.RecordServiceVertxStub recordServiceVertxStub;
   private File clusterFile;
 
   @BeforeAll
@@ -49,11 +46,12 @@ public class SchemaServiceTest {
       .usePlaintext(true)
       .build();
 
-    stub = SchemaServiceGrpc.newVertxStub(channel);
+    schemaServiceVertxStub = SchemaServiceGrpc.newVertxStub(channel);
+    recordServiceVertxStub = RecordServiceGrpc.newVertxStub(channel);
   }
 
   @Test
-  public void testCreate(Vertx vertx, VertxTestContext testContext) throws Exception {
+  public void testCreateSchema(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
       ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
@@ -71,7 +69,31 @@ public class SchemaServiceTest {
       .setSchema(selfDescribedMessage)
       .build();
 
-    stub.create(request, response -> {
+    schemaServiceVertxStub.create(request, response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result().getResult());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    });
+  }
+
+  @Test
+  public void testPut(Vertx vertx, VertxTestContext testContext) throws Exception {
+
+    RecordStoreProtocolTest.Person person = RecordStoreProtocolTest.Person.newBuilder()
+      .setId(1)
+      .setName("PierreZ")
+      .setEmail("toto@example.com")
+      .build();
+
+    RecordStoreProtocol.PutRecordRequest request = RecordStoreProtocol.PutRecordRequest.newBuilder()
+      .setTable("Person")
+      .setMessage(person.toByteString())
+      .build();
+
+    recordServiceVertxStub.put(request, response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result().getResult());
         testContext.completeNow();

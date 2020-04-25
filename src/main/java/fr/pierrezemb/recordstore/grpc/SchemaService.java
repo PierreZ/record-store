@@ -6,15 +6,12 @@ import com.apple.foundationdb.record.metadata.Key;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
-import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpacePath;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
-import fr.pierrezemb.recordstore.fdb.RSKeySpace;
+import fr.pierrezemb.recordstore.fdb.RSMetaDataStore;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import io.grpc.stub.StreamObserver;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   private final FDBDatabase db;
@@ -32,8 +29,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
 
     try (FDBRecordContext context = db.openContext()) {
-      KeySpacePath metaDataPath = RSKeySpace.getMetaDataKeySpacePath(tenantID);
-      FDBMetaDataStore metaDataStore = createMetaDataStore(context, metaDataPath, null);
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID);
 
       // retrieving protobuf descriptor
       RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
@@ -47,7 +43,8 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
       metadataBuilder.getRecordType(request.getName()).setPrimaryKey(Key.Expressions.field(request.getPrimaryKeyField()));
 
       // and save it
-      metaDataStore.saveAndSetCurrent(metadataBuilder.getRecordMetaData().toProto()).join();
+      metaDataStore.saveRecordMetaData(metadataBuilder.getRecordMetaData().toProto());
+      context.commit();
 
     } catch (Descriptors.DescriptorValidationException e) {
       responseObserver.onError(e);
@@ -56,14 +53,5 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
 
     responseObserver.onNext(RecordStoreProtocol.CreateSchemaResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());
     responseObserver.onCompleted();
-  }
-
-  @Nonnull
-  private FDBMetaDataStore createMetaDataStore(@Nonnull FDBRecordContext context, @Nonnull KeySpacePath metaDataPath,
-                                               @Nullable Descriptors.FileDescriptor localFileDescriptor) {
-    FDBMetaDataStore metaDataStore = new FDBMetaDataStore(context, metaDataPath);
-    metaDataStore.setMaintainHistory(true);
-    metaDataStore.setLocalFileDescriptor(localFileDescriptor);
-    return metaDataStore;
   }
 }
