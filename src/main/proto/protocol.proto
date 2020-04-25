@@ -30,6 +30,16 @@ service SchemaService {
 
 service RecordService {
   rpc Put (PutRecordRequest) returns (CreateSchemaResponse);
+  rpc Count (CountRecordRequest) returns (CountRecordResponse);
+}
+
+message CountRecordRequest {
+  string table = 1;
+}
+
+message CountRecordResponse {
+  Result result = 1;
+  int64 size = 2;
 }
 
 message PutRecordRequest {

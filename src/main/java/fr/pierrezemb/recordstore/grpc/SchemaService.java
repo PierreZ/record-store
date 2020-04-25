@@ -2,7 +2,11 @@ package fr.pierrezemb.recordstore.grpc;
 
 import com.apple.foundationdb.record.RecordMetaData;
 import com.apple.foundationdb.record.RecordMetaDataBuilder;
+import com.apple.foundationdb.record.metadata.Index;
+import com.apple.foundationdb.record.metadata.IndexTypes;
 import com.apple.foundationdb.record.metadata.Key;
+import com.apple.foundationdb.record.metadata.expressions.EmptyKeyExpression;
+import com.apple.foundationdb.record.metadata.expressions.GroupingKeyExpression;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
@@ -14,6 +18,9 @@ import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import io.grpc.stub.StreamObserver;
 
 public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
+  // Keep a global track of the number of records stored
+  protected static final Index COUNT_INDEX = new Index(
+    "globalRecordCount", new GroupingKeyExpression(EmptyKeyExpression.EMPTY, 0), IndexTypes.COUNT);
   private final FDBDatabase db;
 
   public SchemaService(FDBDatabase db) {
@@ -41,6 +48,9 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
 
       // set primary key
       metadataBuilder.getRecordType(request.getName()).setPrimaryKey(Key.Expressions.field(request.getPrimaryKeyField()));
+
+      // add internal indexes
+      metadataBuilder.addIndex(request.getName(), COUNT_INDEX);
 
       // and save it
       metaDataStore.saveRecordMetaData(metadataBuilder.getRecordMetaData().toProto());

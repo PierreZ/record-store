@@ -1,5 +1,7 @@
 package fr.pierrezemb.recordstore;
 
+import static org.junit.Assert.assertEquals;
+
 import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
@@ -96,6 +98,24 @@ public class MainVerticleTest {
     recordServiceVertxStub.put(request, response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result().getResult());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    });
+  }
+
+  @Test
+  public void testCount(Vertx vertx, VertxTestContext testContext) throws Exception {
+    RecordStoreProtocol.CountRecordRequest recordRequest = RecordStoreProtocol.CountRecordRequest.newBuilder()
+      .setTable("Person")
+      .build();
+
+    recordServiceVertxStub.count(recordRequest, response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println("there is " + response.result().getSize() + " records");
+        assertEquals(1, response.result().getSize());
         testContext.completeNow();
       } else {
         testContext.failNow(response.cause());
