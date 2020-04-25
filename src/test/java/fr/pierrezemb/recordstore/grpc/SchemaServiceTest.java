@@ -1,18 +1,16 @@
 package fr.pierrezemb.recordstore.grpc;
 
 import com.google.protobuf.DescriptorProtos;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.Message;
+import fr.pierrezemb.recordstore.FoundationDBContainer;
+import fr.pierrezemb.recordstore.MainVerticle;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocolTest;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
 import io.grpc.ManagedChannel;
-import io.vertx.core.json.JsonObject;
-import fr.pierrezemb.recordstore.FoundationDBContainer;
-import fr.pierrezemb.recordstore.MainVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -31,8 +29,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public class SchemaServiceTest {
 
   private final FoundationDBContainer container = new FoundationDBContainer();
-  private File clusterFile;
   SchemaServiceGrpc.SchemaServiceVertxStub stub;
+  private File clusterFile;
 
   @BeforeAll
   void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
@@ -69,7 +67,7 @@ public class SchemaServiceTest {
     RecordStoreProtocol.CreateSchemaRequest request = RecordStoreProtocol.CreateSchemaRequest
       .newBuilder()
       .setName("Person")
-      .setVersion(1)
+      .setPrimaryKeyField("id")
       .setSchema(selfDescribedMessage)
       .build();
 

@@ -12,7 +12,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public final class ProtobufReflectionUtil {
-  private ProtobufReflectionUtil() {}
+  private ProtobufReflectionUtil() {
+  }
 
   @SuppressWarnings("unchecked")
   public static <M extends Message> Parser<M> protobufParser(Class<M> messageClass) {
@@ -39,7 +40,9 @@ public final class ProtobufReflectionUtil {
     return fileDescriptorSet.build();
   }
 
-  /** extract the {@linkplain Descriptor} for the generated message type. */
+  /**
+   * extract the {@linkplain Descriptor} for the generated message type.
+   */
   static <M extends Message> Descriptor protobufDescriptor(Class<M> type) {
     try {
       Method getDescriptor = type.getDeclaredMethod("getDescriptor");

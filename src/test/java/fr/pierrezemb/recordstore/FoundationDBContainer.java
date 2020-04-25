@@ -1,4 +1,5 @@
 package fr.pierrezemb.recordstore;
+
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import java.io.File;
 import java.io.IOException;

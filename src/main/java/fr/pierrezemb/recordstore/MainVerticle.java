@@ -1,6 +1,8 @@
 package fr.pierrezemb.recordstore;
 
 
+import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
+import com.apple.foundationdb.record.provider.foundationdb.FDBDatabaseFactory;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
 import fr.pierrezemb.recordstore.grpc.SchemaService;
 import io.vertx.core.AbstractVerticle;
@@ -14,16 +16,16 @@ public class MainVerticle extends AbstractVerticle {
   public void start(Promise<Void> startPromise) throws Exception {
 
     String clusterFilePath = this.context.config().getString("fdb-cluster-file", "/var/fdb/fdb.cluster");
-    boolean authEnabled = this.context.config().getBoolean("auth-enabled", false);
-    String defaultTenant = this.context.config().getString("default-tenant", "default");
     System.out.println("connecting to fdb@" + clusterFilePath);
+
+    FDBDatabase db = FDBDatabaseFactory.instance().getDatabase(clusterFilePath);
 
     VertxServerBuilder serverBuilder = VertxServerBuilder
       .forAddress(vertx,
         this.context.config().getString("listen-address", "localhost"),
         this.context.config().getInteger("listen-port", 8080))
       .intercept(new AuthInterceptor())
-      .addService(new SchemaService());
+      .addService(new SchemaService(db));
 
     VertxServer server = serverBuilder.build();
 

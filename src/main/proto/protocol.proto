@@ -10,7 +10,7 @@ option java_outer_classname = "RecordStoreProtocol";
 
 message CreateSchemaRequest {
   string name = 1;
-  int64 version = 2;
+  string primary_key_field = 2;
   SelfDescribedMessage schema = 3;
   repeated indexDefinition index_definitions = 4;
 }
@@ -25,7 +25,7 @@ enum Result {
 }
 
 service SchemaService {
-  rpc Create(CreateSchemaRequest) returns (CreateSchemaResponse);
+  rpc Create (CreateSchemaRequest) returns (CreateSchemaResponse);
 }
 
 message indexDefinition {
