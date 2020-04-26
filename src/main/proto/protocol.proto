@@ -64,7 +64,7 @@ message SelfDescribedMessage {
 
 message QueryRequest {
   string table = 1;
-  repeated QueryFilter query_filters = 2;
+  Node query_node = 2;
   bytes continuation = 3;
 }
 
@@ -74,18 +74,35 @@ message QueryResponse {
   bytes continuation = 3;
 }
 
-message QueryFilter {
-  string field = 1;
-  QueryFilterOp operation = 2;
-  oneof value {
-    string string_value = 11;
-    int64 int64_value = 12;
-  }
-}
 
-enum QueryFilterOp {
+enum FieldOperation {
   GREATER_THAN_OR_EQUALS = 0;
   LESS_THAN_OR_EQUALS = 1;
   EQUALS = 2;
 }
 
+message Node {
+  oneof Content {
+    FieldNode field_node = 1;
+    AndNode and_node = 2;
+    OrNode or_node = 3;
+  }
+}
+
+message FieldNode {
+  string field = 1;
+  FieldOperation operation = 2;
+  oneof value {
+    string string_value = 11;
+    int64 int64_value = 12;
+    bytes bytes_value = 13;
+  }
+}
+
+message AndNode {
+  repeated Node nodes = 1;
+}
+
+message OrNode {
+  repeated Node nodes = 2;
+}

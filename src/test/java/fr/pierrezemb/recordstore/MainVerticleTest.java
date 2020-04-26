@@ -125,14 +125,20 @@ public class MainVerticleTest {
   }
   @Test
   public void testPut3(Vertx vertx, VertxTestContext testContext) throws Exception {
-    RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setTable("Person")
-      .addQueryFilters(RecordStoreProtocol.QueryFilter.newBuilder()
+
+    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
+      .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
         .setField("id")
-        .setOperation(RecordStoreProtocol.QueryFilterOp.EQUALS)
-        .setInt64Value(1)
+        .setInt64Value(2)
+        .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
         .build())
       .build();
+
+    RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
+      .setTable("Person")
+      .setQueryNode(query)
+      .build();
+
     recordServiceVertxStub.query(request, response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result().getResult());
