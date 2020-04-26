@@ -12,8 +12,6 @@ public class RecordQueryGenerator {
 
     if (request.getQueryFiltersList().size() == 1) {
       RecordStoreProtocol.QueryFilter queryFilter = request.getQueryFiltersList().get(0);
-      // which value has been set?
-      int number = queryFilter.getValueCase().getNumber();
 
       switch (queryFilter.getOperation()) {
 
