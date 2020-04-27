@@ -30,13 +30,21 @@ public class RecordQueryGenerator {
       case AND_NODE:
         return Query.and(parseChildrenNodes(node.getAndNode()));
       case OR_NODE:
-        break;
+        return  Query.or(parseChildrenNodes(node.getOrNode()));
       case CONTENT_NOT_SET:
-        break;
+        throw new ParseException("no content sent on node " + node.toString(), 0);
     }
 
     return null;
 
+  }
+
+  private static List<QueryComponent> parseChildrenNodes(RecordStoreProtocol.OrNode node) throws ParseException {
+    List<QueryComponent> queryComponents = new ArrayList<>();
+    for (RecordStoreProtocol.Node children : node.getNodesList()) {
+      queryComponents.add(parseNode(children));
+    }
+    return queryComponents;
   }
 
   private static List<QueryComponent> parseChildrenNodes(RecordStoreProtocol.AndNode node) throws ParseException {
@@ -57,7 +65,7 @@ public class RecordQueryGenerator {
       case EQUALS:
         return parseFieldNodeEquals(node);
       case UNRECOGNIZED:
-        break;
+        throw new ParseException("unrecognized field on node " + node.toString(), 0);
     }
     return null;
   }
