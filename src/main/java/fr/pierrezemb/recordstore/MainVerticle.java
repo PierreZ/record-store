@@ -3,13 +3,11 @@ package fr.pierrezemb.recordstore;
 
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabaseFactory;
-import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import fr.pierrezemb.recordstore.fdb.metrics.FDBMetricsStoreTimer;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
 import fr.pierrezemb.recordstore.grpc.RecordService;
 import fr.pierrezemb.recordstore.grpc.SchemaService;
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;

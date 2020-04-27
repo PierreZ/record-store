@@ -123,6 +123,7 @@ public class MainVerticleTest {
       }
     });
   }
+
   @Test
   public void testPut3(Vertx vertx, VertxTestContext testContext) throws Exception {
 
@@ -132,6 +133,53 @@ public class MainVerticleTest {
         .setInt64Value(2)
         .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
         .build())
+      .build();
+
+    RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
+      .setTable("Person")
+      .setQueryNode(query)
+      .build();
+
+    recordServiceVertxStub.query(request, response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println(response.result().getRecordsList());
+        assertEquals(1, response.result().getRecordsCount());
+        try {
+          RecordStoreProtocolTest.Person p = RecordStoreProtocolTest.Person.parseFrom(response.result().getRecords(0));
+          assertEquals("PierreZ", p.getName());
+          assertEquals("toto@example.com", p.getEmail());
+          assertEquals(1, p.getId());
+        } catch (InvalidProtocolBufferException e) {
+          testContext.failNow(e);
+        }
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    });
+  }
+
+  @Test
+  public void testPut4(Vertx vertx, VertxTestContext testContext) throws Exception {
+
+    RecordStoreProtocol.AndNode andNode = RecordStoreProtocol.AndNode.newBuilder()
+      .addNodes(RecordStoreProtocol.Node.newBuilder()
+        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+          .setField("id")
+          .setInt64Value(2)
+          .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+          .build()).build())
+      .addNodes(RecordStoreProtocol.Node.newBuilder()
+        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+          .setField("id")
+          .setInt64Value(1)
+          .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+          .build()).build())
+      .build();
+
+    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
+      .setAndNode(andNode)
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()

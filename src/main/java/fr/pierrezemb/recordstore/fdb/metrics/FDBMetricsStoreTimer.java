@@ -15,7 +15,7 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
    */
   @Override
   public void record(Set<Event> events, long timeDifferenceNanos) {
-    for (Event count: events) {
+    for (Event count : events) {
       Metrics.counter(buildClassname(count.name() + "_ns"), "log_key", count.logKey()).increment(timeDifferenceNanos);
     }
     super.record(events, timeDifferenceNanos);
@@ -43,7 +43,7 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
    */
   @Override
   public void increment(@Nonnull Set<Count> events) {
-    for (Count count: events) {
+    for (Count count : events) {
       Metrics.counter(buildClassname(count.name()), "log_key", count.logKey()).increment();
     }
     super.increment(events);
@@ -74,7 +74,7 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
    */
   @Override
   public void increment(@Nonnull Set<Count> events, int amount) {
-    for (Count count: events) {
+    for (Count count : events) {
       Metrics.counter(buildClassname(count.name()), "log_key", count.logKey()).increment(amount);
     }
     super.increment(events, amount);
