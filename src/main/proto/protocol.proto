@@ -26,6 +26,35 @@ enum Result {
 
 service SchemaService {
   rpc Create (CreateSchemaRequest) returns (CreateSchemaResponse);
+  rpc List (ListSchemaRequest) returns (ListSchemaResponse);
+  rpc Delete (DeleteSchemaRequest) returns (DeleteSchemaResponse);
+}
+
+message DeleteSchemaResponse {
+  Result result = 1;
+}
+
+message DeleteSchemaRequest {
+  repeated string tables = 1;
+}
+
+message ListSchemaRequest {
+}
+
+message ListSchemaResponse {
+  repeated SchemaDescription schemas = 1;
+}
+
+message SchemaDescription {
+  string name = 1;
+  SelfDescribedMessage schema = 2;
+  string primary_key_field = 3;
+  repeated IndexDescription indexes = 4;
+}
+
+message IndexDescription {
+  string name = 1;
+  string type = 2;
 }
 
 service RecordService {

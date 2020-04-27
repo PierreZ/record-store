@@ -5,6 +5,7 @@ import com.apple.foundationdb.record.RecordMetaDataBuilder;
 import com.apple.foundationdb.record.metadata.Index;
 import com.apple.foundationdb.record.metadata.IndexTypes;
 import com.apple.foundationdb.record.metadata.Key;
+import com.apple.foundationdb.record.metadata.RecordType;
 import com.apple.foundationdb.record.metadata.expressions.EmptyKeyExpression;
 import com.apple.foundationdb.record.metadata.expressions.GroupingKeyExpression;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
@@ -16,8 +17,12 @@ import com.google.protobuf.Descriptors;
 import fr.pierrezemb.recordstore.fdb.RSMetaDataStore;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
+import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   // Keep a global track of the number of records stored
@@ -68,5 +73,45 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
 
     responseObserver.onNext(RecordStoreProtocol.CreateSchemaResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());
     responseObserver.onCompleted();
+  }
+
+  /**
+   * @param request
+   * @param responseObserver
+   */
+  @Override
+  public void list(RecordStoreProtocol.ListSchemaRequest request, StreamObserver<RecordStoreProtocol.ListSchemaResponse> responseObserver) {
+    String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    String env = GrpcContextKeys.getEnvOrFail();
+
+    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
+      List<RecordStoreProtocol.SchemaDescription> records = metaDataStore.getRecordMetaData()
+        .getRecordTypes()
+        .entrySet()
+        .stream()
+        .map(e -> RecordStoreProtocol.SchemaDescription.newBuilder()
+          .setName(e.getKey())
+          .setPrimaryKeyField(e.getValue().getPrimaryKey().toKeyExpression().getField().getFieldName())
+          .setSchema(RecordStoreProtocol.SelfDescribedMessage.newBuilder()
+            .setDescriptorSet(ProtobufReflectionUtil.protoFileDescriptorSet(e.getValue().getDescriptor()))
+            .build())
+          .build())
+        .collect(Collectors.toList());
+
+      responseObserver.onNext(RecordStoreProtocol.ListSchemaResponse.newBuilder()
+        .addAllSchemas(records)
+        .build());
+      responseObserver.onCompleted();
+    }
+  }
+
+  /**
+   * @param request
+   * @param responseObserver
+   */
+  @Override
+  public void delete(RecordStoreProtocol.DeleteSchemaRequest request, StreamObserver<RecordStoreProtocol.DeleteSchemaResponse> responseObserver) {
+    super.delete(request, responseObserver);
   }
 }
