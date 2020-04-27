@@ -1,0 +1,17 @@
+plugins {
+  id 'java'
+  id 'application'
+  id "org.jruyi.thrift" version "0.4.1"
+}
+
+mainClassName = 'fr.pierrezemb.recordstore.presto.PrestoConnector'
+
+dependencies {
+  compile project(':record-store')
+  compile group: 'org.apache.thrift', name: 'libthrift', version: '0.13.0'
+}
+
+compileThrift {
+  thriftExecutable "/home/pierrez/workspace/cpp/thrift-0.13.0/compiler/cpp/thrift"
+  generator "java", "private-members"
+}

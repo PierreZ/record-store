@@ -12,17 +12,21 @@
 
 ### Gradle cheat-sheet
 
+#### Record-store
+
 To launch your tests:
 ```
-./gradlew clean test
+./gradlew :record-store:test
 ```
 
 To package your application:
 ```
-./gradlew clean assemble
+./gradlew :record-store:assemble
 ```
 
 To run your application:
 ```
-./gradlew clean run
+./gradlew :record-store:run
 ```
+
+#### Presto-connector
