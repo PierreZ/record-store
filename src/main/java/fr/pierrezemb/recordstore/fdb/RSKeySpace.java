@@ -11,22 +11,24 @@ public class RSKeySpace {
     new KeySpace(
       new DirectoryLayerDirectory("application")
         .addSubdirectory(new KeySpaceDirectory("tenant", KeySpaceDirectory.KeyType.STRING)
-          .addSubdirectory(new KeySpaceDirectory("metadata", KeySpaceDirectory.KeyType.STRING, "m"))
-          .addSubdirectory(new KeySpaceDirectory("data", KeySpaceDirectory.KeyType.STRING, "d"))
-        ));
+          .addSubdirectory(new KeySpaceDirectory("env", KeySpaceDirectory.KeyType.STRING)
+            .addSubdirectory(new KeySpaceDirectory("metadata", KeySpaceDirectory.KeyType.STRING, "m"))
+            .addSubdirectory(new KeySpaceDirectory("data", KeySpaceDirectory.KeyType.STRING, "d"))
+          )));
 
-  public static KeySpacePath getMetaDataKeySpacePath(String tenant) {
-    return getKeySpacePath(tenant, "metadata");
+  public static KeySpacePath getMetaDataKeySpacePath(String tenant, String env) {
+    return getKeySpacePath(tenant, env, "metadata");
   }
 
-  public static KeySpacePath getDataKeySpacePath(String tenant) {
-    return getKeySpacePath(tenant, "data");
+  public static KeySpacePath getDataKeySpacePath(String tenant, String env) {
+    return getKeySpacePath(tenant, env, "data");
   }
 
-  private static KeySpacePath getKeySpacePath(String tenant, String subDirectory) {
+  private static KeySpacePath getKeySpacePath(String tenant, String env, String subDirectory) {
     return RS_KEY_SPACE
       .path("application", APPLICATION_NAME)
       .add("tenant", tenant)
+      .add("env", tenant)
       .add(subDirectory);
   }
 }

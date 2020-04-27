@@ -25,7 +25,9 @@ public class AuthInterceptor implements ServerInterceptor {
    */
   @Override
   public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
-    Context context = Context.current().withValue(GrpcContextKeys.TENANT_ID_KEY, "my-tenant");
+    Context context = Context.current()
+      .withValue(GrpcContextKeys.TENANT_ID_KEY, "my-tenant")
+      .withValue(GrpcContextKeys.ENV_KEY, "dev");
     return Contexts.interceptCall(context, call, headers, next);
   }
 }

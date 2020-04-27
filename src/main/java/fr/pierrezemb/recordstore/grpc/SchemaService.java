@@ -38,9 +38,10 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   @Override
   public void create(RecordStoreProtocol.CreateSchemaRequest request, StreamObserver<RecordStoreProtocol.CreateSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    String env = GrpcContextKeys.getEnvOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID);
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
 
       // retrieving protobuf descriptor
       RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();

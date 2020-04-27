@@ -47,17 +47,18 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   @Override
   public void put(RecordStoreProtocol.PutRecordRequest request, StreamObserver<RecordStoreProtocol.CreateSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    String env = GrpcContextKeys.getEnvOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
 
       // create recordStoreProvider
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID);
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
 
       // Helper func
       Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
         .setMetaDataProvider(metaDataStore)
         .setContext(context)
-        .setKeySpacePath(RSKeySpace.getDataKeySpacePath(tenantID))
+        .setKeySpacePath(RSKeySpace.getDataKeySpacePath(tenantID, env))
         .createOrOpen();
 
       FDBRecordStore r = recordStoreProvider.apply(context);
@@ -89,19 +90,20 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   @Override
   public void count(RecordStoreProtocol.CountRecordRequest request, StreamObserver<RecordStoreProtocol.CountRecordResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    String env = GrpcContextKeys.getEnvOrFail();
 
     IndexAggregateFunction function = new IndexAggregateFunction(
       FunctionNames.COUNT, COUNT_INDEX.getRootExpression(), COUNT_INDEX.getName());
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
       // create recordStoreProvider
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID);
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
 
       // Helper func
       Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
         .setMetaDataProvider(metaDataStore)
         .setContext(context)
-        .setKeySpacePath(RSKeySpace.getDataKeySpacePath(tenantID))
+        .setKeySpacePath(RSKeySpace.getDataKeySpacePath(tenantID, env))
         .createOrOpen();
 
       FDBRecordStore r = recordStoreProvider.apply(context);
@@ -126,17 +128,18 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   @Override
   public void query(RecordStoreProtocol.QueryRequest request, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    String env = GrpcContextKeys.getEnvOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
 
       // create recordStoreProvider
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID);
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
 
       // Helper func
       Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
         .setMetaDataProvider(metaDataStore)
         .setContext(context)
-        .setKeySpacePath(RSKeySpace.getDataKeySpacePath(tenantID))
+        .setKeySpacePath(RSKeySpace.getDataKeySpacePath(tenantID, env))
         .createOrOpen();
 
       FDBRecordStore r = recordStoreProvider.apply(context);
@@ -151,7 +154,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
 
       ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
         .setIsolationLevel(IsolationLevel.SERIALIZABLE)
-        .setDefaultCursorStreamingMode(CursorStreamingMode.WANT_ALL); // either WANT_ALL OR streaming mode
+        .setDefaultCursorStreamingMode(CursorStreamingMode.ITERATOR); // either WANT_ALL OR streaming mode
 
       if (request.getResultLimit() > 0) {
         executeProperties.setReturnedRowLimit(Math.toIntExact(request.getResultLimit()));
@@ -163,7 +166,6 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
       List<ByteString> results = r.executeQuery(query, request.getContinuation().toByteArray(), executeProperties.build())
         .map(FDBRecord::getRecord)
         .map(Message::toByteString).asList().join();
-
 
       responseObserver.onNext(RecordStoreProtocol.QueryResponse.newBuilder()
         .setResult(RecordStoreProtocol.Result.OK)
