@@ -66,6 +66,7 @@ message QueryRequest {
   string table = 1;
   Node query_node = 2;
   bytes continuation = 3;
+  int64 resultLimit = 4;
 }
 
 message QueryResponse {

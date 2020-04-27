@@ -2,6 +2,7 @@ package fr.pierrezemb.recordstore.grpc;
 
 import static fr.pierrezemb.recordstore.grpc.SchemaService.COUNT_INDEX;
 
+import com.apple.foundationdb.record.CursorStreamingMode;
 import com.apple.foundationdb.record.EvaluationContext;
 import com.apple.foundationdb.record.ExecuteProperties;
 import com.apple.foundationdb.record.FunctionNames;
@@ -141,8 +142,25 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
       FDBRecordStore r = recordStoreProvider.apply(context);
       RecordQuery query = RecordQueryGenerator.generate(request);
 
-      // TODO: we should tune SERIAL_EXECUTE
-      List<ByteString> results = r.executeQuery(query, request.getContinuation().toByteArray(), ExecuteProperties.SERIAL_EXECUTE)
+      // TODO: handle errors instead of throwing null
+      if (query == null) {
+        responseObserver.onError(new Throwable("cannot create query"));
+        responseObserver.onCompleted();
+        return;
+      }
+
+      ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
+        .setIsolationLevel(IsolationLevel.SERIALIZABLE)
+        .setDefaultCursorStreamingMode(CursorStreamingMode.WANT_ALL); // either WANT_ALL OR streaming mode
+
+      if (request.getResultLimit() > 0) {
+        executeProperties.setReturnedRowLimit(Math.toIntExact(request.getResultLimit()));
+        executeProperties.setFailOnScanLimitReached(false);
+      }
+
+      executeProperties.setScannedBytesLimit(1_000_000); // 1MB
+
+      List<ByteString> results = r.executeQuery(query, request.getContinuation().toByteArray(), executeProperties.build())
         .map(FDBRecord::getRecord)
         .map(Message::toByteString).asList().join();
 
