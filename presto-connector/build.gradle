@@ -6,9 +6,16 @@ plugins {
 
 mainClassName = 'fr.pierrezemb.recordstore.presto.PrestoConnector'
 
+ext {
+  prestoVersion = '332'
+}
+
 dependencies {
   compile project(':record-store')
   compile group: 'org.apache.thrift', name: 'libthrift', version: '0.13.0'
+  compileOnly "io.prestosql:presto-main:$prestoVersion"
+  compileOnly "io.prestosql:presto-spi:$prestoVersion"
+  testImplementation "io.prestosql:presto-tests:$prestoVersion"
 }
 
 compileThrift {
