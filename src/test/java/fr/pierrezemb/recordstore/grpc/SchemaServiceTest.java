@@ -1,6 +1,7 @@
 package fr.pierrezemb.recordstore.grpc;
 
 import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.Descriptors;
 import fr.pierrezemb.recordstore.FoundationDBContainer;
 import fr.pierrezemb.recordstore.MainVerticle;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
@@ -17,6 +18,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import java.io.File;
 import java.io.IOException;
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -112,6 +114,36 @@ public class SchemaServiceTest {
         testContext.failNow(response.cause());
       }
     });
-
   }
+
+  @Test
+  @Ignore("how to upgrade descriptor?")
+  public void testCRUDSchema4(Vertx vertx, VertxTestContext testContext) throws Exception {
+
+    DescriptorProtos.FileDescriptorSet dependencies =
+      ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
+
+    RecordStoreProtocol.SelfDescribedMessage selfDescribedMessage = RecordStoreProtocol.SelfDescribedMessage
+      .newBuilder()
+      .setDescriptorSet(dependencies)
+      .build();
+
+
+    RecordStoreProtocol.CreateSchemaRequest request = RecordStoreProtocol.CreateSchemaRequest
+      .newBuilder()
+      .setName("Person")
+      .setPrimaryKeyField("id")
+      .setSchema(selfDescribedMessage)
+      .build();
+
+    schemaServiceVertxStub.create(request, response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result().getResult());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    });
+  }
+
 }

@@ -5,6 +5,7 @@ import com.apple.foundationdb.record.RecordMetaDataBuilder;
 import com.apple.foundationdb.record.metadata.Index;
 import com.apple.foundationdb.record.metadata.IndexTypes;
 import com.apple.foundationdb.record.metadata.Key;
+import com.apple.foundationdb.record.metadata.RecordType;
 import com.apple.foundationdb.record.metadata.expressions.EmptyKeyExpression;
 import com.apple.foundationdb.record.metadata.expressions.GroupingKeyExpression;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
@@ -165,6 +166,48 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     }
     responseObserver.onNext(RecordStoreProtocol.AddIndexResponse.newBuilder()
       .setResult(RecordStoreProtocol.Result.OK).build());
+    responseObserver.onCompleted();
+  }
+
+  /**
+   * @param request
+   * @param responseObserver
+   */
+  @Override
+  public void upgradeSchema(RecordStoreProtocol.UpgradeSchemaRequest request, StreamObserver<RecordStoreProtocol.UpgradeSchemaResponse> responseObserver) {
+    String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    String env = GrpcContextKeys.getEnvOrFail();
+
+    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
+
+      // retrieving protobuf descriptor
+      RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
+      DescriptorProtos.FileDescriptorSet descriptorSet = request.getSchema().getDescriptorSet();
+      for (DescriptorProtos.FileDescriptorProto fdp : descriptorSet.getFileList()) {
+        Descriptors.FileDescriptor fd = Descriptors.FileDescriptor.buildFrom(fdp, new Descriptors.FileDescriptor[]{});
+        // updating schema
+        metadataBuilder.updateRecords(fd);
+      }
+
+      // add new indexes
+      for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
+        metadataBuilder.addIndex(
+          request.getName(),
+          request.getName() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString(),
+          Key.Expressions.field(indexDefinition.getField()));
+      }
+
+      // and save it
+      metaDataStore.saveRecordMetaData(metadataBuilder.getRecordMetaData().toProto());
+      context.commit();
+
+    } catch (Descriptors.DescriptorValidationException e) {
+      responseObserver.onError(e);
+      responseObserver.onCompleted();
+    }
+
+    responseObserver.onNext(RecordStoreProtocol.UpgradeSchemaResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());
     responseObserver.onCompleted();
   }
 

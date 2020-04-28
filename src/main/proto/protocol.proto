@@ -30,6 +30,17 @@ service SchemaService {
   rpc Get (GetSchemaRequest) returns (GetSchemaResponse);
   rpc Delete (DeleteSchemaRequest) returns (DeleteSchemaResponse);
   rpc AddIndex (AddIndexRequest) returns (AddIndexResponse);
+  rpc UpgradeSchema (UpgradeSchemaRequest) returns (UpgradeSchemaResponse);
+}
+
+message UpgradeSchemaRequest {
+  string name = 1;
+  SelfDescribedMessage schema = 2;
+  repeated IndexDefinition index_definitions = 3;
+}
+
+message UpgradeSchemaResponse {
+  Result result = 1;
 }
 
 message AddIndexRequest {
