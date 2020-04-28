@@ -33,6 +33,18 @@ service SchemaService {
   rpc UpgradeSchema (UpgradeSchemaRequest) returns (UpgradeSchemaResponse);
 }
 
+service AdminService {
+  rpc DeleteAll(DeleteAllRequest) returns (DeleteAllResponse);
+}
+
+message DeleteAllRequest {
+
+}
+
+message DeleteAllResponse {
+  Result result = 1;
+}
+
 message UpgradeSchemaRequest {
   string name = 1;
   SelfDescribedMessage schema = 2;

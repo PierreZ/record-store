@@ -4,6 +4,7 @@ package fr.pierrezemb.recordstore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabaseFactory;
 import fr.pierrezemb.recordstore.fdb.metrics.FDBMetricsStoreTimer;
+import fr.pierrezemb.recordstore.grpc.AdminService;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
 import fr.pierrezemb.recordstore.grpc.RecordService;
 import fr.pierrezemb.recordstore.grpc.SchemaService;
@@ -45,6 +46,7 @@ public class MainVerticle extends AbstractVerticle {
         this.context.config().getString("listen-address", "localhost"),
         this.context.config().getInteger("listen-port", 8080))
       .intercept(new AuthInterceptor())
+      .addService(new AdminService(db, fdbStoreTimer))
       .addService(new SchemaService(db, fdbStoreTimer))
       .addService(new RecordService(db, fdbStoreTimer));
 

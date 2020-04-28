@@ -3,6 +3,7 @@ package fr.pierrezemb.recordstore.grpc;
 import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.FoundationDBContainer;
 import fr.pierrezemb.recordstore.MainVerticle;
+import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocolTest;
@@ -19,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +31,7 @@ public class SchemaServiceTest {
 
   private final FoundationDBContainer container = new FoundationDBContainer();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
-  private RecordServiceGrpc.RecordServiceVertxStub recordServiceVertxStub;
+  private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
   private File clusterFile;
 
   @BeforeAll
@@ -50,7 +52,7 @@ public class SchemaServiceTest {
       .build();
 
     schemaServiceVertxStub = SchemaServiceGrpc.newVertxStub(channel);
-    recordServiceVertxStub = RecordServiceGrpc.newVertxStub(channel);
+    adminServiceVertxStub = AdminServiceGrpc.newVertxStub(channel);
   }
 
   @Test
@@ -115,8 +117,8 @@ public class SchemaServiceTest {
     });
   }
 
+  @Disabled("how to upgrade descriptor?")
   @Test
-  @Ignore("how to upgrade descriptor?")
   public void testCRUDSchema4(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
@@ -144,11 +146,24 @@ public class SchemaServiceTest {
     });
   }
 
+  @Disabled("no delete for now")
   @Test
-  @Ignore("no delete for now")
   public void testCRUDSchema5(Vertx vertx, VertxTestContext testContext) throws Exception {
     schemaServiceVertxStub.delete(RecordStoreProtocol.DeleteSchemaRequest.newBuilder()
       .setTable("Person")
+      .build(), response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result().getResult());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    });
+  }
+
+  @Test
+  public void testCRUDSchema6(Vertx vertx, VertxTestContext testContext) throws Exception {
+    adminServiceVertxStub.deleteAll(RecordStoreProtocol.DeleteAllRequest.newBuilder()
       .build(), response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result().getResult());
