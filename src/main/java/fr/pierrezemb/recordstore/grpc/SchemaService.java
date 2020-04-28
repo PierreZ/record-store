@@ -5,14 +5,12 @@ import com.apple.foundationdb.record.RecordMetaDataBuilder;
 import com.apple.foundationdb.record.metadata.Index;
 import com.apple.foundationdb.record.metadata.IndexTypes;
 import com.apple.foundationdb.record.metadata.Key;
-import com.apple.foundationdb.record.metadata.RecordType;
 import com.apple.foundationdb.record.metadata.expressions.EmptyKeyExpression;
 import com.apple.foundationdb.record.metadata.expressions.GroupingKeyExpression;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
 import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
@@ -23,7 +21,6 @@ import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
@@ -65,7 +62,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
       metadataBuilder.addIndex(request.getName(), COUNT_INDEX);
 
       // add user indexes
-      for (RecordStoreProtocol.IndexDefinition indexDefinition: request.getIndexDefinitionsList()) {
+      for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
         metadataBuilder.addIndex(
           request.getName(),
           request.getName() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString(),
@@ -130,22 +127,45 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
 
       List<RecordStoreProtocol.SchemaDescription> records =
         ImmutableMap.of(request.getTable(), metaDataStore.getRecordMetaData().getRecordType(request.getTable()))
-        .entrySet()
-        .stream()
-        .map(e -> RecordStoreProtocol.SchemaDescription.newBuilder()
-          .setName(e.getKey())
-          .setPrimaryKeyField(e.getValue().getPrimaryKey().toKeyExpression().getField().getFieldName())
-          .setSchema(RecordStoreProtocol.SelfDescribedMessage.newBuilder()
-            .setDescriptorSet(ProtobufReflectionUtil.protoFileDescriptorSet(e.getValue().getDescriptor()))
+          .entrySet()
+          .stream()
+          .map(e -> RecordStoreProtocol.SchemaDescription.newBuilder()
+            .setName(e.getKey())
+            .setPrimaryKeyField(e.getValue().getPrimaryKey().toKeyExpression().getField().getFieldName())
+            .setSchema(RecordStoreProtocol.SelfDescribedMessage.newBuilder()
+              .setDescriptorSet(ProtobufReflectionUtil.protoFileDescriptorSet(e.getValue().getDescriptor()))
+              .build())
             .build())
-          .build())
-        .collect(Collectors.toList());
+          .collect(Collectors.toList());
 
       responseObserver.onNext(RecordStoreProtocol.GetSchemaResponse.newBuilder()
         .setSchemas(records.get(0))
         .build());
       responseObserver.onCompleted();
     }
+  }
+
+  /**
+   * @param request
+   * @param responseObserver
+   */
+  @Override
+  public void addIndex(RecordStoreProtocol.AddIndexRequest request, StreamObserver<RecordStoreProtocol.AddIndexResponse> responseObserver) {
+    String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    String env = GrpcContextKeys.getEnvOrFail();
+
+    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
+      for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
+        metaDataStore.addIndex(
+          request.getTable(),
+          request.getTable() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString(),
+          Key.Expressions.field(indexDefinition.getField()));
+      }
+    }
+    responseObserver.onNext(RecordStoreProtocol.AddIndexResponse.newBuilder()
+      .setResult(RecordStoreProtocol.Result.OK).build());
+    responseObserver.onCompleted();
   }
 
   /**

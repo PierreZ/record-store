@@ -29,6 +29,16 @@ service SchemaService {
   rpc List (ListSchemaRequest) returns (ListSchemaResponse);
   rpc Get (GetSchemaRequest) returns (GetSchemaResponse);
   rpc Delete (DeleteSchemaRequest) returns (DeleteSchemaResponse);
+  rpc AddIndex (AddIndexRequest) returns (AddIndexResponse);
+}
+
+message AddIndexRequest {
+  string table = 1;
+  repeated IndexDefinition index_definitions = 2;
+}
+
+message AddIndexResponse {
+  Result result = 1;
 }
 
 message GetSchemaRequest {

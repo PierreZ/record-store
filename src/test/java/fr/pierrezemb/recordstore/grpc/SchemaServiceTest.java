@@ -80,6 +80,7 @@ public class SchemaServiceTest {
       }
     });
   }
+
   @Test
   public void testCRUDSchema2(Vertx vertx, VertxTestContext testContext) throws Exception {
     schemaServiceVertxStub.get(RecordStoreProtocol.GetSchemaRequest.newBuilder()
@@ -92,5 +93,25 @@ public class SchemaServiceTest {
         testContext.failNow(response.cause());
       }
     });
+  }
+
+  @Test
+  public void testCRUDSchema3(Vertx vertx, VertxTestContext testContext) throws Exception {
+    schemaServiceVertxStub.addIndex(RecordStoreProtocol.AddIndexRequest.newBuilder()
+      .setTable("Person")
+      .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
+        .setField("name")
+        .setIndexType(RecordStoreProtocol.IndexType.VALUE)
+        .build())
+      .build(), response -> {
+
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result().getResult());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    });
+
   }
 }

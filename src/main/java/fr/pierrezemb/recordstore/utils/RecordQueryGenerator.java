@@ -30,7 +30,7 @@ public class RecordQueryGenerator {
       case AND_NODE:
         return Query.and(parseChildrenNodes(node.getAndNode()));
       case OR_NODE:
-        return  Query.or(parseChildrenNodes(node.getOrNode()));
+        return Query.or(parseChildrenNodes(node.getOrNode()));
       case CONTENT_NOT_SET:
         throw new ParseException("no content sent on node " + node.toString(), 0);
     }
