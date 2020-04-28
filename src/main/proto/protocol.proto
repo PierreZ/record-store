@@ -65,7 +65,7 @@ message DeleteSchemaResponse {
 }
 
 message DeleteSchemaRequest {
-  repeated string tables = 1;
+  string table = 1;
 }
 
 message ListSchemaRequest {

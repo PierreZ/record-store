@@ -1,7 +1,6 @@
 package fr.pierrezemb.recordstore.grpc;
 
 import com.google.protobuf.DescriptorProtos;
-import com.google.protobuf.Descriptors;
 import fr.pierrezemb.recordstore.FoundationDBContainer;
 import fr.pierrezemb.recordstore.MainVerticle;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
@@ -128,7 +127,6 @@ public class SchemaServiceTest {
       .setDescriptorSet(dependencies)
       .build();
 
-
     RecordStoreProtocol.CreateSchemaRequest request = RecordStoreProtocol.CreateSchemaRequest
       .newBuilder()
       .setName("Person")
@@ -146,4 +144,18 @@ public class SchemaServiceTest {
     });
   }
 
+  @Test
+  @Ignore("no delete for now")
+  public void testCRUDSchema5(Vertx vertx, VertxTestContext testContext) throws Exception {
+    schemaServiceVertxStub.delete(RecordStoreProtocol.DeleteSchemaRequest.newBuilder()
+      .setTable("Person")
+      .build(), response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result().getResult());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    });
+  }
 }
