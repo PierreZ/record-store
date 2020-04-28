@@ -12,7 +12,7 @@ message CreateSchemaRequest {
   string name = 1;
   string primary_key_field = 2;
   SelfDescribedMessage schema = 3;
-  repeated indexDefinition index_definitions = 4;
+  repeated IndexDefinition index_definitions = 4;
 }
 
 message CreateSchemaResponse {
@@ -27,7 +27,16 @@ enum Result {
 service SchemaService {
   rpc Create (CreateSchemaRequest) returns (CreateSchemaResponse);
   rpc List (ListSchemaRequest) returns (ListSchemaResponse);
+  rpc Get (GetSchemaRequest) returns (GetSchemaResponse);
   rpc Delete (DeleteSchemaRequest) returns (DeleteSchemaResponse);
+}
+
+message GetSchemaRequest {
+  string table = 1;
+}
+
+message GetSchemaResponse {
+  SchemaDescription schemas = 1;
 }
 
 message DeleteSchemaResponse {
@@ -77,7 +86,7 @@ message PutRecordRequest {
   bytes message = 2;
 }
 
-message indexDefinition {
+message IndexDefinition {
   string field = 1;
   IndexType index_type = 2;
 }

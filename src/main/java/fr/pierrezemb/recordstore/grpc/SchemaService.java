@@ -12,6 +12,8 @@ import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
 import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import fr.pierrezemb.recordstore.fdb.RSMetaDataStore;
@@ -62,6 +64,14 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
       // add internal indexes
       metadataBuilder.addIndex(request.getName(), COUNT_INDEX);
 
+      // add user indexes
+      for (RecordStoreProtocol.IndexDefinition indexDefinition: request.getIndexDefinitionsList()) {
+        metadataBuilder.addIndex(
+          request.getName(),
+          request.getName() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString(),
+          Key.Expressions.field(indexDefinition.getField()));
+      }
+
       // and save it
       metaDataStore.saveRecordMetaData(metadataBuilder.getRecordMetaData().toProto());
       context.commit();
@@ -101,6 +111,38 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
 
       responseObserver.onNext(RecordStoreProtocol.ListSchemaResponse.newBuilder()
         .addAllSchemas(records)
+        .build());
+      responseObserver.onCompleted();
+    }
+  }
+
+  /**
+   * @param request
+   * @param responseObserver
+   */
+  @Override
+  public void get(RecordStoreProtocol.GetSchemaRequest request, StreamObserver<RecordStoreProtocol.GetSchemaResponse> responseObserver) {
+    String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    String env = GrpcContextKeys.getEnvOrFail();
+
+    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
+
+      List<RecordStoreProtocol.SchemaDescription> records =
+        ImmutableMap.of(request.getTable(), metaDataStore.getRecordMetaData().getRecordType(request.getTable()))
+        .entrySet()
+        .stream()
+        .map(e -> RecordStoreProtocol.SchemaDescription.newBuilder()
+          .setName(e.getKey())
+          .setPrimaryKeyField(e.getValue().getPrimaryKey().toKeyExpression().getField().getFieldName())
+          .setSchema(RecordStoreProtocol.SelfDescribedMessage.newBuilder()
+            .setDescriptorSet(ProtobufReflectionUtil.protoFileDescriptorSet(e.getValue().getDescriptor()))
+            .build())
+          .build())
+        .collect(Collectors.toList());
+
+      responseObserver.onNext(RecordStoreProtocol.GetSchemaResponse.newBuilder()
+        .setSchemas(records.get(0))
         .build());
       responseObserver.onCompleted();
     }
