@@ -66,7 +66,7 @@ public class SchemaServiceTest {
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
-      .setPrimaryKeyField("id")
+      .addPrimaryKeyFields("id")
       .setSchema(selfDescribedMessage)
       .build();
 
@@ -107,7 +107,7 @@ public class SchemaServiceTest {
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
-      .setPrimaryKeyField("id")
+      .addPrimaryKeyFields("id")
       .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
         .setField("name")
         .setIndexType(RecordStoreProtocol.IndexType.VALUE)
@@ -139,7 +139,7 @@ public class SchemaServiceTest {
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
-      .setPrimaryKeyField("id")
+      .addPrimaryKeyFields("id")
       // let's forget an index
       .setSchema(selfDescribedMessage)
       .build();

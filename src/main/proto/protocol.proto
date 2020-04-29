@@ -10,7 +10,7 @@ option java_outer_classname = "RecordStoreProtocol";
 
 message UpsertSchemaRequest {
   string name = 1;
-  string primary_key_field = 2;
+  repeated string primary_key_fields = 2;
   SelfDescribedMessage schema = 3;
   repeated IndexDefinition index_definitions = 4;
 }

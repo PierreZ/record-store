@@ -13,6 +13,7 @@ import com.apple.foundationdb.record.metadata.Key;
 import com.apple.foundationdb.record.metadata.MetaDataEvolutionValidator;
 import com.apple.foundationdb.record.metadata.MetaDataException;
 import com.apple.foundationdb.record.metadata.expressions.GroupingKeyExpression;
+import com.apple.foundationdb.record.metadata.expressions.KeyExpression;
 import com.apple.foundationdb.record.metadata.expressions.RecordTypeKeyExpression;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
@@ -21,6 +22,7 @@ import com.apple.foundationdb.record.provider.foundationdb.FDBRecordStore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import com.apple.foundationdb.tuple.Tuple;
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import fr.pierrezemb.recordstore.fdb.RSKeySpace;
@@ -121,7 +123,6 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
       // and save it
       metaDataStore.saveRecordMetaData(newRecordMetaData.getRecordMetaData().toProto());
 
-
       context.commit();
 
     } catch (Descriptors.DescriptorValidationException | MetaDataException e) {
@@ -137,7 +138,6 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   private RecordMetaData createRecordMetaData(RecordStoreProtocol.UpsertSchemaRequest request, int version) throws Descriptors.DescriptorValidationException {
     // retrieving protobuf descriptor
     RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
-
 
     DescriptorProtos.FileDescriptorSet descriptorSet = request.getSchema().getDescriptorSet();
     for (DescriptorProtos.FileDescriptorProto fdp : descriptorSet.getFileList()) {
@@ -161,9 +161,22 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     metadataBuilder.addUniversalIndex(COUNT_UPDATES_INDEX);
 
     // set primary key
-    metadataBuilder.getRecordType(request.getName()).setPrimaryKey(Key.Expressions.field(request.getPrimaryKeyField()));
+    metadataBuilder.getRecordType(request.getName()).setPrimaryKey(buildPrimaryKeyExpression(request.getPrimaryKeyFieldsList().asByteStringList()));
 
     return metadataBuilder.build();
+  }
+
+  private KeyExpression buildPrimaryKeyExpression(List<ByteString> primaryKeyFields) {
+    if (primaryKeyFields.size() == 1) {
+      return Key.Expressions.field(primaryKeyFields.get(0).toStringUtf8());
+    }
+
+    return Key.Expressions.concat(
+      primaryKeyFields
+        .stream()
+        .map(e -> Key.Expressions.field(e.toStringUtf8()))
+        .collect(Collectors.toList())
+    );
   }
 
   /**

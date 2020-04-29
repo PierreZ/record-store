@@ -68,7 +68,7 @@ public class MainVerticleTest {
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
-      .setPrimaryKeyField("id")
+      .addPrimaryKeyFields("id")
       .setSchema(selfDescribedMessage)
       .build();
 
