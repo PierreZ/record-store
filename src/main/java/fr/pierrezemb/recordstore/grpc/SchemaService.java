@@ -44,10 +44,10 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   @Override
   public void create(RecordStoreProtocol.CreateSchemaRequest request, StreamObserver<RecordStoreProtocol.CreateSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String env = GrpcContextKeys.getEnvOrFail();
+    String container = GrpcContextKeys.getContainerOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
 
       // retrieving protobuf descriptor
       RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
@@ -91,10 +91,10 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   @Override
   public void list(RecordStoreProtocol.ListSchemaRequest request, StreamObserver<RecordStoreProtocol.ListSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String env = GrpcContextKeys.getEnvOrFail();
+    String container = GrpcContextKeys.getContainerOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
       List<RecordStoreProtocol.SchemaDescription> records = metaDataStore.getRecordMetaData()
         .getRecordTypes()
         .entrySet()
@@ -122,10 +122,10 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   @Override
   public void get(RecordStoreProtocol.GetSchemaRequest request, StreamObserver<RecordStoreProtocol.GetSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String env = GrpcContextKeys.getEnvOrFail();
+    String container = GrpcContextKeys.getContainerOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
 
       List<RecordStoreProtocol.SchemaDescription> records =
         ImmutableMap.of(request.getTable(), metaDataStore.getRecordMetaData().getRecordType(request.getTable()))
@@ -154,10 +154,10 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   @Override
   public void addIndex(RecordStoreProtocol.AddIndexRequest request, StreamObserver<RecordStoreProtocol.AddIndexResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String env = GrpcContextKeys.getEnvOrFail();
+    String container = GrpcContextKeys.getContainerOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
       for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
         metaDataStore.addIndex(
           request.getTable(),
@@ -177,10 +177,10 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   @Override
   public void upgradeSchema(RecordStoreProtocol.UpgradeSchemaRequest request, StreamObserver<RecordStoreProtocol.UpgradeSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String env = GrpcContextKeys.getEnvOrFail();
+    String container = GrpcContextKeys.getContainerOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, env);
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
 
       // retrieving protobuf descriptor
       RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();

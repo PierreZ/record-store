@@ -26,11 +26,11 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
   @Override
   public void deleteAll(RecordStoreProtocol.DeleteAllRequest request, StreamObserver<RecordStoreProtocol.DeleteAllResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String env = GrpcContextKeys.getEnvOrFail();
+    String container = GrpcContextKeys.getContainerOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBRecordStore.deleteStore(context, RSKeySpace.getDataKeySpacePath(tenantID, env));
-      FDBRecordStore.deleteStore(context, RSKeySpace.getMetaDataKeySpacePath(tenantID, env));
+      FDBRecordStore.deleteStore(context, RSKeySpace.getDataKeySpacePath(tenantID, container));
+      FDBRecordStore.deleteStore(context, RSKeySpace.getMetaDataKeySpacePath(tenantID, container));
       context.commit();
     }
     responseObserver.onNext(RecordStoreProtocol.DeleteAllResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());

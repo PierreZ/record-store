@@ -7,7 +7,7 @@ public class GrpcContextKeys {
    * Key for accessing requested tenant id
    */
   public static final Context.Key<String> TENANT_ID_KEY = Context.key("tenant");
-  public static final Context.Key<String> ENV_KEY = Context.key("env");
+  public static final Context.Key<String> CONTAINER_NAME = Context.key("container");
 
   public static String getTenantIDOrFail() throws RuntimeException {
     String tenantId = GrpcContextKeys.TENANT_ID_KEY.get();
@@ -17,11 +17,11 @@ public class GrpcContextKeys {
     return tenantId;
   }
 
-  public static String getEnvOrFail() throws RuntimeException {
-    String tenantId = GrpcContextKeys.ENV_KEY.get();
-    if (tenantId == null) {
-      throw new RuntimeException("Env not found");
+  public static String getContainerOrFail() throws RuntimeException {
+    String container = GrpcContextKeys.CONTAINER_NAME.get();
+    if (container == null) {
+      throw new RuntimeException("container not found");
     }
-    return tenantId;
+    return container;
   }
 }
