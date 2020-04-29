@@ -66,15 +66,14 @@ public class SchemaServiceTest {
       .setDescriptorSet(dependencies)
       .build();
 
-
-    RecordStoreProtocol.CreateSchemaRequest request = RecordStoreProtocol.CreateSchemaRequest
+    RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
       .setPrimaryKeyField("id")
       .setSchema(selfDescribedMessage)
       .build();
 
-    schemaServiceVertxStub.create(request, response -> {
+    schemaServiceVertxStub.upsert(request, response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result().getResult());
         testContext.completeNow();
@@ -100,14 +99,26 @@ public class SchemaServiceTest {
 
   @Test
   public void testCRUDSchema3(Vertx vertx, VertxTestContext testContext) throws Exception {
-    schemaServiceVertxStub.addIndex(RecordStoreProtocol.AddIndexRequest.newBuilder()
-      .setTable("Person")
+    DescriptorProtos.FileDescriptorSet dependencies =
+      ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
+
+    RecordStoreProtocol.SelfDescribedMessage selfDescribedMessage = RecordStoreProtocol.SelfDescribedMessage
+      .newBuilder()
+      .setDescriptorSet(dependencies)
+      .build();
+
+    RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
+      .newBuilder()
+      .setName("Person")
+      .setPrimaryKeyField("id")
       .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
         .setField("name")
         .setIndexType(RecordStoreProtocol.IndexType.VALUE)
         .build())
-      .build(), response -> {
+      .setSchema(selfDescribedMessage)
+      .build();
 
+    schemaServiceVertxStub.upsert(request, response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result().getResult());
         testContext.completeNow();
@@ -117,7 +128,6 @@ public class SchemaServiceTest {
     });
   }
 
-  @Disabled("how to upgrade descriptor?")
   @Test
   public void testCRUDSchema4(Vertx vertx, VertxTestContext testContext) throws Exception {
 
@@ -129,34 +139,19 @@ public class SchemaServiceTest {
       .setDescriptorSet(dependencies)
       .build();
 
-    RecordStoreProtocol.CreateSchemaRequest request = RecordStoreProtocol.CreateSchemaRequest
+    RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
       .setPrimaryKeyField("id")
+      // let's forget an index
       .setSchema(selfDescribedMessage)
       .build();
 
-    schemaServiceVertxStub.create(request, response -> {
+    schemaServiceVertxStub.upsert(request, response -> {
       if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
-        testContext.completeNow();
+        testContext.failNow(new Throwable("should have failed"));
       } else {
-        testContext.failNow(response.cause());
-      }
-    });
-  }
-
-  @Disabled("no delete for now")
-  @Test
-  public void testCRUDSchema5(Vertx vertx, VertxTestContext testContext) throws Exception {
-    schemaServiceVertxStub.delete(RecordStoreProtocol.DeleteSchemaRequest.newBuilder()
-      .setTable("Person")
-      .build(), response -> {
-      if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
         testContext.completeNow();
-      } else {
-        testContext.failNow(response.cause());
       }
     });
   }

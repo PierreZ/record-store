@@ -23,96 +23,19 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
-  // Keep a global track of the number of records stored
-  protected static final Index COUNT_INDEX = new Index(
-    "globalRecordCount", new GroupingKeyExpression(EmptyKeyExpression.EMPTY, 0), IndexTypes.COUNT);
-  private final MetaDataEvolutionValidator validator = MetaDataEvolutionValidator.getDefaultInstance();
+  private static final Logger log = LoggerFactory.getLogger(SchemaService.class);
+  protected static final Index COUNT_INDEX = new Index("globalRecordCount", new GroupingKeyExpression(EmptyKeyExpression.EMPTY, 0), IndexTypes.COUNT);
+  protected static final Index COUNT_UPDATES_INDEX = new Index("globalRecordUpdateCount", new GroupingKeyExpression(EmptyKeyExpression.EMPTY, 0), IndexTypes.COUNT_UPDATES);
   private final FDBDatabase db;
   private final FDBStoreTimer timer;
 
   public SchemaService(FDBDatabase db, FDBStoreTimer fdbStoreTimer) {
     this.db = db;
     this.timer = fdbStoreTimer;
-  }
-
-  /**
-   * @param request
-   * @param responseObserver
-   */
-  @Override
-  public void create(RecordStoreProtocol.CreateSchemaRequest request, StreamObserver<RecordStoreProtocol.CreateSchemaResponse> responseObserver) {
-    String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String container = GrpcContextKeys.getContainerOrFail();
-
-    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
-
-      // retrieving protobuf descriptor
-      RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
-      DescriptorProtos.FileDescriptorSet descriptorSet = request.getSchema().getDescriptorSet();
-      for (DescriptorProtos.FileDescriptorProto fdp : descriptorSet.getFileList()) {
-        Descriptors.FileDescriptor fd = Descriptors.FileDescriptor.buildFrom(fdp, new Descriptors.FileDescriptor[]{});
-        metadataBuilder.setRecords(fd);
-      }
-
-      // set primary key
-      metadataBuilder.getRecordType(request.getName()).setPrimaryKey(Key.Expressions.field(request.getPrimaryKeyField()));
-
-      // add internal indexes
-      metadataBuilder.addIndex(request.getName(), COUNT_INDEX);
-
-      // add user indexes
-      for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
-        metadataBuilder.addIndex(
-          request.getName(),
-          request.getName() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString(),
-          Key.Expressions.field(indexDefinition.getField()));
-      }
-
-      // and save it
-      metaDataStore.saveRecordMetaData(metadataBuilder.getRecordMetaData().toProto());
-      context.commit();
-
-    } catch (Descriptors.DescriptorValidationException e) {
-      responseObserver.onError(e);
-      responseObserver.onCompleted();
-    }
-
-    responseObserver.onNext(RecordStoreProtocol.CreateSchemaResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());
-    responseObserver.onCompleted();
-  }
-
-  /**
-   * @param request
-   * @param responseObserver
-   */
-  @Override
-  public void list(RecordStoreProtocol.ListSchemaRequest request, StreamObserver<RecordStoreProtocol.ListSchemaResponse> responseObserver) {
-    String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String container = GrpcContextKeys.getContainerOrFail();
-
-    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
-      List<RecordStoreProtocol.SchemaDescription> records = metaDataStore.getRecordMetaData()
-        .getRecordTypes()
-        .entrySet()
-        .stream()
-        .map(e -> RecordStoreProtocol.SchemaDescription.newBuilder()
-          .setName(e.getKey())
-          .setPrimaryKeyField(e.getValue().getPrimaryKey().toKeyExpression().getField().getFieldName())
-          .setSchema(RecordStoreProtocol.SelfDescribedMessage.newBuilder()
-            .setDescriptorSet(ProtobufReflectionUtil.protoFileDescriptorSet(e.getValue().getDescriptor()))
-            .build())
-          .build())
-        .collect(Collectors.toList());
-
-      responseObserver.onNext(RecordStoreProtocol.ListSchemaResponse.newBuilder()
-        .addAllSchemas(records)
-        .build());
-      responseObserver.onCompleted();
-    }
   }
 
   /**
@@ -152,55 +75,40 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
    * @param responseObserver
    */
   @Override
-  public void addIndex(RecordStoreProtocol.AddIndexRequest request, StreamObserver<RecordStoreProtocol.AddIndexResponse> responseObserver) {
-    String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String container = GrpcContextKeys.getContainerOrFail();
-
-    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
-      for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
-        metaDataStore.addIndex(
-          request.getTable(),
-          request.getTable() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString(),
-          Key.Expressions.field(indexDefinition.getField()));
-      }
-    }
-    responseObserver.onNext(RecordStoreProtocol.AddIndexResponse.newBuilder()
-      .setResult(RecordStoreProtocol.Result.OK).build());
-    responseObserver.onCompleted();
-  }
-
-  /**
-   * @param request
-   * @param responseObserver
-   */
-  @Override
-  public void upgradeSchema(RecordStoreProtocol.UpgradeSchemaRequest request, StreamObserver<RecordStoreProtocol.UpgradeSchemaResponse> responseObserver) {
+  public void upsert(RecordStoreProtocol.UpsertSchemaRequest request, StreamObserver<RecordStoreProtocol.UpsertSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
       FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
 
-      // retrieving protobuf descriptor
-      RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
-      DescriptorProtos.FileDescriptorSet descriptorSet = request.getSchema().getDescriptorSet();
-      for (DescriptorProtos.FileDescriptorProto fdp : descriptorSet.getFileList()) {
-        Descriptors.FileDescriptor fd = Descriptors.FileDescriptor.buildFrom(fdp, new Descriptors.FileDescriptor[]{});
-        // updating schema
-        metadataBuilder.updateRecords(fd);
+      RecordMetaData oldMetaData = null;
+      int version = 0;
+      try {
+        oldMetaData = metaDataStore.getRecordMetaData();
+        log.debug("metadata for {}:{} is in version {}", tenantID, container, oldMetaData.getVersion());
+        version = oldMetaData.getVersion() + 1;
+      } catch (FDBMetaDataStore.MissingMetaDataException e) {
+        log.info("missing metadata, creating one");
       }
 
-      // add new indexes
-      for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
-        metadataBuilder.addIndex(
-          request.getName(),
-          request.getName() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString(),
-          Key.Expressions.field(indexDefinition.getField()));
+      RecordMetaData newRecordMetaData = createRecordMetaData(request, version);
+
+      // handling upgrade
+      if (null != oldMetaData) {
+        MetaDataEvolutionValidator metaDataEvolutionValidator = MetaDataEvolutionValidator.newBuilder()
+          .setAllowIndexRebuilds(true)
+          .setAllowMissingFormerIndexNames(false)
+          .build();
+
+        metaDataEvolutionValidator.validate(oldMetaData, newRecordMetaData);
       }
 
       // and save it
-      metaDataStore.saveRecordMetaData(metadataBuilder.getRecordMetaData().toProto());
+      metaDataStore.saveRecordMetaData(newRecordMetaData.getRecordMetaData().toProto());
+
+
+
       context.commit();
 
     } catch (Descriptors.DescriptorValidationException e) {
@@ -208,16 +116,39 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
       responseObserver.onCompleted();
     }
 
-    responseObserver.onNext(RecordStoreProtocol.UpgradeSchemaResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());
+    responseObserver.onNext(RecordStoreProtocol.UpsertSchemaResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());
     responseObserver.onCompleted();
   }
 
-  /**
-   * @param request
-   * @param responseObserver
-   */
-  @Override
-  public void delete(RecordStoreProtocol.DeleteSchemaRequest request, StreamObserver<RecordStoreProtocol.DeleteSchemaResponse> responseObserver) {
-    super.delete(request, responseObserver);
+  private RecordMetaData createRecordMetaData(RecordStoreProtocol.UpsertSchemaRequest request, int version) throws Descriptors.DescriptorValidationException {
+    // retrieving protobuf descriptor
+    RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
+
+
+    DescriptorProtos.FileDescriptorSet descriptorSet = request.getSchema().getDescriptorSet();
+    for (DescriptorProtos.FileDescriptorProto fdp : descriptorSet.getFileList()) {
+      Descriptors.FileDescriptor fd = Descriptors.FileDescriptor.buildFrom(fdp, new Descriptors.FileDescriptor[]{});
+      // updating schema
+      metadataBuilder.setRecords(fd);
+    }
+
+    // set version
+    metadataBuilder.setVersion(version);
+
+    // add new indexes
+    for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
+      metadataBuilder.addIndex(
+        request.getName(),
+        request.getName() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString(),
+        Key.Expressions.field(indexDefinition.getField()));
+    }
+
+    metadataBuilder.addUniversalIndex(COUNT_INDEX);
+    metadataBuilder.addUniversalIndex(COUNT_UPDATES_INDEX);
+
+    // set primary key
+    metadataBuilder.getRecordType(request.getName()).setPrimaryKey(Key.Expressions.field(request.getPrimaryKeyField()));
+
+    return metadataBuilder.build();
   }
 }

@@ -45,7 +45,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
    * @param responseObserver
    */
   @Override
-  public void put(RecordStoreProtocol.PutRecordRequest request, StreamObserver<RecordStoreProtocol.CreateSchemaResponse> responseObserver) {
+  public void put(RecordStoreProtocol.PutRecordRequest request, StreamObserver<RecordStoreProtocol.PutRecordResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
 
@@ -77,7 +77,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
       responseObserver.onError(e);
       responseObserver.onCompleted();
     }
-    responseObserver.onNext(RecordStoreProtocol.CreateSchemaResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());
+    responseObserver.onNext(RecordStoreProtocol.PutRecordResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());
     responseObserver.onCompleted();
   }
 

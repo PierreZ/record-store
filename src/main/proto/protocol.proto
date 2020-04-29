@@ -8,14 +8,14 @@ import "google/protobuf/descriptor.proto";
 option java_package = "fr.pierrezemb.recordstore.proto";
 option java_outer_classname = "RecordStoreProtocol";
 
-message CreateSchemaRequest {
+message UpsertSchemaRequest {
   string name = 1;
   string primary_key_field = 2;
   SelfDescribedMessage schema = 3;
   repeated IndexDefinition index_definitions = 4;
 }
 
-message CreateSchemaResponse {
+message UpsertSchemaResponse {
   Result result = 1;
 }
 
@@ -25,12 +25,8 @@ enum Result {
 }
 
 service SchemaService {
-  rpc Create (CreateSchemaRequest) returns (CreateSchemaResponse);
-  rpc List (ListSchemaRequest) returns (ListSchemaResponse);
+  rpc Upsert (UpsertSchemaRequest) returns (UpsertSchemaResponse);
   rpc Get (GetSchemaRequest) returns (GetSchemaResponse);
-  rpc Delete (DeleteSchemaRequest) returns (DeleteSchemaResponse);
-  rpc AddIndex (AddIndexRequest) returns (AddIndexResponse);
-  rpc UpgradeSchema (UpgradeSchemaRequest) returns (UpgradeSchemaResponse);
 }
 
 service AdminService {
@@ -100,7 +96,7 @@ message IndexDescription {
 }
 
 service RecordService {
-  rpc Put (PutRecordRequest) returns (CreateSchemaResponse);
+  rpc Put (PutRecordRequest) returns (PutRecordResponse);
   rpc Count (CountRecordRequest) returns (CountRecordResponse);
   rpc Query (QueryRequest) returns (QueryResponse);
 }
@@ -112,6 +108,10 @@ message CountRecordRequest {
 message CountRecordResponse {
   Result result = 1;
   int64 size = 2;
+}
+
+message PutRecordResponse {
+  Result result = 1;
 }
 
 message PutRecordRequest {

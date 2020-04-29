@@ -65,14 +65,14 @@ public class MainVerticleTest {
       .build();
 
 
-    RecordStoreProtocol.CreateSchemaRequest request = RecordStoreProtocol.CreateSchemaRequest
+    RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
       .setPrimaryKeyField("id")
       .setSchema(selfDescribedMessage)
       .build();
 
-    schemaServiceVertxStub.create(request, response -> {
+    schemaServiceVertxStub.upsert(request, response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result().getResult());
         testContext.completeNow();
@@ -84,26 +84,6 @@ public class MainVerticleTest {
 
   @Test
   public void testPut1(Vertx vertx, VertxTestContext testContext) throws Exception {
-    schemaServiceVertxStub.list(RecordStoreProtocol.ListSchemaRequest.newBuilder().build(), response -> {
-      if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result());
-        assertEquals(1, response.result().getSchemasCount());
-        System.out.println(1);
-        assertEquals("Person", response.result().getSchemas(0).getName());
-        System.out.println(2);
-        System.out.println(response.result().getSchemas(0).getPrimaryKeyField());
-        System.out.println(23);
-        assertEquals("id", response.result().getSchemas(0).getPrimaryKeyField());
-        System.out.println(3);
-        testContext.completeNow();
-      } else {
-        testContext.failNow(response.cause());
-      }
-    });
-  }
-
-  @Test
-  public void testPut2(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     RecordStoreProtocolTest.Person person = RecordStoreProtocolTest.Person.newBuilder()
       .setId(1)
@@ -127,7 +107,7 @@ public class MainVerticleTest {
   }
 
   @Test
-  public void testPut3(Vertx vertx, VertxTestContext testContext) throws Exception {
+  public void testPut2(Vertx vertx, VertxTestContext testContext) throws Exception {
     RecordStoreProtocol.CountRecordRequest recordRequest = RecordStoreProtocol.CountRecordRequest.newBuilder()
       .setTable("Person")
       .build();
@@ -145,7 +125,7 @@ public class MainVerticleTest {
   }
 
   @Test
-  public void testPut4(Vertx vertx, VertxTestContext testContext) throws Exception {
+  public void testPut3(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
       .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
@@ -181,7 +161,7 @@ public class MainVerticleTest {
   }
 
   @Test
-  public void testPut5(Vertx vertx, VertxTestContext testContext) throws Exception {
+  public void testPut4(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     RecordStoreProtocol.AndNode andNode = RecordStoreProtocol.AndNode.newBuilder()
       .addNodes(RecordStoreProtocol.Node.newBuilder()
