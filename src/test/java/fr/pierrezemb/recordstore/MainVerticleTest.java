@@ -108,15 +108,16 @@ public class MainVerticleTest {
 
   @Test
   public void testPut2(Vertx vertx, VertxTestContext testContext) throws Exception {
-    RecordStoreProtocol.CountRecordRequest recordRequest = RecordStoreProtocol.CountRecordRequest.newBuilder()
-      .setTable("Person")
+    RecordStoreProtocol.StatRequest recordRequest = RecordStoreProtocol.StatRequest.newBuilder()
       .build();
 
-    recordServiceVertxStub.count(recordRequest, response -> {
+    schemaServiceVertxStub.stat(recordRequest, response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result().getResult());
-        System.out.println("there is " + response.result().getSize() + " records");
-        assertEquals(1, response.result().getSize());
+        System.out.println("there is " + response.result().getCount() + " records");
+        System.out.println("there is " + response.result().getCountUpdates() + " updates");
+        assertEquals(1, response.result().getCount());
+        assertEquals(1, response.result().getCountUpdates());
         testContext.completeNow();
       } else {
         testContext.failNow(response.cause());

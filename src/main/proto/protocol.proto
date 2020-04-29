@@ -26,11 +26,12 @@ enum Result {
 
 service SchemaService {
   rpc Upsert (UpsertSchemaRequest) returns (UpsertSchemaResponse);
+  rpc Stat (StatRequest) returns (StatResponse);
   rpc Get (GetSchemaRequest) returns (GetSchemaResponse);
 }
 
 service AdminService {
-  rpc DeleteAll(DeleteAllRequest) returns (DeleteAllResponse);
+  rpc DeleteAll (DeleteAllRequest) returns (DeleteAllResponse);
 }
 
 message DeleteAllRequest {
@@ -97,17 +98,16 @@ message IndexDescription {
 
 service RecordService {
   rpc Put (PutRecordRequest) returns (PutRecordResponse);
-  rpc Count (CountRecordRequest) returns (CountRecordResponse);
   rpc Query (QueryRequest) returns (QueryResponse);
 }
 
-message CountRecordRequest {
-  string table = 1;
+message StatRequest {
 }
 
-message CountRecordResponse {
+message StatResponse {
   Result result = 1;
-  int64 size = 2;
+  int64 count = 2;
+  int64 count_updates = 3;
 }
 
 message PutRecordResponse {
