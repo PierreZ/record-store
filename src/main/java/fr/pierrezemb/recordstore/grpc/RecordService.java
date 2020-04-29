@@ -10,6 +10,7 @@ import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
 import com.apple.foundationdb.record.provider.foundationdb.FDBRecordStore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import com.apple.foundationdb.record.query.RecordQuery;
+import com.apple.foundationdb.record.query.plan.plans.RecordQueryPlan;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
@@ -24,8 +25,11 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
+  private static final Logger log = LoggerFactory.getLogger(RecordService.class);
   private final FDBDatabase db;
   private final FDBStoreTimer timer;
 
@@ -105,6 +109,9 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
         responseObserver.onCompleted();
         return;
       }
+
+      RecordQueryPlan plan = r.planQuery(query);
+      log.info("running query for {}/{}: '{}'", tenantID, container, plan);
 
       ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
         .setIsolationLevel(IsolationLevel.SERIALIZABLE)

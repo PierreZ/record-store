@@ -64,7 +64,6 @@ public class MainVerticleTest {
       .setDescriptorSet(dependencies)
       .build();
 
-
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
