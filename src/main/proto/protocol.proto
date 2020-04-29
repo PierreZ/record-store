@@ -67,6 +67,7 @@ message GetSchemaRequest {
 
 message GetSchemaResponse {
   SchemaDescription schemas = 1;
+  int64 version = 2;
 }
 
 message DeleteSchemaResponse {

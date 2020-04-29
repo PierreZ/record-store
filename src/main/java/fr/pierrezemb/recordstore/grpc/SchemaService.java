@@ -2,11 +2,9 @@ package fr.pierrezemb.recordstore.grpc;
 
 import com.apple.foundationdb.record.EvaluationContext;
 import com.apple.foundationdb.record.FunctionNames;
-import com.apple.foundationdb.record.IndexScanType;
 import com.apple.foundationdb.record.IsolationLevel;
 import com.apple.foundationdb.record.RecordMetaData;
 import com.apple.foundationdb.record.RecordMetaDataBuilder;
-import com.apple.foundationdb.record.ScanProperties;
 import com.apple.foundationdb.record.TupleRange;
 import com.apple.foundationdb.record.metadata.Index;
 import com.apple.foundationdb.record.metadata.IndexAggregateFunction;
@@ -80,6 +78,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
 
       responseObserver.onNext(RecordStoreProtocol.GetSchemaResponse.newBuilder()
         .setSchemas(records.get(0))
+        .setVersion(metaDataStore.getRecordMetaData().getVersion())
         .build());
       responseObserver.onCompleted();
     }
