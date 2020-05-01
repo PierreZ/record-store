@@ -17,7 +17,16 @@ service SchemaService {
 
 // Service which allow to list and delete containers
 service AdminService {
-  rpc DeleteAll (DeleteAllRequest) returns (DeleteAllResponse);
+  rpc List (ListContainerRequest) returns (ListContainerResponse);
+  rpc Delete (DeleteContainerRequest) returns (DeleteContainerResponse);
+}
+
+message ListContainerRequest {
+}
+
+message ListContainerResponse {
+  Result result = 1;
+  repeated string containers = 2;
 }
 
 // Service which manipulate records within a container
@@ -44,11 +53,11 @@ enum Result {
 
 
 
-message DeleteAllRequest {
-
+message DeleteContainerRequest {
+  repeated string containers = 1;
 }
 
-message DeleteAllResponse {
+message DeleteContainerResponse {
   Result result = 1;
 }
 

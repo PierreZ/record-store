@@ -2,6 +2,8 @@ package fr.pierrezemb.recordstore.grpc;
 
 import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_CONTAINER;
 import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_TENANT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.FoundationDBContainer;
@@ -31,7 +33,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class SchemaServiceTest {
+public class SchemaAdminServiceTest {
 
   private final FoundationDBContainer container = new FoundationDBContainer();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
@@ -162,6 +164,19 @@ public class SchemaServiceTest {
         testContext.failNow(new Throwable("should have failed"));
       } else {
         testContext.completeNow();
+      }
+    });
+  }
+
+  @Test
+  public void testCRUDSchema5(Vertx vertx, VertxTestContext testContext) throws Exception {
+    adminServiceVertxStub.list(RecordStoreProtocol.ListContainerRequest.newBuilder().build(), response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result());
+        assertEquals(1, response.result().getContainersList().size());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
       }
     });
   }

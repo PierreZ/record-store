@@ -20,6 +20,12 @@ public class RSKeySpace {
     return getKeySpacePath(tenant, container, "metadata");
   }
 
+  public static KeySpacePath getApplicationKeySpacePath(String tenant) {
+    return RS_KEY_SPACE
+      .path("application", APPLICATION_NAME)
+      .add("tenant", tenant);
+  }
+
   public static KeySpacePath getDataKeySpacePath(String tenant, String container) {
     return getKeySpacePath(tenant, container, "data");
   }
