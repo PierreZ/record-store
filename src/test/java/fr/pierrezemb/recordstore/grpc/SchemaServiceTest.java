@@ -1,8 +1,13 @@
 package fr.pierrezemb.recordstore.grpc;
 
+import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_CONTAINER;
+import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_TENANT;
+
 import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.FoundationDBContainer;
 import fr.pierrezemb.recordstore.MainVerticle;
+import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
+import fr.pierrezemb.recordstore.auth.BiscuitManager;
 import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocolTest;
@@ -17,6 +22,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -40,6 +46,9 @@ public class SchemaServiceTest {
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject().put("fdb-cluster-file", clusterFile.getAbsolutePath())
       );
+    BiscuitManager biscuitManager = new BiscuitManager();
+    String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
+    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, DEFAULT_CONTAINER);
 
     // deploy verticle
     vertx.deployVerticle(new MainVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
@@ -48,8 +57,8 @@ public class SchemaServiceTest {
       .usePlaintext(true)
       .build();
 
-    schemaServiceVertxStub = SchemaServiceGrpc.newVertxStub(channel);
-    adminServiceVertxStub = AdminServiceGrpc.newVertxStub(channel);
+    schemaServiceVertxStub = SchemaServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
+    adminServiceVertxStub = AdminServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
   }
 
   @Test

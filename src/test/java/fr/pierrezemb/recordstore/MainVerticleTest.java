@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.InvalidProtocolBufferException;
+import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
+import fr.pierrezemb.recordstore.auth.BiscuitManager;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocolTest;
@@ -18,6 +20,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -27,6 +30,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MainVerticleTest {
 
+  public static final String DEFAULT_TENANT = "my-tenant";
+  public static final String DEFAULT_CONTAINER = "my-container";
   private final FoundationDBContainer container = new FoundationDBContainer();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
   private RecordServiceGrpc.RecordServiceVertxStub recordServiceVertxStub;
@@ -42,6 +47,10 @@ public class MainVerticleTest {
       .setConfig(new JsonObject().put("fdb-cluster-file", clusterFile.getAbsolutePath())
       );
 
+    BiscuitManager biscuitManager = new BiscuitManager();
+    String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
+    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, DEFAULT_CONTAINER);
+
     // deploy verticle
     vertx.deployVerticle(new MainVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
     ManagedChannel channel = VertxChannelBuilder
@@ -49,8 +58,8 @@ public class MainVerticleTest {
       .usePlaintext(true)
       .build();
 
-    schemaServiceVertxStub = SchemaServiceGrpc.newVertxStub(channel);
-    recordServiceVertxStub = RecordServiceGrpc.newVertxStub(channel);
+    schemaServiceVertxStub = SchemaServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
+    recordServiceVertxStub = RecordServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
   }
 
   @Test
