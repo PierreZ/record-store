@@ -127,7 +127,6 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
 
     } catch (Descriptors.DescriptorValidationException | MetaDataException e) {
       responseObserver.onError(e);
-      responseObserver.onCompleted();
       return;
     }
 

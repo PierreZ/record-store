@@ -32,6 +32,7 @@ public class MainVerticleTest {
 
   public static final String DEFAULT_TENANT = "my-tenant";
   public static final String DEFAULT_CONTAINER = "my-container";
+  public final int port = PortManager.nextFreePort();
   private final FoundationDBContainer container = new FoundationDBContainer();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
   private RecordServiceGrpc.RecordServiceVertxStub recordServiceVertxStub;
@@ -44,8 +45,9 @@ public class MainVerticleTest {
     clusterFile = container.getClusterFile();
 
     DeploymentOptions options = new DeploymentOptions()
-      .setConfig(new JsonObject().put("fdb-cluster-file", clusterFile.getAbsolutePath())
-      );
+      .setConfig(new JsonObject()
+        .put("fdb-cluster-file", clusterFile.getAbsolutePath())
+        .put("listen-port", port));
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
@@ -54,7 +56,7 @@ public class MainVerticleTest {
     // deploy verticle
     vertx.deployVerticle(new MainVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
     ManagedChannel channel = VertxChannelBuilder
-      .forAddress(vertx, "localhost", 8080)
+      .forAddress(vertx, "localhost", port)
       .usePlaintext(true)
       .build();
 

@@ -6,6 +6,7 @@ import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_TENANT;
 import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.FoundationDBContainer;
 import fr.pierrezemb.recordstore.MainVerticle;
+import fr.pierrezemb.recordstore.PortManager;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
 import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
@@ -34,6 +35,7 @@ public class SchemaServiceTest {
 
   private final FoundationDBContainer container = new FoundationDBContainer();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
+  public final int port = PortManager.nextFreePort();
   private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
   private File clusterFile;
 
@@ -44,8 +46,10 @@ public class SchemaServiceTest {
     clusterFile = container.getClusterFile();
 
     DeploymentOptions options = new DeploymentOptions()
-      .setConfig(new JsonObject().put("fdb-cluster-file", clusterFile.getAbsolutePath())
-      );
+      .setConfig(new JsonObject()
+        .put("fdb-cluster-file", clusterFile.getAbsolutePath())
+        .put("listen-port", port));
+
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
     BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, DEFAULT_CONTAINER);
@@ -53,7 +57,7 @@ public class SchemaServiceTest {
     // deploy verticle
     vertx.deployVerticle(new MainVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
     ManagedChannel channel = VertxChannelBuilder
-      .forAddress(vertx, "localhost", 8080)
+      .forAddress(vertx, "localhost", port)
       .usePlaintext(true)
       .build();
 
@@ -158,19 +162,6 @@ public class SchemaServiceTest {
         testContext.failNow(new Throwable("should have failed"));
       } else {
         testContext.completeNow();
-      }
-    });
-  }
-
-  @Test
-  public void testCRUDSchema6(Vertx vertx, VertxTestContext testContext) throws Exception {
-    adminServiceVertxStub.deleteAll(RecordStoreProtocol.DeleteAllRequest.newBuilder()
-      .build(), response -> {
-      if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
-        testContext.completeNow();
-      } else {
-        testContext.failNow(response.cause());
       }
     });
   }

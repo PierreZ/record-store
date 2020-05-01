@@ -8,6 +8,24 @@ import "google/protobuf/descriptor.proto";
 option java_package = "fr.pierrezemb.recordstore.proto";
 option java_outer_classname = "RecordStoreProtocol";
 
+// administrative part of the container
+service SchemaService {
+  rpc Upsert (UpsertSchemaRequest) returns (UpsertSchemaResponse);
+  rpc Stat (StatRequest) returns (StatResponse);
+  rpc Get (GetSchemaRequest) returns (GetSchemaResponse);
+}
+
+// Service which allow to list and delete containers
+service AdminService {
+  rpc DeleteAll (DeleteAllRequest) returns (DeleteAllResponse);
+}
+
+// Service which manipulate records within a container
+service RecordService {
+  rpc Put (PutRecordRequest) returns (PutRecordResponse);
+  rpc Query (QueryRequest) returns (QueryResponse);
+}
+
 message UpsertSchemaRequest {
   string name = 1;
   repeated string primary_key_fields = 2;
@@ -24,15 +42,7 @@ enum Result {
   KO = 1;
 }
 
-service SchemaService {
-  rpc Upsert (UpsertSchemaRequest) returns (UpsertSchemaResponse);
-  rpc Stat (StatRequest) returns (StatResponse);
-  rpc Get (GetSchemaRequest) returns (GetSchemaResponse);
-}
 
-service AdminService {
-  rpc DeleteAll (DeleteAllRequest) returns (DeleteAllResponse);
-}
 
 message DeleteAllRequest {
 
@@ -97,10 +107,6 @@ message IndexDescription {
   string type = 2;
 }
 
-service RecordService {
-  rpc Put (PutRecordRequest) returns (PutRecordResponse);
-  rpc Query (QueryRequest) returns (QueryResponse);
-}
 
 message StatRequest {
 }

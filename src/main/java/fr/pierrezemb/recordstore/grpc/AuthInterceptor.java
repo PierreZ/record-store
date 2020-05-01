@@ -54,24 +54,22 @@ public class AuthInterceptor implements ServerInterceptor {
 
     Context context = Context.current();
 
-    for (Metadata.Key<String> requiredKey : requiredKeys) {
-      if (headers.containsKey(requiredKey)) {
-        String value = headers.get(requiredKey);
+    if (!headers.containsKey(GrpcMetadataKeys.AUTHORIZATION_METADATA_KEY)) {
+      call.close(Status.PERMISSION_DENIED.withDescription("no authorization token"), new Metadata());
+      return new ServerCall.Listener<ReqT>() {
+      };
+    }
 
-        if (METADATA_KEY_TO_CONTEXT_KEY.containsKey(requiredKey)) {
-          // adding key to metadata
-          context = context.withValue(METADATA_KEY_TO_CONTEXT_KEY.get(requiredKey), value);
-        }
+    String tenant = getFromHeaders(headers, GrpcMetadataKeys.TENANT_METADATA_KEY);
+    context = context.withValue(GrpcContextKeys.TENANT_ID_KEY, tenant);
 
-      } else {
-        call.close(Status.UNAUTHENTICATED.withDescription(requiredKey.toString() + " not passed as metadata"), headers);
-        return new ServerCall.Listener<ReqT>() {
-        };
-      }
+    if (tenant == null) {
+      call.close(Status.PERMISSION_DENIED.withDescription("no tenant provided"), new Metadata());
+      return new ServerCall.Listener<ReqT>() {
+      };
     }
 
     String token = headers.get(GrpcMetadataKeys.AUTHORIZATION_METADATA_KEY);
-    String tenant = headers.get(GrpcMetadataKeys.TENANT_METADATA_KEY);
     Either<Error, Void> result = this.biscuitManager.checkTenant(tenant, token.substring("Bearer ".length()));
     if (result.isLeft()) {
       call.close(Status.UNAUTHENTICATED.withDescription("bad tenant and/or token"), headers);
@@ -79,6 +77,21 @@ public class AuthInterceptor implements ServerInterceptor {
       };
     }
 
+    // Admin calls does not need containers
+    if (call.getMethodDescriptor().getFullMethodName().toLowerCase().contains("admin")) {
+      return Contexts.interceptCall(context, call, headers, next);
+    }
+
+    String container = getFromHeaders(headers, GrpcMetadataKeys.CONTAINER_METADATA_KEY);
+    context = context.withValue(GrpcContextKeys.CONTAINER_NAME, container);
+
     return Contexts.interceptCall(context, call, headers, next);
+  }
+
+  private String getFromHeaders(Metadata headers, Metadata.Key<String> tenantMetadataKey) {
+    if (headers.containsKey(tenantMetadataKey)) {
+      return headers.get(tenantMetadataKey);
+    }
+    return null;
   }
 }
