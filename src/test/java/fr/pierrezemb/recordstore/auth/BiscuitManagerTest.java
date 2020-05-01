@@ -23,7 +23,7 @@ class BiscuitManagerTest {
 
   @Test
   public void create() {
-    byte[] sealed = this.biscuitManager.create("my-tenant", Collections.emptyList());
+    String sealed = this.biscuitManager.create("my-tenant", Collections.emptyList());
     Either<Error, Void> res = this.biscuitManager.checkTenant("my-tenant", sealed);
     assertFalse(res.isLeft());
 

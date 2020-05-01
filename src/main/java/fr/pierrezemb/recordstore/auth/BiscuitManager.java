@@ -19,11 +19,13 @@ import com.clevercloud.biscuit.token.builder.Block;
 import io.vavr.control.Either;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BiscuitManager {
+  public static final String DEFAULT_BISCUIT_KEY = "3A8621F1847F19D6DAEAB5465CE8D3908B91C66FB9AF380D508FCF9253458907";
   private static final Logger LOGGER = LoggerFactory.getLogger(BiscuitManager.class);
   private final SymbolTable symbols;
   KeyPair root;
@@ -35,7 +37,11 @@ public class BiscuitManager {
     symbols = Biscuit.default_symbol_table();
   }
 
-  public byte[] create(String tenant, List<String> authorizedContainers) {
+  public BiscuitManager() {
+    this(DEFAULT_BISCUIT_KEY);
+  }
+
+  public String create(String tenant, List<String> authorizedContainers) {
     Block authority_builder = new Block(0, symbols);
 
     // add tenant fact in biscuit
@@ -47,11 +53,14 @@ public class BiscuitManager {
       authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("container"), s(s))));
     }
 
-    return Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build())
-      .get().seal(root.private_key.toByteArray()).get();
+    // TODO: handle error in a nicer way
+    return Base64.getEncoder()
+      .encodeToString(
+        Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build())
+          .get().seal(root.private_key.toByteArray()).get());
   }
 
-  public Either<Error, Void> checkTenant(String tenant, byte[] serializedBiscuit) {
+  public Either<Error, Void> checkTenant(String tenant, String serializedBiscuit) {
 
     Either<Error, Verifier> res = createVerifier(serializedBiscuit);
     if (res.isLeft()) {
@@ -59,7 +68,6 @@ public class BiscuitManager {
       return Left(res.getLeft());
     }
 
-    LOGGER.info("created verifier");
     Verifier verifier = res.get();
     verifier.add_fact(fact("tenant", Arrays.asList(s("ambient"), s(tenant))));
     verifier.set_time();
@@ -73,11 +81,10 @@ public class BiscuitManager {
     return verifier.verify();
   }
 
-  public Either<Error, Verifier> createVerifier(byte[] serializedBiscuit) {
+  public Either<Error, Verifier> createVerifier(String serializedBiscuit) {
 
-    LOGGER.info("verifierFromBiscuit: got biscuit: {}", serializedBiscuit);
     Either<Error, Biscuit> deser = Biscuit.from_sealed(
-      serializedBiscuit,
+      Base64.getDecoder().decode(serializedBiscuit),
       root.private_key.toByteArray()
     );
     if (deser.isLeft()) {
@@ -88,7 +95,6 @@ public class BiscuitManager {
     }
 
     Biscuit token = deser.get();
-    LOGGER.info("verifierFromBiscuit: got biscuit: {}", token);
 
     Either<Error, Verifier> res = token.verify_sealed();
     if (res.isLeft()) {
