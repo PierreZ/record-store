@@ -9,7 +9,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RecordQueryGenerator {
+
   public static RecordQuery generate(RecordStoreProtocol.QueryRequest request) {
+    RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()
+      .setRecordType(request.getTable());
+
+    try {
+      QueryComponent queryComponents = parseNode(request.getQueryNode());
+      return queryBuilder.setFilter(queryComponents).build();
+    } catch (ParseException e) {
+      System.err.println(e);
+    }
+    return null;
+  }
+
+  public static RecordQuery generate(RecordStoreProtocol.DeleteRecordRequest request) {
     RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()
       .setRecordType(request.getTable());
 

@@ -1,5 +1,10 @@
 package fr.pierrezemb.recordstore.grpc;
 
+import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.COUNT_INDEX;
+import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.COUNT_UPDATES_INDEX;
+import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.INDEX_COUNT_AGGREGATE_FUNCTION;
+import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.INDEX_COUNT_UPDATES_AGGREGATE_FUNCTION;
+
 import com.apple.foundationdb.record.EvaluationContext;
 import com.apple.foundationdb.record.FunctionNames;
 import com.apple.foundationdb.record.IsolationLevel;
@@ -40,10 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
-  protected static final Index COUNT_INDEX = new Index("globalRecordCount",
-    new GroupingKeyExpression(RecordTypeKeyExpression.RECORD_TYPE_KEY, 0), IndexTypes.COUNT);
-  protected static final Index COUNT_UPDATES_INDEX = new Index("globalRecordUpdateCount",
-    new GroupingKeyExpression(RecordTypeKeyExpression.RECORD_TYPE_KEY, 0), IndexTypes.COUNT_UPDATES);
   private static final Logger log = LoggerFactory.getLogger(SchemaService.class);
   private final FDBDatabase db;
   private final FDBStoreTimer timer;
@@ -187,10 +188,6 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
 
-    IndexAggregateFunction function = new IndexAggregateFunction(
-      FunctionNames.COUNT, COUNT_INDEX.getRootExpression(), COUNT_INDEX.getName());
-    IndexAggregateFunction updateFunction = new IndexAggregateFunction(
-      FunctionNames.COUNT_UPDATES, COUNT_UPDATES_INDEX.getRootExpression(), COUNT_UPDATES_INDEX.getName());
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
       // create recordStoreProvider
@@ -208,14 +205,14 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
       CompletableFuture<Tuple> countFuture = r.evaluateAggregateFunction(
         EvaluationContext.EMPTY,
         Collections.emptyList(),
-        function,
+        INDEX_COUNT_AGGREGATE_FUNCTION,
         TupleRange.ALL,
         IsolationLevel.SERIALIZABLE);
 
       CompletableFuture<Tuple> updateFuture = r.evaluateAggregateFunction(
         EvaluationContext.EMPTY,
         Collections.emptyList(),
-        updateFunction,
+        INDEX_COUNT_UPDATES_AGGREGATE_FUNCTION,
         TupleRange.ALL,
         IsolationLevel.SERIALIZABLE);
 

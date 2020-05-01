@@ -33,6 +33,18 @@ message ListContainerResponse {
 service RecordService {
   rpc Put (PutRecordRequest) returns (PutRecordResponse);
   rpc Query (QueryRequest) returns (QueryResponse);
+  rpc Delete (DeleteRecordRequest) returns (DeleteRecordResponse);
+}
+
+message DeleteRecordRequest {
+  string table = 1;
+  bool delete_all = 2;
+  Node query_node = 3;
+}
+
+message DeleteRecordResponse {
+  Result result = 1;
+  int64 deleted_count = 2;
 }
 
 message UpsertSchemaRequest {

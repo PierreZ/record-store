@@ -125,12 +125,82 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
       executeProperties.setScannedBytesLimit(1_000_000); // 1MB
 
       List<ByteString> results = r.executeQuery(query, request.getContinuation().toByteArray(), executeProperties.build())
+        .map(e -> {
+          if (log.isTraceEnabled()) {
+            log.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
+          }
+          return e;
+        })
         .map(FDBRecord::getRecord)
         .map(Message::toByteString).asList().join();
 
       responseObserver.onNext(RecordStoreProtocol.QueryResponse.newBuilder()
         .setResult(RecordStoreProtocol.Result.OK)
         .addAllRecords(results)
+        .build());
+      responseObserver.onCompleted();
+    }
+  }
+
+  /**
+   * @param request
+   * @param responseObserver
+   */
+  @Override
+  public void delete(RecordStoreProtocol.DeleteRecordRequest request, StreamObserver<RecordStoreProtocol.DeleteRecordResponse> responseObserver) {
+    String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    String container = GrpcContextKeys.getContainerOrFail();
+
+    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
+
+      // create recordStoreProvider
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
+
+      // Helper func
+      Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
+        .setMetaDataProvider(metaDataStore)
+        .setContext(context)
+        .setKeySpacePath(RSKeySpace.getDataKeySpacePath(tenantID, container))
+        .createOrOpen();
+
+      FDBRecordStore r = recordStoreProvider.apply(context);
+
+      Integer count = 0;
+
+      if (request.getDeleteAll()) {
+        r.deleteAllRecords();
+      } else {
+        // running delete on query Mode
+        RecordQuery query = RecordQueryGenerator.generate(request);
+
+        // TODO: handle errors instead of throwing null
+        if (query == null) {
+          responseObserver.onError(new Throwable("cannot create query"));
+          responseObserver.onCompleted();
+          return;
+        }
+
+        RecordQueryPlan plan = r.planQuery(query);
+        log.info("running query for {}/{}: '{}'", tenantID, container, plan);
+
+        ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
+          .setIsolationLevel(IsolationLevel.SERIALIZABLE)
+          .setDefaultCursorStreamingMode(CursorStreamingMode.ITERATOR); // either WANT_ALL OR streaming mode
+
+        count = r.executeQuery(query, null, executeProperties.build())
+          .map(e -> {
+            if (log.isTraceEnabled()) {
+              log.trace("deleting {} from {}/{}", e.getPrimaryKey(), tenantID, container);
+            } return e;
+          })
+          .map(e -> r.deleteRecord(e.getPrimaryKey()))
+          .getCount().join();
+      }
+      context.commit();
+
+      responseObserver.onNext(RecordStoreProtocol.DeleteRecordResponse.newBuilder()
+        .setResult(RecordStoreProtocol.Result.OK)
+        .setDeletedCount(count.longValue())
         .build());
       responseObserver.onCompleted();
     }

@@ -3,6 +3,7 @@ package fr.pierrezemb.recordstore.grpc;
 import com.apple.foundationdb.record.ScanProperties;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
+import com.apple.foundationdb.record.provider.foundationdb.FDBRecordStore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpacePath;
 import com.apple.foundationdb.record.provider.foundationdb.keyspace.ResolvedKeySpacePath;
@@ -52,6 +53,17 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
    */
   @Override
   public void delete(RecordStoreProtocol.DeleteContainerRequest request, StreamObserver<RecordStoreProtocol.DeleteContainerResponse> responseObserver) {
-    super.delete(request, responseObserver);
+    String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
+      for (String container: request.getContainersList()) {
+          FDBRecordStore.deleteStore(context, RSKeySpace.getDataKeySpacePath(tenantID, container));
+          FDBRecordStore.deleteStore(context, RSKeySpace.getMetaDataKeySpacePath(tenantID, container));
+          context.commit();
+      }
+    }
+    responseObserver.onNext(RecordStoreProtocol.DeleteContainerResponse.newBuilder()
+      .setResult(RecordStoreProtocol.Result.OK)
+      .build());
+    responseObserver.onCompleted();
   }
 }

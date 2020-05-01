@@ -217,4 +217,80 @@ public class MainVerticleTest {
       }
     });
   }
+
+  @Test
+  public void testPut5(Vertx vertx, VertxTestContext testContext) throws Exception {
+    RecordStoreProtocol.AndNode andNode = RecordStoreProtocol.AndNode.newBuilder()
+      .addNodes(RecordStoreProtocol.Node.newBuilder()
+        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+          .setField("id")
+          .setInt64Value(2)
+          .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+          .build()).build())
+      .addNodes(RecordStoreProtocol.Node.newBuilder()
+        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+          .setField("id")
+          .setInt64Value(1)
+          .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+          .build()).build())
+      .build();
+
+    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
+      .setAndNode(andNode)
+      .build();
+
+    RecordStoreProtocol.DeleteRecordRequest request = RecordStoreProtocol.DeleteRecordRequest.newBuilder()
+      .setQueryNode(query)
+      .setTable("Person")
+      .build();
+
+    recordServiceVertxStub.delete(request, response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result().getResult());
+        assertEquals(1, response.result().getDeletedCount());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    });
+  }
+
+  @Test
+  public void testPut6(Vertx vertx, VertxTestContext testContext) throws Exception {
+
+    RecordStoreProtocol.AndNode andNode = RecordStoreProtocol.AndNode.newBuilder()
+      .addNodes(RecordStoreProtocol.Node.newBuilder()
+        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+          .setField("id")
+          .setInt64Value(2)
+          .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+          .build()).build())
+      .addNodes(RecordStoreProtocol.Node.newBuilder()
+        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+          .setField("id")
+          .setInt64Value(1)
+          .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+          .build()).build())
+      .build();
+
+    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
+      .setAndNode(andNode)
+      .build();
+
+    RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
+      .setTable("Person")
+      .setQueryNode(query)
+      .build();
+
+    recordServiceVertxStub.query(request, response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println(response.result().getRecordsList().size());
+        assertEquals(0, response.result().getRecordsList().size());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    });
+  }
 }

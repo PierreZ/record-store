@@ -180,4 +180,17 @@ public class SchemaAdminServiceTest {
       }
     });
   }
+  @Test
+  public void testCRUDSchema6(Vertx vertx, VertxTestContext testContext) throws Exception {
+    adminServiceVertxStub.delete(RecordStoreProtocol.DeleteContainerRequest.newBuilder()
+      .addContainers(DEFAULT_CONTAINER)
+      .build(), response -> {
+      if (response.succeeded()) {
+        System.out.println("Got the server response: " + response.result());
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
+      }
+    } );
+  }
 }
