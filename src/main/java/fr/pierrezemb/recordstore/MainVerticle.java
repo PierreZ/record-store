@@ -3,8 +3,6 @@ package fr.pierrezemb.recordstore;
 
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabaseFactory;
-import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
-import com.apple.foundationdb.tuple.Tuple;
 import fr.pierrezemb.recordstore.fdb.metrics.FDBMetricsStoreTimer;
 import fr.pierrezemb.recordstore.grpc.AdminService;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
@@ -13,13 +11,8 @@ import fr.pierrezemb.recordstore.grpc.SchemaService;
 import io.micrometer.core.instrument.Metrics;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.grpc.VertxServer;
 import io.vertx.grpc.VertxServerBuilder;
-import io.vertx.micrometer.MicrometerMetricsOptions;
-import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +45,7 @@ public class MainVerticle extends AbstractVerticle {
       return;
     }
     System.out.println("connected to FDB!");
+    Metrics.addRegistry(BackendRegistries.getDefaultNow());
     FDBMetricsStoreTimer fdbStoreTimer = new FDBMetricsStoreTimer();
 
     VertxServerBuilder serverBuilder = VertxServerBuilder
