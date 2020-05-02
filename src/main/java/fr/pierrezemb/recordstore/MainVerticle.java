@@ -45,8 +45,7 @@ public class MainVerticle extends AbstractVerticle {
       return;
     }
     System.out.println("connected to FDB!");
-    Metrics.addRegistry(BackendRegistries.getDefaultNow());
-    FDBMetricsStoreTimer fdbStoreTimer = new FDBMetricsStoreTimer();
+    FDBMetricsStoreTimer fdbStoreTimer = new FDBMetricsStoreTimer(vertx.isMetricsEnabled());
 
     VertxServerBuilder serverBuilder = VertxServerBuilder
       .forAddress(vertx,

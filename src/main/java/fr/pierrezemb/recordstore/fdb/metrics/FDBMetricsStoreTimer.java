@@ -2,11 +2,24 @@ package fr.pierrezemb.recordstore.fdb.metrics;
 
 import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import io.micrometer.core.instrument.Metrics;
+import io.vertx.micrometer.backends.BackendRegistries;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
 
 public class FDBMetricsStoreTimer extends FDBStoreTimer {
+
+  // I did not find how to enable properly metrics when firing tests
+  // so trying to use metrics without SPI enabled triggers NPE
+  private boolean export;
+
+  public FDBMetricsStoreTimer(boolean enableExport) {
+    export = enableExport;
+    if (export) {
+      Metrics.addRegistry(BackendRegistries.getDefaultNow());
+    }
+  }
+
   /**
    * Record the amount of time each element in a set of events took to run.
    * This applies the same time difference to each event in the set.
@@ -16,8 +29,10 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
    */
   @Override
   public void record(Set<Event> events, long timeDifferenceNanos) {
-    for (Event count : events) {
-      Metrics.counter(buildClassname(count.name() + "_ns"), "log_key", count.logKey()).increment(timeDifferenceNanos);
+    if (export) {
+      for (Event count : events) {
+        Metrics.counter(buildClassname(count.name() + "_ns"), "log_key", count.logKey()).increment(timeDifferenceNanos);
+      }
     }
     super.record(events, timeDifferenceNanos);
   }
@@ -32,7 +47,9 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
    */
   @Override
   public void record(Event event, long timeDifferenceNanos) {
-    Metrics.counter(buildClassname(event.name() + "_ns"), "log_key", event.logKey()).increment(timeDifferenceNanos);
+    if (export) {
+      Metrics.counter(buildClassname(event.name() + "_ns"), "log_key", event.logKey()).increment(timeDifferenceNanos);
+    }
     super.record(event, timeDifferenceNanos);
   }
 
@@ -44,8 +61,10 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
    */
   @Override
   public void increment(@Nonnull Set<Count> events) {
-    for (Count count : events) {
-      Metrics.counter(buildClassname(count.name()), "log_key", count.logKey()).increment();
+    if (export) {
+      for (Count count : events) {
+        Metrics.counter(buildClassname(count.name()), "log_key", count.logKey()).increment();
+      }
     }
     super.increment(events);
   }
@@ -58,7 +77,9 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
    */
   @Override
   public void increment(@Nonnull Count event) {
-    Metrics.counter(buildClassname(event.name()), "log_key", event.logKey()).increment();
+    if (export) {
+      Metrics.counter(buildClassname(event.name()), "log_key", event.logKey()).increment();
+    }
     super.increment(event);
   }
 
@@ -75,8 +96,10 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
    */
   @Override
   public void increment(@Nonnull Set<Count> events, int amount) {
-    for (Count count : events) {
-      Metrics.counter(buildClassname(count.name()), "log_key", count.logKey()).increment(amount);
+    if (export) {
+      for (Count count : events) {
+        Metrics.counter(buildClassname(count.name()), "log_key", count.logKey()).increment(amount);
+      }
     }
     super.increment(events, amount);
   }
@@ -90,7 +113,9 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
    */
   @Override
   public void increment(Count event, int amount) {
-    Metrics.counter(buildClassname(event.name()), "log_key", event.logKey()).increment(amount);
+    if (export) {
+      Metrics.counter(buildClassname(event.name()), "log_key", event.logKey()).increment(amount);
+    }
     super.increment(event, amount);
   }
 }
