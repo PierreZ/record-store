@@ -3,6 +3,8 @@ package fr.pierrezemb.recordstore;
 
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabaseFactory;
+import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
+import com.apple.foundationdb.tuple.Tuple;
 import fr.pierrezemb.recordstore.fdb.metrics.FDBMetricsStoreTimer;
 import fr.pierrezemb.recordstore.grpc.AdminService;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
@@ -22,6 +24,8 @@ import io.vertx.micrometer.backends.BackendRegistries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 import static fr.pierrezemb.recordstore.auth.BiscuitManager.DEFAULT_BISCUIT_KEY;
 
 public class MainVerticle extends AbstractVerticle {
@@ -34,22 +38,20 @@ public class MainVerticle extends AbstractVerticle {
     String clusterFilePath = this.context.config().getString("fdb-cluster-file", "/var/fdb/fdb.cluster");
     System.out.println("connecting to fdb@" + clusterFilePath);
 
-    // TODO: find a better options to set vertx options than to override everything
-    Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
-      new MicrometerMetricsOptions()
-        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true)
-          .setStartEmbeddedServer(true)
-          .setEmbeddedServerOptions(new HttpServerOptions().setPort(8081))
-          .setEmbeddedServerEndpoint("/metrics"))
-        .setEnabled(true)));
-    Metrics.addRegistry(BackendRegistries.getDefaultNow());
-
     String key = this.context.config().getString("biscuit-key", DEFAULT_BISCUIT_KEY);
     if (key.equals(DEFAULT_BISCUIT_KEY)) {
       LOGGER.warn("using default key for tokens");
     }
 
     FDBDatabase db = FDBDatabaseFactory.instance().getDatabase(clusterFilePath);
+    try {
+      db.performNoOpAsync().get(2, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      System.err.println("could not perform a noop on fdb: " + e.getMessage());
+      startPromise.fail(e);
+      return;
+    }
+    System.out.println("connected to FDB!");
     FDBMetricsStoreTimer fdbStoreTimer = new FDBMetricsStoreTimer();
 
     VertxServerBuilder serverBuilder = VertxServerBuilder

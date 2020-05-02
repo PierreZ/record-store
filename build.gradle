@@ -28,12 +28,13 @@ ext {
 }
 
 application {
-  mainClassName = 'io.vertx.core.Launcher'
+  mainClassName = 'fr.pierrezemb.recordstore.Launcher'
 }
 
 sourceCompatibility = '11'
 
 def mainVerticleName = 'fr.pierrezemb.recordstore.MainVerticle'
+def mainClassName = 'fr.pierrezemb.recordstore.Launcher'
 def watchForChange = 'src/**/*'
 def doOnChange = './gradlew classes'
 
@@ -83,7 +84,7 @@ test {
 }
 
 run {
-  args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
+  args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange", "--conf=./config.json"]
 }
 
 protobuf {
