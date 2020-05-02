@@ -1,7 +1,5 @@
 package fr.pierrezemb.recordstore;
 
-import static org.junit.Assert.assertEquals;
-
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
@@ -18,13 +16,16 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -51,6 +52,7 @@ public class MainVerticleTest {
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
+    System.out.println(sealedBiscuit);
     BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, DEFAULT_CONTAINER);
 
     // deploy verticle
@@ -70,21 +72,16 @@ public class MainVerticleTest {
     DescriptorProtos.FileDescriptorSet dependencies =
       ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
 
-    RecordStoreProtocol.SelfDescribedMessage selfDescribedMessage = RecordStoreProtocol.SelfDescribedMessage
-      .newBuilder()
-      .setDescriptorSet(dependencies)
-      .build();
-
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
       .addPrimaryKeyFields("id")
-      .setSchema(selfDescribedMessage)
+      .setSchema(dependencies)
       .build();
 
     schemaServiceVertxStub.upsert(request, response -> {
       if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println("Got the server response: " + response.result());
         testContext.completeNow();
       } else {
         testContext.failNow(response.cause());
@@ -108,7 +105,7 @@ public class MainVerticleTest {
 
     recordServiceVertxStub.put(request, response -> {
       if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println("Got the server response: " + response.result());
         testContext.completeNow();
       } else {
         testContext.failNow(response.cause());
@@ -123,7 +120,7 @@ public class MainVerticleTest {
 
     schemaServiceVertxStub.stat(recordRequest, response -> {
       if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println("Got the server response: " + response.result());
         System.out.println("there is " + response.result().getCount() + " records");
         System.out.println("there is " + response.result().getCountUpdates() + " updates");
         assertEquals(1, response.result().getCount());
@@ -153,7 +150,7 @@ public class MainVerticleTest {
 
     recordServiceVertxStub.query(request, response -> {
       if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println("Got the server response: " + response.result());
         System.out.println(response.result().getRecordsList());
         assertEquals(1, response.result().getRecordsCount());
         try {
@@ -200,7 +197,7 @@ public class MainVerticleTest {
 
     recordServiceVertxStub.query(request, response -> {
       if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println("Got the server response: " + response.result());
         System.out.println(response.result().getRecordsList());
         assertEquals(1, response.result().getRecordsCount());
         try {
@@ -246,7 +243,7 @@ public class MainVerticleTest {
 
     recordServiceVertxStub.delete(request, response -> {
       if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println("Got the server response: " + response.result());
         assertEquals(1, response.result().getDeletedCount());
         testContext.completeNow();
       } else {
@@ -284,7 +281,7 @@ public class MainVerticleTest {
 
     recordServiceVertxStub.query(request, response -> {
       if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println("Got the server response: " + response.result());
         System.out.println(response.result().getRecordsList().size());
         assertEquals(0, response.result().getRecordsList().size());
         testContext.completeNow();

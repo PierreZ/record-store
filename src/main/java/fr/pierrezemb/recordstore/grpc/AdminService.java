@@ -10,12 +10,18 @@ import com.apple.foundationdb.record.provider.foundationdb.keyspace.ResolvedKeyS
 import fr.pierrezemb.recordstore.fdb.RSKeySpace;
 import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AdminService.class);
   private final FDBDatabase db;
   private final FDBStoreTimer timer;
 
@@ -52,17 +58,20 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
    * @param responseObserver
    */
   @Override
-  public void delete(RecordStoreProtocol.DeleteContainerRequest request, StreamObserver<RecordStoreProtocol.DeleteContainerResponse> responseObserver) {
+  public void delete(RecordStoreProtocol.DeleteContainerRequest request, StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      for (String container: request.getContainersList()) {
-          FDBRecordStore.deleteStore(context, RSKeySpace.getDataKeySpacePath(tenantID, container));
-          FDBRecordStore.deleteStore(context, RSKeySpace.getMetaDataKeySpacePath(tenantID, container));
-          context.commit();
+      for (String container : request.getContainersList()) {
+        FDBRecordStore.deleteStore(context, RSKeySpace.getDataKeySpacePath(tenantID, container));
+        FDBRecordStore.deleteStore(context, RSKeySpace.getMetaDataKeySpacePath(tenantID, container));
+        context.commit();
       }
+    } catch (RuntimeException runtimeException) {
+      LOGGER.error("could not delete container", runtimeException);
+      throw new StatusRuntimeException(Status.INTERNAL.withDescription(runtimeException.getMessage()));
     }
-    responseObserver.onNext(RecordStoreProtocol.DeleteContainerResponse.newBuilder()
-      .setResult(RecordStoreProtocol.Result.OK)
+
+    responseObserver.onNext(RecordStoreProtocol.EmptyResponse.newBuilder()
       .build());
     responseObserver.onCompleted();
   }

@@ -10,7 +10,7 @@ option java_outer_classname = "RecordStoreProtocol";
 
 // administrative part of the container
 service SchemaService {
-  rpc Upsert (UpsertSchemaRequest) returns (UpsertSchemaResponse);
+  rpc Upsert (UpsertSchemaRequest) returns (EmptyResponse);
   rpc Stat (StatRequest) returns (StatResponse);
   rpc Get (GetSchemaRequest) returns (GetSchemaResponse);
 }
@@ -18,20 +18,19 @@ service SchemaService {
 // Service which allow to list and delete containers
 service AdminService {
   rpc List (ListContainerRequest) returns (ListContainerResponse);
-  rpc Delete (DeleteContainerRequest) returns (DeleteContainerResponse);
+  rpc Delete (DeleteContainerRequest) returns (EmptyResponse);
 }
 
 message ListContainerRequest {
 }
 
 message ListContainerResponse {
-  Result result = 1;
-  repeated string containers = 2;
+  repeated string containers = 1;
 }
 
 // Service which manipulate records within a container
 service RecordService {
-  rpc Put (PutRecordRequest) returns (PutRecordResponse);
+  rpc Put (PutRecordRequest) returns (EmptyResponse);
   rpc Query (QueryRequest) returns (QueryResponse);
   rpc Delete (DeleteRecordRequest) returns (DeleteRecordResponse);
 }
@@ -43,53 +42,22 @@ message DeleteRecordRequest {
 }
 
 message DeleteRecordResponse {
-  Result result = 1;
-  int64 deleted_count = 2;
+  int64 deleted_count = 1;
 }
 
 message UpsertSchemaRequest {
   string name = 1;
   repeated string primary_key_fields = 2;
-  SelfDescribedMessage schema = 3;
+  google.protobuf.FileDescriptorSet schema = 3;
   repeated IndexDefinition index_definitions = 4;
 }
 
-message UpsertSchemaResponse {
-  Result result = 1;
+message EmptyResponse {
+
 }
-
-enum Result {
-  OK = 0;
-  KO = 1;
-}
-
-
 
 message DeleteContainerRequest {
   repeated string containers = 1;
-}
-
-message DeleteContainerResponse {
-  Result result = 1;
-}
-
-message UpgradeSchemaRequest {
-  string name = 1;
-  SelfDescribedMessage schema = 2;
-  repeated IndexDefinition index_definitions = 3;
-}
-
-message UpgradeSchemaResponse {
-  Result result = 1;
-}
-
-message AddIndexRequest {
-  string table = 1;
-  repeated IndexDefinition index_definitions = 2;
-}
-
-message AddIndexResponse {
-  Result result = 1;
 }
 
 message GetSchemaRequest {
@@ -99,10 +67,6 @@ message GetSchemaRequest {
 message GetSchemaResponse {
   SchemaDescription schemas = 1;
   int64 version = 2;
-}
-
-message DeleteSchemaResponse {
-  Result result = 1;
 }
 
 message DeleteSchemaRequest {
@@ -118,7 +82,7 @@ message ListSchemaResponse {
 
 message SchemaDescription {
   string name = 1;
-  SelfDescribedMessage schema = 2;
+  google.protobuf.FileDescriptorSet schema = 2;
   string primary_key_field = 3;
   repeated IndexDescription indexes = 4;
 }
@@ -126,6 +90,12 @@ message SchemaDescription {
 message IndexDescription {
   string name = 1;
   string type = 2;
+  IndexStatus status = 3;
+}
+
+enum IndexStatus {
+  InSync = 0;
+  Building = 1;
 }
 
 
@@ -133,13 +103,8 @@ message StatRequest {
 }
 
 message StatResponse {
-  Result result = 1;
-  int64 count = 2;
-  int64 count_updates = 3;
-}
-
-message PutRecordResponse {
-  Result result = 1;
+  int64 count = 1;
+  int64 count_updates = 2;
 }
 
 message PutRecordRequest {
@@ -157,8 +122,6 @@ enum IndexType {
 }
 
 message SelfDescribedMessage {
-  // Set of FileDescriptorProtos which describe the type and its dependencies.
-  google.protobuf.FileDescriptorSet descriptor_set = 1;
 }
 
 message QueryRequest {
@@ -169,9 +132,8 @@ message QueryRequest {
 }
 
 message QueryResponse {
-  Result result = 1;
-  repeated bytes records = 2;
-  bytes continuation = 3;
+  repeated bytes records = 1;
+  bytes continuation = 2;
 }
 
 

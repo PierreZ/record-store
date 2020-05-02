@@ -1,12 +1,11 @@
 package fr.pierrezemb.recordstore.auth;
 
-import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.AUTHORIZATION_METADATA_KEY;
-import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.CONTAINER_METADATA_KEY;
-import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.TENANT_METADATA_KEY;
-
 import io.grpc.Metadata;
 import io.grpc.Status;
+
 import java.util.concurrent.Executor;
+
+import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.*;
 
 public class BiscuitClientCredential extends io.grpc.CallCredentials {
   static final String BEARER_TYPE = "Bearer";

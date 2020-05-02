@@ -1,28 +1,25 @@
 package fr.pierrezemb.recordstore.auth;
 
-import static com.clevercloud.biscuit.token.builder.Utils.caveat;
-import static com.clevercloud.biscuit.token.builder.Utils.fact;
-import static com.clevercloud.biscuit.token.builder.Utils.pred;
-import static com.clevercloud.biscuit.token.builder.Utils.rule;
-import static com.clevercloud.biscuit.token.builder.Utils.s;
-import static com.clevercloud.biscuit.token.builder.Utils.string;
-import static com.clevercloud.biscuit.token.builder.Utils.var;
-import static io.vavr.API.Left;
-import static io.vavr.API.Right;
-
 import com.clevercloud.biscuit.crypto.KeyPair;
 import com.clevercloud.biscuit.datalog.SymbolTable;
 import com.clevercloud.biscuit.error.Error;
 import com.clevercloud.biscuit.token.Biscuit;
 import com.clevercloud.biscuit.token.Verifier;
 import com.clevercloud.biscuit.token.builder.Block;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.vavr.control.Either;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.clevercloud.biscuit.token.builder.Utils.*;
+import static io.vavr.API.Left;
+import static io.vavr.API.Right;
 
 public class BiscuitManager {
   public static final String DEFAULT_BISCUIT_KEY = "3A8621F1847F19D6DAEAB5465CE8D3908B91C66FB9AF380D508FCF9253458907";
@@ -53,11 +50,19 @@ public class BiscuitManager {
       authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("container"), s(s))));
     }
 
-    // TODO: handle error in a nicer way
-    return Base64.getEncoder()
-      .encodeToString(
-        Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build())
-          .get().seal(root.private_key.toByteArray()).get());
+    Either<Error, Biscuit> result = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build());
+    if (result.isLeft()) {
+      LOGGER.error("cannot create biscuit: {}", result.getLeft());
+      throw new StatusRuntimeException(Status.INTERNAL.withDescription("cannot create biscuit"));
+    }
+
+    Either<Error.FormatError, byte[]> resultSerialize = result.get().seal(root.private_key.toByteArray());
+    if (result.isLeft()) {
+      LOGGER.error("cannot serialize biscuit: {}", result.getLeft());
+      throw new StatusRuntimeException(Status.INTERNAL.withDescription("cannot serialize biscuit"));
+    }
+
+    return Base64.getEncoder().encodeToString(resultSerialize.get());
   }
 
   public Either<Error, Void> checkTenant(String tenant, String serializedBiscuit) {

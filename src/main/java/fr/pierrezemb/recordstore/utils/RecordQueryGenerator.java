@@ -4,6 +4,7 @@ import com.apple.foundationdb.record.query.RecordQuery;
 import com.apple.foundationdb.record.query.expressions.Query;
 import com.apple.foundationdb.record.query.expressions.QueryComponent;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
+
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;

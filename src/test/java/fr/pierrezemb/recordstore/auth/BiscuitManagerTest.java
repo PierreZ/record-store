@@ -1,14 +1,15 @@
 package fr.pierrezemb.recordstore.auth;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import com.clevercloud.biscuit.error.Error;
 import io.vavr.control.Either;
-import java.util.Collections;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+
+import java.util.Collections;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BiscuitManagerTest {
@@ -26,6 +27,7 @@ class BiscuitManagerTest {
     String sealed = this.biscuitManager.create("my-tenant", Collections.emptyList());
     Either<Error, Void> res = this.biscuitManager.checkTenant("my-tenant", sealed);
     assertFalse(res.isLeft());
+    System.out.println(sealed);
 
     // should fail
     Either<Error, Void> res2 = this.biscuitManager.checkTenant("my-tedsanant", sealed);

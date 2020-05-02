@@ -2,8 +2,9 @@ package fr.pierrezemb.recordstore.fdb.metrics;
 
 import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import io.micrometer.core.instrument.Metrics;
-import java.util.Set;
+
 import javax.annotation.Nonnull;
+import java.util.Set;
 
 public class FDBMetricsStoreTimer extends FDBStoreTimer {
   /**

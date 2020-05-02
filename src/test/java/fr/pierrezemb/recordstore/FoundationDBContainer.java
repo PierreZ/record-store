@@ -1,13 +1,14 @@
 package fr.pierrezemb.recordstore;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
-import java.io.File;
-import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+
+import java.io.File;
+import java.io.IOException;
 
 public class FoundationDBContainer extends GenericContainer<FoundationDBContainer> {
   public static final int FDB_PORT = 4500;

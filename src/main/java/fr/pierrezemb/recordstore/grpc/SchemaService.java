@@ -1,30 +1,11 @@
 package fr.pierrezemb.recordstore.grpc;
 
-import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.COUNT_INDEX;
-import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.COUNT_UPDATES_INDEX;
-import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.INDEX_COUNT_AGGREGATE_FUNCTION;
-import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.INDEX_COUNT_UPDATES_AGGREGATE_FUNCTION;
-
-import com.apple.foundationdb.record.EvaluationContext;
-import com.apple.foundationdb.record.FunctionNames;
-import com.apple.foundationdb.record.IsolationLevel;
-import com.apple.foundationdb.record.RecordMetaData;
-import com.apple.foundationdb.record.RecordMetaDataBuilder;
-import com.apple.foundationdb.record.TupleRange;
-import com.apple.foundationdb.record.metadata.Index;
-import com.apple.foundationdb.record.metadata.IndexAggregateFunction;
-import com.apple.foundationdb.record.metadata.IndexTypes;
+import com.apple.foundationdb.record.*;
 import com.apple.foundationdb.record.metadata.Key;
 import com.apple.foundationdb.record.metadata.MetaDataEvolutionValidator;
 import com.apple.foundationdb.record.metadata.MetaDataException;
-import com.apple.foundationdb.record.metadata.expressions.GroupingKeyExpression;
 import com.apple.foundationdb.record.metadata.expressions.KeyExpression;
-import com.apple.foundationdb.record.metadata.expressions.RecordTypeKeyExpression;
-import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
-import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
-import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
-import com.apple.foundationdb.record.provider.foundationdb.FDBRecordStore;
-import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
+import com.apple.foundationdb.record.provider.foundationdb.*;
 import com.apple.foundationdb.tuple.Tuple;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -35,14 +16,19 @@ import fr.pierrezemb.recordstore.fdb.RSMetaDataStore;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.*;
 
 public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   private static final Logger log = LoggerFactory.getLogger(SchemaService.class);
@@ -66,33 +52,45 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
       FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
 
+      List<RecordStoreProtocol.IndexDescription> indexes = metaDataStore.getRecordMetaData().getAllIndexes().stream()
+        .filter(e -> !e.getName().startsWith("global"))
+        .map(e ->
+          RecordStoreProtocol.IndexDescription.newBuilder()
+            .build()
+        ).collect(Collectors.toList());
+
       List<RecordStoreProtocol.SchemaDescription> records =
         ImmutableMap.of(request.getTable(), metaDataStore.getRecordMetaData().getRecordType(request.getTable()))
           .entrySet()
           .stream()
           .map(e -> RecordStoreProtocol.SchemaDescription.newBuilder()
             .setName(e.getKey())
+            .addAllIndexes(indexes)
             .setPrimaryKeyField(e.getValue().getPrimaryKey().toKeyExpression().getField().getFieldName())
-            .setSchema(RecordStoreProtocol.SelfDescribedMessage.newBuilder()
-              .setDescriptorSet(ProtobufReflectionUtil.protoFileDescriptorSet(e.getValue().getDescriptor()))
-              .build())
+            .setSchema(ProtobufReflectionUtil.protoFileDescriptorSet(e.getValue().getDescriptor()))
             .build())
           .collect(Collectors.toList());
+
 
       responseObserver.onNext(RecordStoreProtocol.GetSchemaResponse.newBuilder()
         .setSchemas(records.get(0))
         .setVersion(metaDataStore.getRecordMetaData().getVersion())
         .build());
       responseObserver.onCompleted();
+
+    } catch (RuntimeException e) {
+      log.error(e.getMessage());
+      throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
     }
   }
+
 
   /**
    * @param request
    * @param responseObserver
    */
   @Override
-  public void upsert(RecordStoreProtocol.UpsertSchemaRequest request, StreamObserver<RecordStoreProtocol.UpsertSchemaResponse> responseObserver) {
+  public void upsert(RecordStoreProtocol.UpsertSchemaRequest request, StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
 
@@ -127,11 +125,11 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
       context.commit();
 
     } catch (Descriptors.DescriptorValidationException | MetaDataException e) {
-      responseObserver.onError(e);
-      return;
+      log.error(e.getMessage());
+      throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
     }
 
-    responseObserver.onNext(RecordStoreProtocol.UpsertSchemaResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());
+    responseObserver.onNext(RecordStoreProtocol.EmptyResponse.newBuilder().build());
     responseObserver.onCompleted();
   }
 
@@ -139,7 +137,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     // retrieving protobuf descriptor
     RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
 
-    DescriptorProtos.FileDescriptorSet descriptorSet = request.getSchema().getDescriptorSet();
+    DescriptorProtos.FileDescriptorSet descriptorSet = request.getSchema();
     for (DescriptorProtos.FileDescriptorProto fdp : descriptorSet.getFileList()) {
       Descriptors.FileDescriptor fd = Descriptors.FileDescriptor.buildFrom(fdp, new Descriptors.FileDescriptor[]{});
       // updating schema
@@ -224,6 +222,9 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
         .setCountUpdates(result.getLong(1))
         .build());
       responseObserver.onCompleted();
+    } catch (RuntimeException e) {
+      log.error(e.getMessage());
+      throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
     }
   }
 }

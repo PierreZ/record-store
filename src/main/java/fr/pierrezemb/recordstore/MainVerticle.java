@@ -1,8 +1,6 @@
 package fr.pierrezemb.recordstore;
 
 
-import static fr.pierrezemb.recordstore.auth.BiscuitManager.DEFAULT_BISCUIT_KEY;
-
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabaseFactory;
 import fr.pierrezemb.recordstore.fdb.metrics.FDBMetricsStoreTimer;
@@ -23,6 +21,8 @@ import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static fr.pierrezemb.recordstore.auth.BiscuitManager.DEFAULT_BISCUIT_KEY;
 
 public class MainVerticle extends AbstractVerticle {
 

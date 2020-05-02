@@ -1,10 +1,5 @@
 package fr.pierrezemb.recordstore.grpc;
 
-import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_CONTAINER;
-import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_TENANT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
 import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.FoundationDBContainer;
 import fr.pierrezemb.recordstore.MainVerticle;
@@ -23,21 +18,26 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+
+import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_CONTAINER;
+import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_TENANT;
+import static org.junit.Assert.assertEquals;
+
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SchemaAdminServiceTest {
 
+  public final int port = PortManager.nextFreePort();
   private final FoundationDBContainer container = new FoundationDBContainer();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
-  public final int port = PortManager.nextFreePort();
   private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
   private File clusterFile;
 
@@ -73,21 +73,17 @@ public class SchemaAdminServiceTest {
     DescriptorProtos.FileDescriptorSet dependencies =
       ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
 
-    RecordStoreProtocol.SelfDescribedMessage selfDescribedMessage = RecordStoreProtocol.SelfDescribedMessage
-      .newBuilder()
-      .setDescriptorSet(dependencies)
-      .build();
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
       .addPrimaryKeyFields("id")
-      .setSchema(selfDescribedMessage)
+      .setSchema(dependencies)
       .build();
 
     schemaServiceVertxStub.upsert(request, response -> {
       if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println("Got the server response: " + response.result());
         testContext.completeNow();
       } else {
         testContext.failNow(response.cause());
@@ -114,10 +110,6 @@ public class SchemaAdminServiceTest {
     DescriptorProtos.FileDescriptorSet dependencies =
       ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
 
-    RecordStoreProtocol.SelfDescribedMessage selfDescribedMessage = RecordStoreProtocol.SelfDescribedMessage
-      .newBuilder()
-      .setDescriptorSet(dependencies)
-      .build();
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
@@ -127,12 +119,12 @@ public class SchemaAdminServiceTest {
         .setField("name")
         .setIndexType(RecordStoreProtocol.IndexType.VALUE)
         .build())
-      .setSchema(selfDescribedMessage)
+      .setSchema(dependencies)
       .build();
 
     schemaServiceVertxStub.upsert(request, response -> {
       if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result().getResult());
+        System.out.println("Got the server response: " + response.result());
         testContext.completeNow();
       } else {
         testContext.failNow(response.cause());
@@ -146,17 +138,12 @@ public class SchemaAdminServiceTest {
     DescriptorProtos.FileDescriptorSet dependencies =
       ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
 
-    RecordStoreProtocol.SelfDescribedMessage selfDescribedMessage = RecordStoreProtocol.SelfDescribedMessage
-      .newBuilder()
-      .setDescriptorSet(dependencies)
-      .build();
-
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setName("Person")
       .addPrimaryKeyFields("id")
       // let's forget an index
-      .setSchema(selfDescribedMessage)
+      .setSchema(dependencies)
       .build();
 
     schemaServiceVertxStub.upsert(request, response -> {
@@ -180,6 +167,7 @@ public class SchemaAdminServiceTest {
       }
     });
   }
+
   @Test
   public void testCRUDSchema6(Vertx vertx, VertxTestContext testContext) throws Exception {
     adminServiceVertxStub.delete(RecordStoreProtocol.DeleteContainerRequest.newBuilder()
@@ -191,6 +179,6 @@ public class SchemaAdminServiceTest {
       } else {
         testContext.failNow(response.cause());
       }
-    } );
+    });
   }
 }

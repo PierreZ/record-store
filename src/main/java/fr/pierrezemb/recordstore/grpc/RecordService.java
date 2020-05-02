@@ -3,30 +3,25 @@ package fr.pierrezemb.recordstore.grpc;
 import com.apple.foundationdb.record.CursorStreamingMode;
 import com.apple.foundationdb.record.ExecuteProperties;
 import com.apple.foundationdb.record.IsolationLevel;
-import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
-import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
-import com.apple.foundationdb.record.provider.foundationdb.FDBRecord;
-import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
-import com.apple.foundationdb.record.provider.foundationdb.FDBRecordStore;
-import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
+import com.apple.foundationdb.record.RecordCursor;
+import com.apple.foundationdb.record.provider.foundationdb.*;
 import com.apple.foundationdb.record.query.RecordQuery;
 import com.apple.foundationdb.record.query.plan.plans.RecordQueryPlan;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.Message;
+import com.google.protobuf.*;
 import fr.pierrezemb.recordstore.fdb.RSKeySpace;
 import fr.pierrezemb.recordstore.fdb.RSMetaDataStore;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.utils.RecordQueryGenerator;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   private static final Logger log = LoggerFactory.getLogger(RecordService.class);
@@ -43,7 +38,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
    * @param responseObserver
    */
   @Override
-  public void put(RecordStoreProtocol.PutRecordRequest request, StreamObserver<RecordStoreProtocol.PutRecordResponse> responseObserver) {
+  public void put(RecordStoreProtocol.PutRecordRequest request, StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
 
@@ -72,10 +67,13 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
       context.commit();
 
     } catch (InvalidProtocolBufferException e) {
-      responseObserver.onError(e);
-      responseObserver.onCompleted();
+      throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("could not parse Protobuf: " + e.getMessage()));
+    } catch (RuntimeException e) {
+      log.error(e.getMessage());
+      throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
     }
-    responseObserver.onNext(RecordStoreProtocol.PutRecordResponse.newBuilder().setResult(RecordStoreProtocol.Result.OK).build());
+
+    responseObserver.onNext(RecordStoreProtocol.EmptyResponse.newBuilder().build());
     responseObserver.onCompleted();
   }
 
@@ -103,28 +101,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
       FDBRecordStore r = recordStoreProvider.apply(context);
       RecordQuery query = RecordQueryGenerator.generate(request);
 
-      // TODO: handle errors instead of throwing null
-      if (query == null) {
-        responseObserver.onError(new Throwable("cannot create query"));
-        responseObserver.onCompleted();
-        return;
-      }
-
-      RecordQueryPlan plan = r.planQuery(query);
-      log.info("running query for {}/{}: '{}'", tenantID, container, plan);
-
-      ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
-        .setIsolationLevel(IsolationLevel.SERIALIZABLE)
-        .setDefaultCursorStreamingMode(CursorStreamingMode.ITERATOR); // either WANT_ALL OR streaming mode
-
-      if (request.getResultLimit() > 0) {
-        executeProperties.setReturnedRowLimit(Math.toIntExact(request.getResultLimit()));
-        executeProperties.setFailOnScanLimitReached(false);
-      }
-
-      executeProperties.setScannedBytesLimit(1_000_000); // 1MB
-
-      List<ByteString> results = r.executeQuery(query, request.getContinuation().toByteArray(), executeProperties.build())
+      List<ByteString> results = this.executeQuery(r, query, tenantID, container)
         .map(e -> {
           if (log.isTraceEnabled()) {
             log.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
@@ -135,11 +112,32 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
         .map(Message::toByteString).asList().join();
 
       responseObserver.onNext(RecordStoreProtocol.QueryResponse.newBuilder()
-        .setResult(RecordStoreProtocol.Result.OK)
         .addAllRecords(results)
         .build());
       responseObserver.onCompleted();
+    } catch (RuntimeException e) {
+      log.error(e.getMessage());
+      throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
     }
+  }
+
+  private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query, String tenantID, String container) {
+    // TODO: handle errors instead of throwing null
+    if (query == null) {
+      log.error("query is null, skipping");
+      throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("bad query"));
+    }
+
+    RecordQueryPlan plan = r.planQuery(query);
+    log.info("running query for {}/{}: '{}'", tenantID, container, plan);
+
+    ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
+      .setIsolationLevel(IsolationLevel.SERIALIZABLE)
+      .setDefaultCursorStreamingMode(CursorStreamingMode.ITERATOR); // either WANT_ALL OR streaming mode
+
+    executeProperties.setScannedBytesLimit(1_000_000); // 1MB
+
+    return r.executeQuery(query, null, executeProperties.build());
   }
 
   /**
@@ -173,25 +171,13 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
         // running delete on query Mode
         RecordQuery query = RecordQueryGenerator.generate(request);
 
-        // TODO: handle errors instead of throwing null
-        if (query == null) {
-          responseObserver.onError(new Throwable("cannot create query"));
-          responseObserver.onCompleted();
-          return;
-        }
 
-        RecordQueryPlan plan = r.planQuery(query);
-        log.info("running query for {}/{}: '{}'", tenantID, container, plan);
-
-        ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
-          .setIsolationLevel(IsolationLevel.SERIALIZABLE)
-          .setDefaultCursorStreamingMode(CursorStreamingMode.ITERATOR); // either WANT_ALL OR streaming mode
-
-        count = r.executeQuery(query, null, executeProperties.build())
+        count = this.executeQuery(r, query, tenantID, container)
           .map(e -> {
             if (log.isTraceEnabled()) {
               log.trace("deleting {} from {}/{}", e.getPrimaryKey(), tenantID, container);
-            } return e;
+            }
+            return e;
           })
           .map(e -> r.deleteRecord(e.getPrimaryKey()))
           .getCount().join();
@@ -199,10 +185,12 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
       context.commit();
 
       responseObserver.onNext(RecordStoreProtocol.DeleteRecordResponse.newBuilder()
-        .setResult(RecordStoreProtocol.Result.OK)
         .setDeletedCount(count.longValue())
         .build());
       responseObserver.onCompleted();
+    } catch (RuntimeException e) {
+      log.error(e.getMessage());
+      throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
     }
   }
 }

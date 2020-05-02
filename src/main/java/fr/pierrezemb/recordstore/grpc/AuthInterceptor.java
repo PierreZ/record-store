@@ -3,19 +3,14 @@ package fr.pierrezemb.recordstore.grpc;
 import com.clevercloud.biscuit.error.Error;
 import com.google.common.collect.ImmutableMap;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
-import io.grpc.Context;
-import io.grpc.Contexts;
-import io.grpc.Metadata;
-import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
-import io.grpc.ServerInterceptor;
-import io.grpc.Status;
+import io.grpc.*;
 import io.vavr.control.Either;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class AuthInterceptor implements ServerInterceptor {
   private static final Logger LOGGER = LoggerFactory.getLogger(AuthInterceptor.class);
@@ -53,6 +48,7 @@ public class AuthInterceptor implements ServerInterceptor {
   public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
 
     Context context = Context.current();
+    LOGGER.info("{}", headers);
 
     if (!headers.containsKey(GrpcMetadataKeys.AUTHORIZATION_METADATA_KEY)) {
       call.close(Status.PERMISSION_DENIED.withDescription("no authorization token"), new Metadata());
@@ -70,6 +66,17 @@ public class AuthInterceptor implements ServerInterceptor {
     }
 
     String token = headers.get(GrpcMetadataKeys.AUTHORIZATION_METADATA_KEY);
+    if (token == null) {
+      call.close(Status.PERMISSION_DENIED.withDescription("no token provided"), new Metadata());
+      return new ServerCall.Listener<ReqT>() {
+      };
+    }
+    if (!token.startsWith("Bearer ")) {
+      call.close(Status.PERMISSION_DENIED.withDescription("expected format 'Bearer my-token'"), new Metadata());
+      return new ServerCall.Listener<ReqT>() {
+      };
+    }
+
     Either<Error, Void> result = this.biscuitManager.checkTenant(tenant, token.substring("Bearer ".length()));
     if (result.isLeft()) {
       call.close(Status.UNAUTHENTICATED.withDescription("bad tenant and/or token"), headers);
