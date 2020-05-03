@@ -1,12 +1,13 @@
 syntax = "proto3";
 
-package tutorial;
+package recordstorepb;
 
 import "google/protobuf/any.proto";
 import "google/protobuf/descriptor.proto";
 
 option java_package = "fr.pierrezemb.recordstore.proto";
 option java_outer_classname = "RecordStoreProtocol";
+option go_package = ".;recordstorepb";
 
 // administrative part of the container
 service SchemaService {
