@@ -1,6 +1,7 @@
 package fr.pierrezemb.recordstore.grpc;
 
 import com.apple.foundationdb.record.*;
+import com.apple.foundationdb.record.metadata.Index;
 import com.apple.foundationdb.record.metadata.Key;
 import com.apple.foundationdb.record.metadata.MetaDataEvolutionValidator;
 import com.apple.foundationdb.record.metadata.MetaDataException;
@@ -23,6 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -107,7 +110,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
         log.info("missing metadata, creating one");
       }
 
-      RecordMetaData newRecordMetaData = createRecordMetaData(request, version);
+      RecordMetaData newRecordMetaData = createRecordMetaData(request, version, oldMetaData);
 
       // handling upgrade
       if (null != oldMetaData) {
@@ -133,7 +136,8 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     responseObserver.onCompleted();
   }
 
-  private RecordMetaData createRecordMetaData(RecordStoreProtocol.UpsertSchemaRequest request, int version) throws Descriptors.DescriptorValidationException {
+  private RecordMetaData createRecordMetaData(RecordStoreProtocol.UpsertSchemaRequest request, int version, RecordMetaData oldMetadata) throws Descriptors.DescriptorValidationException {
+
     // retrieving protobuf descriptor
     RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
 
@@ -147,19 +151,38 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     // set version
     metadataBuilder.setVersion(version);
 
-    // add new indexes
-    for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
-      metadataBuilder.addIndex(
-        request.getName(),
-        request.getName() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString(),
-        Key.Expressions.field(indexDefinition.getField()));
+    HashSet<Index> oldIndexes = oldMetadata != null ?
+      new HashSet<>(oldMetadata.getAllIndexes()) :
+      new HashSet<>();
+    HashSet<String> oldIndexesNames = new HashSet<>();
+
+    // add old indexes
+    for (Index index: oldIndexes) {
+      log.trace("adding old index {}", index.getName());
+      oldIndexesNames.add(index.getName());
+      metadataBuilder.addIndex(request.getName(), index);
     }
 
-    metadataBuilder.addUniversalIndex(COUNT_INDEX);
-    metadataBuilder.addUniversalIndex(COUNT_UPDATES_INDEX);
+    // add new indexes
+    for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
+      String indexName = request.getName() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString();
+      if (!oldIndexesNames.contains(indexName)) {
+        log.trace("adding new index {}", indexName);
+        metadataBuilder.addIndex(
+          request.getName(),
+          indexName,
+          Key.Expressions.field(indexDefinition.getField()));
+      }
+    }
+
+    if (oldMetadata == null) {
+      metadataBuilder.addUniversalIndex(COUNT_INDEX);
+      metadataBuilder.addUniversalIndex(COUNT_UPDATES_INDEX);
+    }
 
     // set primary key
-    metadataBuilder.getRecordType(request.getName()).setPrimaryKey(buildPrimaryKeyExpression(request.getPrimaryKeyFieldsList().asByteStringList()));
+    metadataBuilder.getRecordType(request.getName())
+      .setPrimaryKey(buildPrimaryKeyExpression(request.getPrimaryKeyFieldsList().asByteStringList()));
 
     return metadataBuilder.build();
   }

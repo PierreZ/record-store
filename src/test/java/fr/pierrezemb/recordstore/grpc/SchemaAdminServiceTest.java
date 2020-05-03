@@ -19,6 +19,7 @@ import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,7 +68,7 @@ public class SchemaAdminServiceTest {
     adminServiceVertxStub = AdminServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
   }
 
-  @Test
+  @RepeatedTest(value = 3)
   public void testCRUDSchema1(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
@@ -142,21 +143,46 @@ public class SchemaAdminServiceTest {
       .newBuilder()
       .setName("Person")
       .addPrimaryKeyFields("id")
-      // let's forget an index
+      // let's forget an index, this is working as we cannot delete an Index for now
       .setSchema(dependencies)
       .build();
 
     schemaServiceVertxStub.upsert(request, response -> {
       if (response.succeeded()) {
-        testContext.failNow(new Throwable("should have failed"));
-      } else {
         testContext.completeNow();
+      } else {
+        testContext.failNow(new Throwable("should have failed"));
+      }
+    });
+  }
+
+  @RepeatedTest(value = 3)
+  public void testCRUDSchema5(Vertx vertx, VertxTestContext testContext) throws Exception {
+
+    DescriptorProtos.FileDescriptorSet dependencies =
+      ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
+
+    // upsert old schema should be harmless
+    RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
+      .newBuilder()
+      .setName("Person")
+      .addPrimaryKeyFields("id")
+      .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
+        .setField("name").build())
+      .setSchema(dependencies)
+      .build();
+
+    schemaServiceVertxStub.upsert(request, response -> {
+      if (response.succeeded()) {
+        testContext.completeNow();
+      } else {
+        testContext.failNow(response.cause());
       }
     });
   }
 
   @Test
-  public void testCRUDSchema5(Vertx vertx, VertxTestContext testContext) throws Exception {
+  public void testCRUDSchema6(Vertx vertx, VertxTestContext testContext) throws Exception {
     adminServiceVertxStub.list(RecordStoreProtocol.ListContainerRequest.newBuilder().build(), response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result());
@@ -169,7 +195,7 @@ public class SchemaAdminServiceTest {
   }
 
   @Test
-  public void testCRUDSchema6(Vertx vertx, VertxTestContext testContext) throws Exception {
+  public void testCRUDSchema7(Vertx vertx, VertxTestContext testContext) throws Exception {
     adminServiceVertxStub.delete(RecordStoreProtocol.DeleteContainerRequest.newBuilder()
       .addContainers(DEFAULT_CONTAINER)
       .build(), response -> {
