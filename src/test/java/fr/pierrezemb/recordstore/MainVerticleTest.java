@@ -29,10 +29,11 @@ import com.apple.foundationdb.tuple.Tuple;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -201,22 +202,21 @@ public class MainVerticleTest {
       .build();
 
     recordServiceVertxStub.query(request, response -> {
-      if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result());
-        System.out.println(response.result().getRecordsList());
-        assertEquals(1, response.result().getRecordsCount());
+      response.handler(req -> {
+        System.out.println("received a response");
+        RecordStoreProtocolTest.Person p = null;
         try {
-          RecordStoreProtocolTest.Person p = RecordStoreProtocolTest.Person.parseFrom(response.result().getRecords(0));
+          p = RecordStoreProtocolTest.Person.parseFrom(req.getRecord());
           assertEquals("PierreZ", p.getName());
           assertEquals("toto@example.com", p.getEmail());
           assertEquals(1, p.getId());
         } catch (InvalidProtocolBufferException e) {
           testContext.failNow(e);
+          e.printStackTrace();
         }
-        testContext.completeNow();
-      } else {
-        testContext.failNow(response.cause());
-      }
+      });
+      response.endHandler(end -> testContext.completeNow());
+      response.exceptionHandler(testContext::failNow);
     });
   }
 
@@ -248,22 +248,21 @@ public class MainVerticleTest {
       .build();
 
     recordServiceVertxStub.query(request, response -> {
-      if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result());
-        System.out.println(response.result().getRecordsList());
-        assertEquals(1, response.result().getRecordsCount());
+      response.handler(req -> {
+        System.out.println("received a response");
+        RecordStoreProtocolTest.Person p = null;
         try {
-          RecordStoreProtocolTest.Person p = RecordStoreProtocolTest.Person.parseFrom(response.result().getRecords(0));
+          p = RecordStoreProtocolTest.Person.parseFrom(req.getRecord());
           assertEquals("PierreZ", p.getName());
           assertEquals("toto@example.com", p.getEmail());
           assertEquals(1, p.getId());
         } catch (InvalidProtocolBufferException e) {
           testContext.failNow(e);
+          e.printStackTrace();
         }
-        testContext.completeNow();
-      } else {
-        testContext.failNow(response.cause());
-      }
+      });
+      response.endHandler(end -> testContext.completeNow());
+      response.exceptionHandler(testContext::failNow);
     });
   }
 
@@ -332,14 +331,23 @@ public class MainVerticleTest {
       .build();
 
     recordServiceVertxStub.query(request, response -> {
-      if (response.succeeded()) {
-        System.out.println("Got the server response: " + response.result());
-        System.out.println(response.result().getRecordsList().size());
-        assertEquals(0, response.result().getRecordsList().size());
+      List<RecordStoreProtocolTest.Person> results = new ArrayList<>();
+      response.handler(req -> {
+        System.out.println("received a response");
+        RecordStoreProtocolTest.Person p = null;
+        try {
+          p = RecordStoreProtocolTest.Person.parseFrom(req.getRecord());
+          results.add(p);
+        } catch (InvalidProtocolBufferException e) {
+          testContext.failNow(e);
+          e.printStackTrace();
+        }
+      });
+      response.endHandler(end -> {
+        assertEquals(0, results.size());
         testContext.completeNow();
-      } else {
-        testContext.failNow(response.cause());
-      }
+      });
+      response.exceptionHandler(testContext::failNow);
     });
   }
 

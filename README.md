@@ -1,4 +1,4 @@
-# record-store
+# record-store ![gradle build](https://github.com/PierreZ/record-store/workflows/gradle%20build/badge.svg?branch=master)
 
 ## Building
 

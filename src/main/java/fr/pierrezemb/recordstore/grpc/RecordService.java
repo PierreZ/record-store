@@ -7,6 +7,7 @@ import com.apple.foundationdb.record.RecordCursor;
 import com.apple.foundationdb.record.provider.foundationdb.*;
 import com.apple.foundationdb.record.query.RecordQuery;
 import com.apple.foundationdb.record.query.plan.plans.RecordQueryPlan;
+import com.google.gson.internal.bind.JsonTreeReader;
 import com.google.protobuf.*;
 import fr.pierrezemb.recordstore.fdb.RSKeySpace;
 import fr.pierrezemb.recordstore.fdb.RSMetaDataStore;
@@ -77,6 +78,8 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     responseObserver.onCompleted();
   }
 
+
+
   /**
    * @param request
    * @param responseObserver
@@ -101,7 +104,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
       FDBRecordStore r = recordStoreProvider.apply(context);
       RecordQuery query = RecordQueryGenerator.generate(request);
 
-      List<ByteString> results = this.executeQuery(r, query, tenantID, container)
+      this.executeQuery(r, query, tenantID, container)
         .map(e -> {
           if (log.isTraceEnabled()) {
             log.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
@@ -109,11 +112,10 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
           return e;
         })
         .map(FDBRecord::getRecord)
-        .map(Message::toByteString).asList().join();
+        .map(Message::toByteString)
+        .forEach(e -> responseObserver.onNext(RecordStoreProtocol.QueryResponse.newBuilder().setRecord(e).build()))
+        .join();
 
-      responseObserver.onNext(RecordStoreProtocol.QueryResponse.newBuilder()
-        .addAllRecords(results)
-        .build());
       responseObserver.onCompleted();
     } catch (RuntimeException e) {
       log.error(e.getMessage());
