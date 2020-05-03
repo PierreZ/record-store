@@ -51,6 +51,7 @@ dependencies {
 
   testImplementation "io.vertx:vertx-junit5:$vertxVersion"
   testCompile "org.testcontainers:testcontainers:1.13.0"
+  testCompile  "org.json:json:20190722"
 
   // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
   testCompile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.30'

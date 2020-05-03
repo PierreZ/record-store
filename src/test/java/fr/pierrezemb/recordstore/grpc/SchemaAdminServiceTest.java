@@ -1,5 +1,8 @@
 package fr.pierrezemb.recordstore.grpc;
 
+import com.apple.foundationdb.Database;
+import com.apple.foundationdb.FDB;
+import com.apple.foundationdb.tuple.Tuple;
 import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.FoundationDBContainer;
 import fr.pierrezemb.recordstore.MainVerticle;
@@ -23,30 +26,45 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.json.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Collections;
 
 import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_CONTAINER;
 import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_TENANT;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SchemaAdminServiceTest {
 
   public final int port = PortManager.nextFreePort();
-  private final FoundationDBContainer container = new FoundationDBContainer();
+  private FoundationDBContainer container;
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
   private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
   private File clusterFile;
 
+
+  @BeforeAll
+  void init() {
+    if (PortManager.listeningPort(FoundationDBContainer.FDB_PORT)) {
+      System.out.println("Fdb already reachable");
+      clusterFile = new File("/usr/local/etc/foundationdb/fdb.cluster");
+    } else {
+      System.out.println("Fdb not reachable, spawning container");
+      container = new FoundationDBContainer(FoundationDBContainer.FDB_PORT);
+      container.start();
+      clusterFile = container.getClusterFile();
+    }
+  }
+
+
   @BeforeAll
   void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
-
-    container.start();
-    clusterFile = container.getClusterFile();
 
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()
@@ -66,6 +84,32 @@ public class SchemaAdminServiceTest {
 
     schemaServiceVertxStub = SchemaServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
     adminServiceVertxStub = AdminServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
+  }
+
+  @BeforeAll
+  public void testFdbReachable()
+  {
+    assertTrue(PortManager.listeningPort(FoundationDBContainer.FDB_PORT));
+
+    ByteBuffer buffer = ByteBuffer.allocate("/status/json".length() + 2);
+    buffer.put((byte)0xff);
+    buffer.put((byte)0xff);
+    buffer.put("/status/json".getBytes(Charset.defaultCharset()));
+    byte[] checkStatusKey = buffer.array();
+
+    FDB fdb = FDB.selectAPIVersion(610);
+    try(Database db = fdb.open(clusterFile.toString())) {
+
+      // Get Status special key from the database
+      String status = db.run(tr -> {
+        byte[] result = tr.get(checkStatusKey).join();
+        return new String(result);
+      });
+      JSONObject obj = new JSONObject(status);
+      System.out.println("DB Health   : " + obj.getJSONObject("client").getJSONObject("database_status").getBoolean("healthy"));
+      System.out.println("Data Health : " + obj.getJSONObject("cluster").getJSONObject("data").getJSONObject("state").getBoolean("healthy"));
+      assertTrue(obj.getJSONObject("client").getJSONObject("database_status").getBoolean("healthy"));
+    }
   }
 
   @RepeatedTest(value = 3)

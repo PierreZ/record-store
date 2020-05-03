@@ -1,6 +1,7 @@
 package fr.pierrezemb.recordstore;
 
 import java.net.ServerSocket;
+import java.net.Socket;
 
 public class PortManager {
   private static int nextPort = getBasePort();
@@ -23,7 +24,18 @@ public class PortManager {
     }
   }
 
+
+
   private static int getBasePort() {
     return Integer.valueOf(System.getProperty("test.basePort", "15000"));
+  }
+
+
+  public static boolean listeningPort(int fdbPort) {
+    try (ServerSocket s = new ServerSocket(fdbPort)) {
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

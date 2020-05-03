@@ -18,12 +18,16 @@ public class FoundationDBContainer extends GenericContainer<FoundationDBContaine
   private File clusterFile;
 
   public FoundationDBContainer() {
-    this(FDB_VERSION);
+    this(FDB_VERSION, FDB_PORT);
   }
 
-  public FoundationDBContainer(String fdbVersion) {
+  public FoundationDBContainer(int fdbPort) {
+    this(FDB_VERSION, fdbPort);
+  }
+
+  public FoundationDBContainer(String fdbVersion, int fdbPort) {
     super(FDB_IMAGE + ":" + fdbVersion);
-    withExposedPorts(FDB_PORT);
+    withExposedPorts(fdbPort);
     waitingFor(Wait.forListeningPort());
   }
 
