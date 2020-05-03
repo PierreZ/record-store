@@ -21,17 +21,10 @@ service AdminService {
   rpc Delete (DeleteContainerRequest) returns (EmptyResponse);
 }
 
-message ListContainerRequest {
-}
-
-message ListContainerResponse {
-  repeated string containers = 1;
-}
-
 // Service which manipulate records within a container
 service RecordService {
   rpc Put (PutRecordRequest) returns (EmptyResponse);
-  rpc Query (QueryRequest) returns (QueryResponse);
+  rpc Query (QueryRequest) returns (stream QueryResponse);
   rpc Delete (DeleteRecordRequest) returns (DeleteRecordResponse);
 }
 
@@ -39,6 +32,13 @@ message DeleteRecordRequest {
   string table = 1;
   bool delete_all = 2;
   Node query_node = 3;
+}
+
+message ListContainerRequest {
+}
+
+message ListContainerResponse {
+  repeated string containers = 1;
 }
 
 message DeleteRecordResponse {
@@ -132,8 +132,7 @@ message QueryRequest {
 }
 
 message QueryResponse {
-  repeated bytes records = 1;
-  bytes continuation = 2;
+  bytes record = 1;
 }
 
 
