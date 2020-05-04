@@ -23,6 +23,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.apple.foundationdb.FDB;
+import com.apple.foundationdb.Cluster;
 import com.apple.foundationdb.Database;
 import com.apple.foundationdb.tuple.Tuple;
 
@@ -51,13 +52,21 @@ public class MainVerticleTest {
   private FoundationDBContainer container;
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
   private RecordServiceGrpc.RecordServiceVertxStub recordServiceVertxStub;
+
+  private static String OS = System.getProperty("os.name").toLowerCase();
   private File clusterFile;
 
   @BeforeAll
   void init() {
     if (PortManager.listeningPort(FoundationDBContainer.FDB_PORT)) {
-      System.out.println("Fdb already reachable");
-      clusterFile = new File("/usr/local/etc/foundationdb/fdb.cluster");
+      System.out.println("Fdb: already reachable");
+      if (OS.indexOf("nux") >= 0) {
+        clusterFile = new File("/etc/foundationdb/fdb.cluster");
+      } else if (OS.indexOf("mac") >= 0) {
+        clusterFile = new File("/usr/local/etc/foundationdb/fdb.cluster");
+      } else {
+        System.out.println("Fdb: Can't get default clusterFile");
+      }
     } else {
       System.out.println("Fdb not reachable, spawning container");
       container = new FoundationDBContainer(FoundationDBContainer.FDB_PORT);

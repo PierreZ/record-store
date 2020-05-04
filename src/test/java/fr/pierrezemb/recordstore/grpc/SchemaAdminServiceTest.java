@@ -46,14 +46,22 @@ public class SchemaAdminServiceTest {
   private FoundationDBContainer container;
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
   private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
+
+  private static String OS = System.getProperty("os.name").toLowerCase();
   private File clusterFile;
 
 
   @BeforeAll
-  void init() {
+  void init() throws Exception{
     if (PortManager.listeningPort(FoundationDBContainer.FDB_PORT)) {
-      System.out.println("Fdb already reachable");
-      clusterFile = new File("/usr/local/etc/foundationdb/fdb.cluster");
+      System.out.println("Fdb: already reachable");
+      if (OS.indexOf("nux") >= 0) {
+        clusterFile = new File("/etc/foundationdb/fdb.cluster");
+      } else if (OS.indexOf("mac") >= 0) {
+        clusterFile = new File("/usr/local/etc/foundationdb/fdb.cluster");
+      } else {
+        System.out.println("Fdb: Can't get default clusterFile");
+      }
     } else {
       System.out.println("Fdb not reachable, spawning container");
       container = new FoundationDBContainer(FoundationDBContainer.FDB_PORT);
@@ -106,8 +114,7 @@ public class SchemaAdminServiceTest {
         return new String(result);
       });
       JSONObject obj = new JSONObject(status);
-      System.out.println("DB Health   : " + obj.getJSONObject("client").getJSONObject("database_status").getBoolean("healthy"));
-      System.out.println("Data Health : " + obj.getJSONObject("cluster").getJSONObject("data").getJSONObject("state").getBoolean("healthy"));
+      System.out.println("Fdb Health   : " + obj.getJSONObject("client").getJSONObject("database_status").getBoolean("healthy"));
       assertTrue(obj.getJSONObject("client").getJSONObject("database_status").getBoolean("healthy"));
     }
   }
