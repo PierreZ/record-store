@@ -120,6 +120,7 @@ message IndexDefinition {
 
 enum IndexType {
   VALUE = 0;
+  TEXT_DEFAULT_TOKENIZER = 1;
 }
 
 message SelfDescribedMessage {
@@ -138,6 +139,8 @@ message QueryResponse {
 
 
 enum FieldOperation {
+
+  // valid for field query
   GREATER_THAN_OR_EQUALS = 0;
   LESS_THAN_OR_EQUALS = 1;
   GREATER_THAN = 2;
@@ -149,6 +152,10 @@ enum FieldOperation {
   NOT_EQUALS = 8;
   NOT_NULL = 9;
   MATCHES = 10;
+
+  // valid for text queries
+  TEXT_CONTAINS_ANY = 11;
+  TEXT_CONTAINS_ALL = 12;
 }
 
 message Node {
@@ -176,6 +183,8 @@ message FieldNode {
     bytes bytes_value = 21;
     FieldNode fieldNode = 22;
   }
+
+  repeated string tokens = 40;
 }
 
 message AndNode {

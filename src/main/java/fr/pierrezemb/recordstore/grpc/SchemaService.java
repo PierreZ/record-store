@@ -1,10 +1,7 @@
 package fr.pierrezemb.recordstore.grpc;
 
 import com.apple.foundationdb.record.*;
-import com.apple.foundationdb.record.metadata.Index;
-import com.apple.foundationdb.record.metadata.Key;
-import com.apple.foundationdb.record.metadata.MetaDataEvolutionValidator;
-import com.apple.foundationdb.record.metadata.MetaDataException;
+import com.apple.foundationdb.record.metadata.*;
 import com.apple.foundationdb.record.metadata.expressions.KeyExpression;
 import com.apple.foundationdb.record.provider.foundationdb.*;
 import com.apple.foundationdb.tuple.Tuple;
@@ -24,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -157,7 +153,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     HashSet<String> oldIndexesNames = new HashSet<>();
 
     // add old indexes
-    for (Index index: oldIndexes) {
+    for (Index index : oldIndexes) {
       log.trace("adding old index {}", index.getName());
       oldIndexesNames.add(index.getName());
       metadataBuilder.addIndex(request.getName(), index);
@@ -167,11 +163,25 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     for (RecordStoreProtocol.IndexDefinition indexDefinition : request.getIndexDefinitionsList()) {
       String indexName = request.getName() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString();
       if (!oldIndexesNames.contains(indexName)) {
-        log.trace("adding new index {}", indexName);
-        metadataBuilder.addIndex(
-          request.getName(),
-          indexName,
-          Key.Expressions.field(indexDefinition.getField()));
+        log.trace("adding new index {} of type {}", indexName, indexDefinition.getIndexType());
+        Index index = null;
+        switch (indexDefinition.getIndexType()) {
+          case VALUE:
+            index = new Index(
+              indexName,
+              Key.Expressions.field(indexDefinition.getField()),
+              IndexTypes.VALUE);
+            break;
+          // https://github.com/FoundationDB/fdb-record-layer/blob/e70d3f9b5cec1cf37b6f540d4e673059f2a628ab/fdb-record-layer-core/src/main/java/com/apple/foundationdb/record/provider/foundationdb/indexes/TextIndexMaintainer.java#L81-L93
+          case TEXT_DEFAULT_TOKENIZER:
+            index = new Index(
+              indexName,
+              Key.Expressions.field(indexDefinition.getField()),
+              IndexTypes.TEXT);
+        }
+        if (index != null) {
+          metadataBuilder.addIndex(request.getName(), index);
+        }
       }
     }
 

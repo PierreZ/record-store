@@ -102,6 +102,10 @@ public class RecordQueryGenerator {
           throw new ParseException("Matches onl accept a nested FieldValue", 0);
         }
         return Query.field(node.getField()).matches(Objects.requireNonNull(parseFieldNode(node.getFieldNode())));
+      case TEXT_CONTAINS_ANY:
+        return Query.field(node.getField()).text().containsAny(node.getTokensList());
+      case TEXT_CONTAINS_ALL:
+        return Query.field(node.getField()).text().containsAll(node.getTokensList());
       case UNRECOGNIZED:
         throw new ParseException("unrecognized field on node " + node.toString(), 0);
     }
