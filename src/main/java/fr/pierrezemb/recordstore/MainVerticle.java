@@ -8,12 +8,10 @@ import fr.pierrezemb.recordstore.grpc.AdminService;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
 import fr.pierrezemb.recordstore.grpc.RecordService;
 import fr.pierrezemb.recordstore.grpc.SchemaService;
-import io.micrometer.core.instrument.Metrics;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.grpc.VertxServer;
 import io.vertx.grpc.VertxServerBuilder;
-import io.vertx.micrometer.backends.BackendRegistries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -7,8 +7,10 @@ import com.apple.foundationdb.record.RecordCursor;
 import com.apple.foundationdb.record.provider.foundationdb.*;
 import com.apple.foundationdb.record.query.RecordQuery;
 import com.apple.foundationdb.record.query.plan.plans.RecordQueryPlan;
-import com.google.gson.internal.bind.JsonTreeReader;
-import com.google.protobuf.*;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Message;
 import fr.pierrezemb.recordstore.fdb.RSKeySpace;
 import fr.pierrezemb.recordstore.fdb.RSMetaDataStore;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
@@ -21,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.function.Function;
 
 public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
@@ -77,7 +78,6 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     responseObserver.onNext(RecordStoreProtocol.EmptyResponse.newBuilder().build());
     responseObserver.onCompleted();
   }
-
 
 
   /**

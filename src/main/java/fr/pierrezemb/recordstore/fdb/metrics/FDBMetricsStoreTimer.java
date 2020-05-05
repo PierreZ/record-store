@@ -11,7 +11,7 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
 
   // I did not find how to enable properly metrics when firing tests
   // so trying to use metrics without SPI enabled triggers NPE
-  private boolean export;
+  private final boolean export;
 
   public FDBMetricsStoreTimer(boolean enableExport) {
     export = enableExport;
