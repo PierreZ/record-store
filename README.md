@@ -31,3 +31,10 @@ docker exec fdb fdbcli --exec "status"
 
 ./gradlew clean run
 ```
+
+## Access
+
+`https://recordstore.pierrezemb.org`
+
+* pierre: CioIABIGdGVuYW50EgZwaWVycmUaFgoUCAQSBAgAEAASBAgAEAcSBAgAEAgaIK9qDfu3+WHNAzDqfNIbe5ANvWVo5ieppvu+T1y/hwc2
+* steven: CioIABIGdGVuYW50EgZzdGV2ZW4aFgoUCAQSBAgAEAASBAgAEAcSBAgAEAgaIAs7vb0irYUOrMig8hUhJ31j27X1C3RznDZl+Os29auU
