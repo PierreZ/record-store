@@ -17,9 +17,11 @@ public class Launcher extends io.vertx.core.Launcher {
       new MicrometerMetricsOptions()
         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true)
           .setStartEmbeddedServer(true)
-          .setEmbeddedServerOptions(new HttpServerOptions().setPort(8081))
+          .setEmbeddedServerOptions(new HttpServerOptions()
+            .setHost("127.0.0.1")
+            .setPort(9098))
           .setEmbeddedServerEndpoint("/metrics"))
         .setEnabled(true));
-    System.out.println("starting metrics on 8081");
+    System.out.println("starting metrics on 9098");
   }
 }
