@@ -1,0 +1,18 @@
+plugins {
+  id 'java'
+  id 'application'
+}
+
+ext {
+  prestoVersion = '332'
+}
+
+mainClassName = 'fr.pierrezemb.recordstore.presto.PrestoConnector'
+
+dependencies {
+  compile project(':record-store')
+  compileOnly "io.prestosql:presto-main:$prestoVersion"
+  compileOnly "io.prestosql:presto-spi:$prestoVersion"
+}
+
+
