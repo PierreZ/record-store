@@ -1,0 +1,10 @@
+plugins {
+  id 'java'
+}
+
+dependencies {
+  compile project(':record-store')
+  compile group: 'io.grpc', name: 'grpc-stub', version: '1.29.0'
+}
+
+
