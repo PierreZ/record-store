@@ -1,11 +1,10 @@
 package fr.pierrezemb.recordstore.presto;
 
+import com.google.inject.Inject;
 import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.log.Logger;
 import io.prestosql.spi.connector.*;
 import io.prestosql.spi.transaction.IsolationLevel;
-
-import javax.inject.Inject;
 
 import static io.prestosql.spi.transaction.IsolationLevel.READ_COMMITTED;
 import static java.util.Objects.requireNonNull;
@@ -25,13 +24,13 @@ public class RecordStoreConnector implements Connector {
     RecordStoreMetadata metadata,
     RecordStoreSplitManager splitManager,
     RecordStoreRecordSetProvider recordSetProvider,
-    RecordStoreConnectorConfig RecordStoreConnectorConfig
+    RecordStoreConnectorConfig recordStoreConnectorConfig
   ) {
     this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
     this.metadata = requireNonNull(metadata, "metadata is null");
     this.splitManager = requireNonNull(splitManager, "splitManager is null");
     this.recordSetProvider = requireNonNull(recordSetProvider, "recordSetProvider is null");
-    this.recordStoreConnectorConfig = requireNonNull(RecordStoreConnectorConfig, "RecordStoreConnectorConfig is null");
+    this.recordStoreConnectorConfig = requireNonNull(recordStoreConnectorConfig, "RecordStoreConnectorConfig is null");
   }
 
   @Override
@@ -42,6 +41,7 @@ public class RecordStoreConnector implements Connector {
 
   @Override
   public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle) {
+    System.out.println(this.recordStoreConnectorConfig.getClusterFile());
     return metadata;
   }
 
