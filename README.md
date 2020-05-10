@@ -1,4 +1,4 @@
-# record-store ![gradle build](https://github.com/PierreZ/record-store/workflows/gradle%20build/badge.svg?branch=master)
+# record-store ![record-store](https://github.com/PierreZ/record-store/workflows/record-store/badge.svg?branch=master) ![record-store](https://github.com/PierreZ/record-store/workflows/presto-connector/badge.svg?branch=master) ![record-store](https://github.com/PierreZ/record-store/workflows/java-client/badge.svg?branch=master)
 
 ## Building
 
