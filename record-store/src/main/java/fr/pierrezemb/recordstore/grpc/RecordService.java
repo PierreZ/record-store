@@ -19,6 +19,7 @@ import fr.pierrezemb.recordstore.utils.RecordQueryGenerator;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import io.micrometer.core.instrument.Gauge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,6 +189,37 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
 
       responseObserver.onNext(RecordStoreProtocol.DeleteRecordResponse.newBuilder()
         .setDeletedCount(count.longValue())
+        .build());
+      responseObserver.onCompleted();
+    } catch (RuntimeException e) {
+      log.error(e.getMessage());
+      throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
+    }
+  }
+
+  @Override
+  public void getQueryPlan(RecordStoreProtocol.QueryRequest request, StreamObserver<RecordStoreProtocol.GetQueryPlanResponse> responseObserver) {
+    String tenantID = GrpcContextKeys.getTenantIDOrFail();
+    String container = GrpcContextKeys.getContainerOrFail();
+
+    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
+
+      // create recordStoreProvider
+      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
+
+      // Helper func
+      Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
+        .setMetaDataProvider(metaDataStore)
+        .setContext(context)
+        .setKeySpacePath(RSKeySpace.getDataKeySpacePath(tenantID, container))
+        .createOrOpen();
+
+      FDBRecordStore r = recordStoreProvider.apply(context);
+      RecordQuery query = RecordQueryGenerator.generate(request);
+      RecordQueryPlan recordQueryPlan = r.planQuery(query);
+
+      responseObserver.onNext(RecordStoreProtocol.GetQueryPlanResponse.newBuilder()
+        .setQueryPlan(recordQueryPlan.toString())
         .build());
       responseObserver.onCompleted();
     } catch (RuntimeException e) {

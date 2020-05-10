@@ -75,4 +75,11 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
       .build());
     responseObserver.onCompleted();
   }
+
+  @Override
+  public void ping(RecordStoreProtocol.EmptyRequest request, StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
+    GrpcContextKeys.getTenantIDOrFail();
+    responseObserver.onNext(RecordStoreProtocol.EmptyResponse.newBuilder().build());
+    responseObserver.onCompleted();
+  }
 }

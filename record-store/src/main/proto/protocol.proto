@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package recordstorepb;
 
-import "google/protobuf/any.proto";
 import "google/protobuf/descriptor.proto";
 
 option java_package = "fr.pierrezemb.recordstore.proto";
@@ -20,12 +19,15 @@ service SchemaService {
 service AdminService {
   rpc List (ListContainerRequest) returns (ListContainerResponse);
   rpc Delete (DeleteContainerRequest) returns (EmptyResponse);
+  // can be used to check auth
+  rpc Ping (EmptyRequest) returns (EmptyResponse);
 }
 
 // Service which manipulate records within a container
 service RecordService {
   rpc Put (PutRecordRequest) returns (EmptyResponse);
   rpc Query (QueryRequest) returns (stream QueryResponse);
+  rpc GetQueryPlan(QueryRequest) returns (GetQueryPlanResponse);
   rpc Delete (DeleteRecordRequest) returns (DeleteRecordResponse);
 }
 
@@ -33,6 +35,10 @@ message DeleteRecordRequest {
   string table = 1;
   bool delete_all = 2;
   Node query_node = 3;
+}
+
+message GetQueryPlanResponse {
+  string query_plan = 1;
 }
 
 message ListContainerRequest {
@@ -53,9 +59,9 @@ message UpsertSchemaRequest {
   repeated IndexDefinition index_definitions = 4;
 }
 
-message EmptyResponse {
+message EmptyRequest {}
 
-}
+message EmptyResponse {}
 
 message DeleteContainerRequest {
   repeated string containers = 1;

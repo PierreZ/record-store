@@ -3,10 +3,7 @@ package fr.pierrezemb.recordstore;
 import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
-import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
-import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
-import fr.pierrezemb.recordstore.proto.RecordStoreProtocolTest;
-import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
+import fr.pierrezemb.recordstore.proto.*;
 import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
 import io.grpc.ManagedChannel;
 import io.vertx.core.DeploymentOptions;
@@ -32,8 +29,7 @@ public class MainVerticleTestUnauthorized {
   public static final String DEFAULT_CONTAINER = "my-container";
   public final int port = PortManager.nextFreePort();
   private final FoundationDBContainer container = new FoundationDBContainer();
-  private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
-  private RecordServiceGrpc.RecordServiceVertxStub recordServiceVertxStub;
+  private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
   private File clusterFile;
 
   @BeforeAll
@@ -58,24 +54,13 @@ public class MainVerticleTestUnauthorized {
       .usePlaintext(true)
       .build();
 
-    schemaServiceVertxStub = SchemaServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
-    recordServiceVertxStub = RecordServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
+    adminServiceVertxStub = AdminServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
   }
 
   @Test
-  public void testCreateSchemaBadToken(Vertx vertx, VertxTestContext testContext) throws Exception {
+  public void testBadAuth(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
-
-    RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
-      .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
-      .setSchema(dependencies)
-      .build();
-
-    schemaServiceVertxStub.upsert(request, response -> {
+    adminServiceVertxStub.ping(RecordStoreProtocol.EmptyRequest.newBuilder().build(), response -> {
       if (response.succeeded()) {
         testContext.failNow(response.cause());
       } else {
