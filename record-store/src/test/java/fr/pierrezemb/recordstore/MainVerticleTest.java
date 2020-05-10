@@ -303,12 +303,13 @@ public class MainVerticleTest {
       response.exceptionHandler(testContext::failNow);
     });
   }
+
   @Test
   public void testPut7(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
       .setTable("Person")
-      .setSortBy(RecordStoreProtocol.SortByRequest.newBuilder().setType(RecordStoreProtocol.SortByType.NEWEST_FIRST)
+      .setSortBy(RecordStoreProtocol.SortByRequest.newBuilder().setType(RecordStoreProtocol.SortByType.SORT_BY_NEWEST_VERSION_FIRST)
         .build())
       .build();
 

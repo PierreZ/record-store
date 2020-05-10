@@ -133,6 +133,7 @@ message QueryRequest {
   bytes continuation = 3;
   int64 resultLimit = 4;
   SortByRequest sort_by = 5;
+  repeated string fields_to_return = 6;
 }
 
 message SortByRequest {

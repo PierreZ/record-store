@@ -1,9 +1,5 @@
 package fr.pierrezemb.recordstore.client;
 
-import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-
 public class RecordStoreClient {
   private final String tenant;
   private final String container;

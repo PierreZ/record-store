@@ -9,8 +9,8 @@ public class BiscuitGenerator {
     BiscuitManager biscuitManager = new BiscuitManager();
 
     List<String> users = Arrays.asList("pierre", "steven");
-    for (String user: users) {
-      System.out.println(user + ": " +  biscuitManager.create(user, Collections.emptyList()));
+    for (String user : users) {
+      System.out.println(user + ": " + biscuitManager.create(user, Collections.emptyList()));
     }
   }
 }

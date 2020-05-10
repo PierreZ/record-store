@@ -41,8 +41,7 @@ public class RSConnectorFactory implements ConnectorFactory {
         .initialize();
 
       return injector.getInstance(RSConnector.class);
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       throwIfUnchecked(e);
       throw new RuntimeException(e);
     }

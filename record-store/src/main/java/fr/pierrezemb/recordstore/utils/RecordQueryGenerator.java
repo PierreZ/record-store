@@ -1,6 +1,5 @@
 package fr.pierrezemb.recordstore.utils;
 
-import com.apple.foundationdb.record.RecordMetaDataProto;
 import com.apple.foundationdb.record.metadata.Key;
 import com.apple.foundationdb.record.metadata.expressions.VersionKeyExpression;
 import com.apple.foundationdb.record.query.RecordQuery;
@@ -14,6 +13,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class RecordQueryGenerator {
 
@@ -21,7 +21,11 @@ public class RecordQueryGenerator {
     RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()
       .setRecordType(request.getTable());
 
-    // queryBuilder.setRequiredResults()
+    if (request.getFieldsToReturnCount() > 0) {
+      queryBuilder.setRequiredResults(request.getFieldsToReturnList().asByteStringList()
+        .stream()
+        .map(e -> Key.Expressions.field(String.valueOf(e.toString()))).collect(Collectors.toList()));
+    }
 
     if (request.getSortBy().isInitialized()) {
       switch (request.getSortBy().getType()) {
