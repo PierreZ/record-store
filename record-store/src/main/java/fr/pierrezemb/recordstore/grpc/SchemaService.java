@@ -3,6 +3,7 @@ package fr.pierrezemb.recordstore.grpc;
 import com.apple.foundationdb.record.*;
 import com.apple.foundationdb.record.metadata.*;
 import com.apple.foundationdb.record.metadata.expressions.KeyExpression;
+import com.apple.foundationdb.record.metadata.expressions.VersionKeyExpression;
 import com.apple.foundationdb.record.provider.foundationdb.*;
 import com.apple.foundationdb.tuple.Tuple;
 import com.google.common.collect.ImmutableMap;
@@ -144,8 +145,10 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
       metadataBuilder.setRecords(fd);
     }
 
-    // set version
+    // set options
     metadataBuilder.setVersion(version);
+    metadataBuilder.setStoreRecordVersions(true);
+    metadataBuilder.setSplitLongRecords(true);
 
     HashSet<Index> oldIndexes = oldMetadata != null ?
       new HashSet<>(oldMetadata.getAllIndexes()) :
@@ -178,10 +181,17 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
               indexName,
               Key.Expressions.field(indexDefinition.getField()),
               IndexTypes.TEXT);
+            break;
+          case VERSION:
+            index = new Index(
+              indexName,
+              VersionKeyExpression.VERSION,
+              IndexTypes.VERSION);
+            break;
+          case UNRECOGNIZED:
+            continue;
         }
-        if (index != null) {
-          metadataBuilder.addIndex(request.getName(), index);
-        }
+        metadataBuilder.addIndex(request.getName(), index);
       }
     }
 

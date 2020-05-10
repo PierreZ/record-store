@@ -79,6 +79,10 @@ public class MainVerticleTest {
       .setName("Person")
       .addPrimaryKeyFields("id")
       .setSchema(dependencies)
+      // keep track of the versions
+      .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
+        .setIndexType(RecordStoreProtocol.IndexType.VERSION)
+        .build())
       .build();
 
     schemaServiceVertxStub.upsert(request, response -> {
