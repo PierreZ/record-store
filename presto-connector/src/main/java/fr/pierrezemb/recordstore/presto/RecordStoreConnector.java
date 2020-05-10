@@ -1,18 +1,71 @@
 package fr.pierrezemb.recordstore.presto;
 
-import io.prestosql.spi.connector.Connector;
-import io.prestosql.spi.connector.ConnectorMetadata;
-import io.prestosql.spi.connector.ConnectorTransactionHandle;
+import io.airlift.bootstrap.LifeCycleManager;
+import io.airlift.log.Logger;
+import io.prestosql.spi.connector.*;
 import io.prestosql.spi.transaction.IsolationLevel;
 
+import javax.inject.Inject;
+
+import static io.prestosql.spi.transaction.IsolationLevel.READ_COMMITTED;
+import static java.util.Objects.requireNonNull;
+
 public class RecordStoreConnector implements Connector {
+  private static final Logger log = Logger.get(RecordStoreConnector.class);
+
+  private final LifeCycleManager lifeCycleManager;
+  private final RecordStoreMetadata metadata;
+  private final RecordStoreSplitManager splitManager;
+  private final RecordStoreRecordSetProvider recordSetProvider;
+  private final RecordStoreConnectorConfig recordStoreConnectorConfig;
+
+  @Inject
+  public RecordStoreConnector(
+    LifeCycleManager lifeCycleManager,
+    RecordStoreMetadata metadata,
+    RecordStoreSplitManager splitManager,
+    RecordStoreRecordSetProvider recordSetProvider,
+    RecordStoreConnectorConfig RecordStoreConnectorConfig
+  ) {
+    this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
+    this.metadata = requireNonNull(metadata, "metadata is null");
+    this.splitManager = requireNonNull(splitManager, "splitManager is null");
+    this.recordSetProvider = requireNonNull(recordSetProvider, "recordSetProvider is null");
+    this.recordStoreConnectorConfig = requireNonNull(RecordStoreConnectorConfig, "RecordStoreConnectorConfig is null");
+  }
+
   @Override
   public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel, boolean readOnly) {
-    return null;
+    IsolationLevel.checkConnectorSupports(READ_COMMITTED, isolationLevel);
+    return RecordStoreTransactionHandle.INSTANCE;
   }
 
   @Override
   public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle) {
-    return null;
+    return metadata;
+  }
+
+  @Override
+  public ConnectorSplitManager getSplitManager() {
+    return splitManager;
+  }
+
+  @Override
+  public ConnectorRecordSetProvider getRecordSetProvider() {
+    return recordSetProvider;
+  }
+
+  @Override
+  public final void shutdown() {
+    try {
+      this.recordStoreConnectorConfig.close();
+    } catch (Exception e) {
+      log.error(e, "Failed to close RecordStore connector");
+    }
+    try {
+      lifeCycleManager.stop();
+    } catch (Exception e) {
+      log.error(e, "Error shutting down connector");
+    }
   }
 }
