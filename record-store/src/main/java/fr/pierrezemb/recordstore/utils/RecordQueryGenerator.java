@@ -1,5 +1,8 @@
 package fr.pierrezemb.recordstore.utils;
 
+import com.apple.foundationdb.record.RecordMetaDataProto;
+import com.apple.foundationdb.record.metadata.Key;
+import com.apple.foundationdb.record.metadata.expressions.VersionKeyExpression;
 import com.apple.foundationdb.record.query.RecordQuery;
 import com.apple.foundationdb.record.query.expressions.Query;
 import com.apple.foundationdb.record.query.expressions.QueryComponent;
@@ -18,6 +21,26 @@ public class RecordQueryGenerator {
     RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()
       .setRecordType(request.getTable());
 
+    // queryBuilder.setRequiredResults()
+
+    if (request.getSortBy().isInitialized()) {
+      switch (request.getSortBy().getType()) {
+        case SORT_BY_OLDEST_VERSION_FIRST:
+          queryBuilder.setSort(VersionKeyExpression.VERSION);
+          break;
+        case SORT_BY_NEWEST_VERSION_FIRST:
+          queryBuilder.setSort(VersionKeyExpression.VERSION, true);
+          break;
+        case SORT_BY_VALUE:
+          queryBuilder.setSort(Key.Expressions.field(request.getSortBy().getField()));
+          break;
+        case SORT_BY_VALUE_REVERSED:
+          queryBuilder.setSort(Key.Expressions.field(request.getSortBy().getField()), true);
+        case UNRECOGNIZED:
+          break;
+      }
+    }
+
     try {
       QueryComponent queryComponents = parseNode(request.getQueryNode());
       return queryBuilder.setFilter(queryComponents).build();
@@ -32,14 +55,21 @@ public class RecordQueryGenerator {
 
     try {
       QueryComponent queryComponents = parseNode(request.getQueryNode());
-      return queryBuilder.setFilter(queryComponents).build();
+      if (queryComponents != null) {
+        queryBuilder.setFilter(queryComponents);
+      }
     } catch (ParseException e) {
-      System.err.println(e);
+      return null;
     }
-    return null;
+    return queryBuilder.build();
   }
 
   public static QueryComponent parseNode(RecordStoreProtocol.Node node) throws ParseException {
+
+    if (node == null) {
+      return null;
+    }
+
     switch (node.getContentCase()) {
 
       case FIELD_NODE:
@@ -48,12 +78,8 @@ public class RecordQueryGenerator {
         return Query.and(parseChildrenNodes(node.getAndNode()));
       case OR_NODE:
         return Query.or(parseChildrenNodes(node.getOrNode()));
-      case CONTENT_NOT_SET:
-        throw new ParseException("no content sent on node " + node.toString(), 0);
     }
-
     return null;
-
   }
 
   private static List<QueryComponent> parseChildrenNodes(RecordStoreProtocol.OrNode node) throws ParseException {

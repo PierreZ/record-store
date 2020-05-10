@@ -303,4 +303,33 @@ public class MainVerticleTest {
       response.exceptionHandler(testContext::failNow);
     });
   }
+  @Test
+  public void testPut7(Vertx vertx, VertxTestContext testContext) throws Exception {
+
+    RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
+      .setTable("Person")
+      .setSortBy(RecordStoreProtocol.SortByRequest.newBuilder().setType(RecordStoreProtocol.SortByType.NEWEST_FIRST)
+        .build())
+      .build();
+
+    recordServiceVertxStub.query(request, response -> {
+      List<RecordStoreProtocolTest.Person> results = new ArrayList<>();
+      response.handler(req -> {
+        System.out.println("received a response");
+        RecordStoreProtocolTest.Person p = null;
+        try {
+          p = RecordStoreProtocolTest.Person.parseFrom(req.getRecord());
+          results.add(p);
+        } catch (InvalidProtocolBufferException e) {
+          testContext.failNow(e);
+          e.printStackTrace();
+        }
+      });
+      response.endHandler(end -> {
+        assertEquals(0, results.size());
+        testContext.completeNow();
+      });
+      response.exceptionHandler(testContext::failNow);
+    });
+  }
 }
