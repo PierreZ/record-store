@@ -7,7 +7,7 @@ import com.apple.foundationdb.record.provider.foundationdb.FDBRecordStore;
 import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpacePath;
 import com.apple.foundationdb.record.provider.foundationdb.keyspace.ResolvedKeySpacePath;
-import fr.pierrezemb.recordstore.fdb.RSKeySpace;
+import fr.pierrezemb.recordstore.fdb.RecordStoreKeySpace;
 import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import io.grpc.Status;
@@ -38,7 +38,7 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
   public void list(RecordStoreProtocol.ListContainerRequest request, StreamObserver<RecordStoreProtocol.ListContainerResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      KeySpacePath tenantKeySpace = RSKeySpace.getApplicationKeySpacePath(tenantID);
+      KeySpacePath tenantKeySpace = RecordStoreKeySpace.getApplicationKeySpacePath(tenantID);
       System.out.println(tenantKeySpace);
       List<ResolvedKeySpacePath> containers = tenantKeySpace
         .listSubdirectory(context, "container", ScanProperties.FORWARD_SCAN);
@@ -62,8 +62,8 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
       for (String container : request.getContainersList()) {
-        FDBRecordStore.deleteStore(context, RSKeySpace.getDataKeySpacePath(tenantID, container));
-        FDBRecordStore.deleteStore(context, RSKeySpace.getMetaDataKeySpacePath(tenantID, container));
+        FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getDataKeySpacePath(tenantID, container));
+        FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getMetaDataKeySpacePath(tenantID, container));
         context.commit();
       }
     } catch (RuntimeException runtimeException) {

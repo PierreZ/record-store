@@ -5,7 +5,7 @@ import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpace;
 import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpaceDirectory;
 import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpacePath;
 
-public class RSKeySpace {
+public class RecordStoreKeySpace {
   public static final String APPLICATION_NAME = "record-store";
   public static final KeySpace RS_KEY_SPACE =
     new KeySpace(

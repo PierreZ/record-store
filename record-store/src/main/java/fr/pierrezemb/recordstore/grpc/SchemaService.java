@@ -10,8 +10,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
-import fr.pierrezemb.recordstore.fdb.RSKeySpace;
-import fr.pierrezemb.recordstore.fdb.RSMetaDataStore;
+import fr.pierrezemb.recordstore.fdb.RecordStoreKeySpace;
+import fr.pierrezemb.recordstore.fdb.RecordStoreMetaDataStore;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
@@ -50,7 +50,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     String container = GrpcContextKeys.getContainerOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
+      FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
 
       List<RecordStoreProtocol.IndexDescription> indexes = metaDataStore.getRecordMetaData().getAllIndexes().stream()
         .filter(e -> !e.getName().startsWith("global"))
@@ -95,7 +95,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     String container = GrpcContextKeys.getContainerOrFail();
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
+      FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
 
       RecordMetaData oldMetaData = null;
       int version = 0;
@@ -232,13 +232,13 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
 
     try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
       // create recordStoreProvider
-      FDBMetaDataStore metaDataStore = RSMetaDataStore.createMetadataStore(context, tenantID, container);
+      FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
 
       // Helper func
       Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
         .setMetaDataProvider(metaDataStore)
         .setContext(context)
-        .setKeySpacePath(RSKeySpace.getDataKeySpacePath(tenantID, container))
+        .setKeySpacePath(RecordStoreKeySpace.getDataKeySpacePath(tenantID, container))
         .createOrOpen();
 
       FDBRecordStore r = recordStoreProvider.apply(context);

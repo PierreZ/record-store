@@ -4,8 +4,8 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import io.prestosql.spi.type.TypeManager;
 
-public class RSModule implements Module {
-  public RSModule(String catalogName, TypeManager typeManager) {
+public class RecordStoreModule implements Module {
+  public RecordStoreModule(String catalogName, TypeManager typeManager) {
   }
 
   @Override

@@ -5,7 +5,7 @@ import io.prestosql.spi.connector.ConnectorMetadata;
 import io.prestosql.spi.connector.ConnectorTransactionHandle;
 import io.prestosql.spi.transaction.IsolationLevel;
 
-public class RSConnector implements Connector {
+public class RecordStoreConnector implements Connector {
   @Override
   public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel, boolean readOnly) {
     return null;

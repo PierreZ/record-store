@@ -13,7 +13,7 @@ import java.util.Map;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static java.util.Objects.requireNonNull;
 
-public class RSConnectorFactory implements ConnectorFactory {
+public class RecordStoreConnectorFactory implements ConnectorFactory {
   @Override
   public String getName() {
     return "record-store";
@@ -21,7 +21,7 @@ public class RSConnectorFactory implements ConnectorFactory {
 
   @Override
   public ConnectorHandleResolver getHandleResolver() {
-    return new RSHandleResolver();
+    return new RecordStoreHandleResolver();
   }
 
   @Override
@@ -32,7 +32,7 @@ public class RSConnectorFactory implements ConnectorFactory {
       // A plugin is not required to use Guice; it is just very convenient
       Bootstrap app = new Bootstrap(
         new JsonModule(),
-        new RSModule(catalogName, context.getTypeManager()));
+        new RecordStoreModule(catalogName, context.getTypeManager()));
 
       Injector injector = app
         .strictConfig()
@@ -40,7 +40,7 @@ public class RSConnectorFactory implements ConnectorFactory {
         .setRequiredConfigurationProperties(config)
         .initialize();
 
-      return injector.getInstance(RSConnector.class);
+      return injector.getInstance(RecordStoreConnector.class);
     } catch (Exception e) {
       throwIfUnchecked(e);
       throw new RuntimeException(e);
