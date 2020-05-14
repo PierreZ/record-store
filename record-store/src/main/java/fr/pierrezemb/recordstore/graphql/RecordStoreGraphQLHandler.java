@@ -1,6 +1,5 @@
 package fr.pierrezemb.recordstore.graphql;
 
-import fr.pierrezemb.recordstore.GraphQLVerticle;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.graphql.GraphQLHandler;
 import org.dataloader.DataLoaderRegistry;
@@ -12,6 +11,7 @@ import java.util.function.Function;
 
 public class RecordStoreGraphQLHandler implements GraphQLHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(RecordStoreGraphQLHandler.class);
+
   @Override
   public GraphQLHandler queryContext(Function<RoutingContext, Object> factory) {
     LOGGER.debug("received a factory on queryContext: {}", factory.toString());

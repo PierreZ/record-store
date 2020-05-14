@@ -1,24 +1,8 @@
 package fr.pierrezemb.recordstore.grpc;
 
-import com.apple.foundationdb.record.CursorStreamingMode;
-import com.apple.foundationdb.record.ExecuteProperties;
-import com.apple.foundationdb.record.IsolationLevel;
-import com.apple.foundationdb.record.RecordCursor;
-import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
-import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
-import com.apple.foundationdb.record.provider.foundationdb.FDBQueriedRecord;
-import com.apple.foundationdb.record.provider.foundationdb.FDBRecord;
-import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
-import com.apple.foundationdb.record.provider.foundationdb.FDBRecordStore;
-import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import com.apple.foundationdb.record.query.RecordQuery;
-import com.apple.foundationdb.record.query.plan.plans.RecordQueryPlan;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.Message;
-import fr.pierrezemb.recordstore.fdb.RecordStoreKeySpace;
-import fr.pierrezemb.recordstore.fdb.RecordStoreMetaDataStore;
+import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.utils.RecordQueryGenerator;
@@ -28,17 +12,12 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.function.Function;
-
 public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   private static final Logger log = LoggerFactory.getLogger(RecordService.class);
-  private final FDBDatabase db;
-  private final FDBStoreTimer timer;
+  private final RecordLayer recordLayer;
 
-  public RecordService(FDBDatabase db, FDBStoreTimer fdbStoreTimer) {
-    this.db = db;
-    this.timer = fdbStoreTimer;
+  public RecordService(RecordLayer recordLayer) {
+    this.recordLayer = recordLayer;
   }
 
   /**
@@ -50,30 +29,8 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
 
-    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-
-      // create recordStoreProvider
-      FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
-
-      // Helper func
-      Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
-        .setMetaDataProvider(metaDataStore)
-        .setContext(context)
-        .setKeySpacePath(RecordStoreKeySpace.getDataKeySpacePath(tenantID, container))
-        .createOrOpen();
-
-      FDBRecordStore r = recordStoreProvider.apply(context);
-
-      Descriptors.Descriptor descriptor = metaDataStore.getRecordMetaData().getRecordsDescriptor().findMessageTypeByName(request.getTable());
-
-      DynamicMessage msg = DynamicMessage
-        .parseFrom(
-          descriptor,
-          request.getMessage());
-
-      r.saveRecord(msg);
-      context.commit();
-
+    try {
+      this.recordLayer.putRecord(tenantID, container, request.getTable(), request.getMessage().toByteArray());
     } catch (InvalidProtocolBufferException e) {
       throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("could not parse Protobuf: " + e.getMessage()));
     } catch (RuntimeException e) {
@@ -94,34 +51,10 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   public void query(RecordStoreProtocol.QueryRequest request, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
+    RecordQuery query = RecordQueryGenerator.generate(request);
 
-    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-
-      // create recordStoreProvider
-      FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
-
-      // Helper func
-      Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
-        .setMetaDataProvider(metaDataStore)
-        .setContext(context)
-        .setKeySpacePath(RecordStoreKeySpace.getDataKeySpacePath(tenantID, container))
-        .createOrOpen();
-
-      FDBRecordStore r = recordStoreProvider.apply(context);
-      RecordQuery query = RecordQueryGenerator.generate(request);
-
-      this.executeQuery(r, query, tenantID, container)
-        .map(e -> {
-          if (log.isTraceEnabled()) {
-            log.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
-          }
-          return e;
-        })
-        .map(FDBRecord::getRecord)
-        .map(Message::toByteString)
-        .forEach(e -> responseObserver.onNext(RecordStoreProtocol.QueryResponse.newBuilder().setRecord(e).build()))
-        .join();
-
+    try {
+      this.recordLayer.queryRecordsWithObserver(tenantID, container, query, responseObserver);
       responseObserver.onCompleted();
     } catch (RuntimeException e) {
       log.error(e.getMessage());
@@ -129,24 +62,6 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     }
   }
 
-  private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query, String tenantID, String container) {
-    // TODO: handle errors instead of throwing null
-    if (query == null) {
-      log.error("query is null, skipping");
-      throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("bad query"));
-    }
-
-    RecordQueryPlan plan = r.planQuery(query);
-    log.info("running query for {}/{}: '{}'", tenantID, container, plan);
-
-    ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
-      .setIsolationLevel(IsolationLevel.SERIALIZABLE)
-      .setDefaultCursorStreamingMode(CursorStreamingMode.ITERATOR); // either WANT_ALL OR streaming mode
-
-    executeProperties.setScannedBytesLimit(1_000_000); // 1MB
-
-    return r.executeQuery(query, null, executeProperties.build());
-  }
 
   /**
    * @param request
@@ -157,43 +72,17 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
 
-    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-
-      // create recordStoreProvider
-      FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
-
-      // Helper func
-      Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
-        .setMetaDataProvider(metaDataStore)
-        .setContext(context)
-        .setKeySpacePath(RecordStoreKeySpace.getDataKeySpacePath(tenantID, container))
-        .createOrOpen();
-
-      FDBRecordStore r = recordStoreProvider.apply(context);
-
-      Integer count = 0;
-
+    long count = 0L;
+    try {
       if (request.getDeleteAll()) {
-        r.deleteAllRecords();
+        count = this.recordLayer.deleteAllRecords(tenantID, container);
       } else {
-        // running delete on query Mode
         RecordQuery query = RecordQueryGenerator.generate(request);
-
-
-        count = this.executeQuery(r, query, tenantID, container)
-          .map(e -> {
-            if (log.isTraceEnabled()) {
-              log.trace("deleting {} from {}/{}", e.getPrimaryKey(), tenantID, container);
-            }
-            return e;
-          })
-          .map(e -> r.deleteRecord(e.getPrimaryKey()))
-          .getCount().join();
+        count = this.recordLayer.deleteRecords(tenantID, container, query);
       }
-      context.commit();
 
       responseObserver.onNext(RecordStoreProtocol.DeleteRecordResponse.newBuilder()
-        .setDeletedCount(count.longValue())
+        .setDeletedCount(count)
         .build());
       responseObserver.onCompleted();
     } catch (RuntimeException e) {
@@ -206,25 +95,12 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   public void getQueryPlan(RecordStoreProtocol.QueryRequest request, StreamObserver<RecordStoreProtocol.GetQueryPlanResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
+    RecordQuery query = RecordQueryGenerator.generate(request);
 
-    try (FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer)) {
-
-      // create recordStoreProvider
-      FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
-
-      // Helper func
-      Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
-        .setMetaDataProvider(metaDataStore)
-        .setContext(context)
-        .setKeySpacePath(RecordStoreKeySpace.getDataKeySpacePath(tenantID, container))
-        .createOrOpen();
-
-      FDBRecordStore r = recordStoreProvider.apply(context);
-      RecordQuery query = RecordQueryGenerator.generate(request);
-      RecordQueryPlan recordQueryPlan = r.planQuery(query);
-
+    try {
+      String queryPlan = this.recordLayer.getQueryPlan(tenantID, container, query);
       responseObserver.onNext(RecordStoreProtocol.GetQueryPlanResponse.newBuilder()
-        .setQueryPlan(recordQueryPlan.toString())
+        .setQueryPlan(queryPlan)
         .build());
       responseObserver.onCompleted();
     } catch (RuntimeException e) {

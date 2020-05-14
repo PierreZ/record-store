@@ -51,7 +51,7 @@ public class SchemaAdminServiceTest {
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()
         .put("fdb-cluster-file", clusterFile.getAbsolutePath())
-        .put("listen-port", port));
+        .put("grpc-listen-port", port));
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
