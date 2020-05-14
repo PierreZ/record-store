@@ -1,6 +1,8 @@
 package fr.pierrezemb.recordstore;
 
 import com.google.common.collect.ImmutableMap;
+import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
+import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.graphql.RecordStoreGraphQLHandler;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -25,14 +27,23 @@ public class GraphQLVerticle extends AbstractVerticle {
       .setHeaders(ImmutableMap.of("tenant", "my-tenant", "container", "my-container"))
       .setEnabled(true);
 
+
+    String clusterFilePath = this.context.config().getString("fdb-cluster-file", "/var/fdb/fdb.cluster");
+    RecordLayer recordLayer = new RecordLayer(clusterFilePath, vertx.isMetricsEnabled());
+
+    DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
+    datasetsLoader.LoadDataset(this.context.config().getString("load-demo", "PERSONS"));
+
     Router router = Router.router(vertx);
     router.route("/graphiql/*").handler(GraphiQLHandler.create(options));
-    router.route("/graphql").handler(new RecordStoreGraphQLHandler());
+    router.route("/graphql").handler(new RecordStoreGraphQLHandler(recordLayer));
 
     LOGGER.info("starting graphQL server on {}", port);
 
     vertx.createHttpServer()
       .requestHandler(router)
       .listen(port);
+
+    startPromise.complete();
   }
 }

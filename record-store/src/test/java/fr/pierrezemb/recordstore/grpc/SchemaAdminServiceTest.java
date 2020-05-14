@@ -6,9 +6,9 @@ import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.PortManager;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
+import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
 import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
-import fr.pierrezemb.recordstore.proto.RecordStoreProtocolTest;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
 import io.grpc.ManagedChannel;
@@ -72,7 +72,7 @@ public class SchemaAdminServiceTest {
   public void testCRUDSchema1(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
 
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
@@ -109,7 +109,7 @@ public class SchemaAdminServiceTest {
   @Test
   public void testCRUDSchema3(Vertx vertx, VertxTestContext testContext) throws Exception {
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
 
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
@@ -137,7 +137,7 @@ public class SchemaAdminServiceTest {
   public void testCRUDSchema4(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
@@ -160,7 +160,7 @@ public class SchemaAdminServiceTest {
   public void testCRUDSchema5(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
 
     // upsert old schema should be harmless
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest

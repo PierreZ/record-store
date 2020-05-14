@@ -1,5 +1,6 @@
 package fr.pierrezemb.recordstore.graphql;
 
+import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.graphql.GraphQLHandler;
 import org.dataloader.DataLoaderRegistry;
@@ -11,6 +12,11 @@ import java.util.function.Function;
 
 public class RecordStoreGraphQLHandler implements GraphQLHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(RecordStoreGraphQLHandler.class);
+  private final RecordLayer recordLayer;
+
+  public RecordStoreGraphQLHandler(RecordLayer recordLayer) {
+    this.recordLayer = recordLayer;
+  }
 
   @Override
   public GraphQLHandler queryContext(Function<RoutingContext, Object> factory) {

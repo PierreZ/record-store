@@ -57,6 +57,8 @@ dependencies {
   // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
   runtime group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.30'
 
+  // faker
+  implementation 'com.github.javafaker:javafaker:1.0.2'
 
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterEngineVersion"
   testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterEngineVersion"

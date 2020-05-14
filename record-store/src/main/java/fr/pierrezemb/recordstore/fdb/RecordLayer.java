@@ -277,6 +277,10 @@ public class RecordLayer {
     FDBRecordStore r = recordStoreProvider.apply(context);
     Descriptors.Descriptor descriptor = metaDataStore.getRecordMetaData().getRecordsDescriptor().findMessageTypeByName(table);
 
+    if (descriptor == null) {
+      throw new RuntimeException("cannot find descriptor for table " + table);
+    }
+
     DynamicMessage msg = DynamicMessage.parseFrom(descriptor, record);
 
     r.saveRecord(msg);

@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-option java_package = "fr.pierrezemb.recordstore.proto";
-option java_outer_classname = "RecordStoreProtocolTest";
+option java_package = "fr.pierrezemb.recordstore.datasets.proto";
+option java_outer_classname = "DemoPersonProto";
 
 message Person {
   int64 id = 1;
