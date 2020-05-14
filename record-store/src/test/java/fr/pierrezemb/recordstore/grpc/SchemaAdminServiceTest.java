@@ -2,7 +2,7 @@ package fr.pierrezemb.recordstore.grpc;
 
 import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.FoundationDBContainer;
-import fr.pierrezemb.recordstore.MainVerticle;
+import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.PortManager;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
@@ -28,8 +28,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 
-import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_CONTAINER;
-import static fr.pierrezemb.recordstore.MainVerticleTest.DEFAULT_TENANT;
+import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_CONTAINER;
+import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_TENANT;
 import static org.junit.Assert.assertEquals;
 
 @ExtendWith(VertxExtension.class)
@@ -58,7 +58,7 @@ public class SchemaAdminServiceTest {
     BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, DEFAULT_CONTAINER);
 
     // deploy verticle
-    vertx.deployVerticle(new MainVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
+    vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
     ManagedChannel channel = VertxChannelBuilder
       .forAddress(vertx, "localhost", port)
       .usePlaintext(true)

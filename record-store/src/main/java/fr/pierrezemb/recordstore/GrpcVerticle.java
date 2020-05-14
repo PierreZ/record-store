@@ -19,9 +19,9 @@ import java.util.concurrent.TimeUnit;
 
 import static fr.pierrezemb.recordstore.auth.BiscuitManager.DEFAULT_BISCUIT_KEY;
 
-public class MainVerticle extends AbstractVerticle {
+public class GrpcVerticle extends AbstractVerticle {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(GrpcVerticle.class);
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -48,7 +48,7 @@ public class MainVerticle extends AbstractVerticle {
     VertxServerBuilder serverBuilder = VertxServerBuilder
       .forAddress(vertx,
         this.context.config().getString("listen-address", "localhost"),
-        this.context.config().getInteger("listen-port", 8080))
+        this.context.config().getInteger("grpc-listen-port", 8080))
       .intercept(new AuthInterceptor(key))
       .addService(new AdminService(db, fdbStoreTimer))
       .addService(new SchemaService(db, fdbStoreTimer))
