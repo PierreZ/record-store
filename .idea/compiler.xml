@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="11" />
+    <bytecodeTargetLevel target="11">
+      <module name="record-store.presto-connector" target="13" />
+      <module name="record-store.presto-connector.main" target="13" />
+      <module name="record-store.presto-connector.test" target="13" />
+    </bytecodeTargetLevel>
   </component>
 </project>
