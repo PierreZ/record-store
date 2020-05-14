@@ -1,10 +1,9 @@
 package fr.pierrezemb.recordstore;
 
-import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
-import fr.pierrezemb.recordstore.proto.*;
-import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
+import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
+import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import io.grpc.ManagedChannel;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;

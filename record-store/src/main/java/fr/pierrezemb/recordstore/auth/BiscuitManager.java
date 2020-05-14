@@ -17,7 +17,13 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 
-import static com.clevercloud.biscuit.token.builder.Utils.*;
+import static com.clevercloud.biscuit.token.builder.Utils.caveat;
+import static com.clevercloud.biscuit.token.builder.Utils.fact;
+import static com.clevercloud.biscuit.token.builder.Utils.pred;
+import static com.clevercloud.biscuit.token.builder.Utils.rule;
+import static com.clevercloud.biscuit.token.builder.Utils.s;
+import static com.clevercloud.biscuit.token.builder.Utils.string;
+import static com.clevercloud.biscuit.token.builder.Utils.var;
 import static io.vavr.API.Left;
 import static io.vavr.API.Right;
 

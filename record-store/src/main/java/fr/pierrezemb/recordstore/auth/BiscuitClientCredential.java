@@ -5,7 +5,9 @@ import io.grpc.Status;
 
 import java.util.concurrent.Executor;
 
-import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.*;
+import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.AUTHORIZATION_METADATA_KEY;
+import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.CONTAINER_METADATA_KEY;
+import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.TENANT_METADATA_KEY;
 
 public class BiscuitClientCredential extends io.grpc.CallCredentials {
   static final String BEARER_TYPE = "Bearer";

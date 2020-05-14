@@ -27,7 +27,7 @@ service AdminService {
 service RecordService {
   rpc Put (PutRecordRequest) returns (EmptyResponse);
   rpc Query (QueryRequest) returns (stream QueryResponse);
-  rpc GetQueryPlan(QueryRequest) returns (GetQueryPlanResponse);
+  rpc GetQueryPlan (QueryRequest) returns (GetQueryPlanResponse);
   rpc Delete (DeleteRecordRequest) returns (DeleteRecordResponse);
 }
 
@@ -59,9 +59,11 @@ message UpsertSchemaRequest {
   repeated IndexDefinition index_definitions = 4;
 }
 
-message EmptyRequest {}
+message EmptyRequest {
+}
 
-message EmptyResponse {}
+message EmptyResponse {
+}
 
 message DeleteContainerRequest {
   repeated string containers = 1;

@@ -1,10 +1,22 @@
 package fr.pierrezemb.recordstore.grpc;
 
-import com.apple.foundationdb.record.*;
-import com.apple.foundationdb.record.metadata.*;
+import com.apple.foundationdb.record.EvaluationContext;
+import com.apple.foundationdb.record.IsolationLevel;
+import com.apple.foundationdb.record.RecordMetaData;
+import com.apple.foundationdb.record.RecordMetaDataBuilder;
+import com.apple.foundationdb.record.TupleRange;
+import com.apple.foundationdb.record.metadata.Index;
+import com.apple.foundationdb.record.metadata.IndexTypes;
+import com.apple.foundationdb.record.metadata.Key;
+import com.apple.foundationdb.record.metadata.MetaDataEvolutionValidator;
+import com.apple.foundationdb.record.metadata.MetaDataException;
 import com.apple.foundationdb.record.metadata.expressions.KeyExpression;
 import com.apple.foundationdb.record.metadata.expressions.VersionKeyExpression;
-import com.apple.foundationdb.record.provider.foundationdb.*;
+import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
+import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
+import com.apple.foundationdb.record.provider.foundationdb.FDBRecordContext;
+import com.apple.foundationdb.record.provider.foundationdb.FDBRecordStore;
+import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import com.apple.foundationdb.tuple.Tuple;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -28,7 +40,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.*;
+import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.COUNT_INDEX;
+import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.COUNT_UPDATES_INDEX;
+import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.INDEX_COUNT_AGGREGATE_FUNCTION;
+import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.INDEX_COUNT_UPDATES_AGGREGATE_FUNCTION;
 
 public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   private static final Logger log = LoggerFactory.getLogger(SchemaService.class);
