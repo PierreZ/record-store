@@ -10,7 +10,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
-import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
+import fr.pierrezemb.recordstore.utils.protobuf.ProtobufReflectionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

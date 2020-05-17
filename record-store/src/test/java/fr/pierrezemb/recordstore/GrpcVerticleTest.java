@@ -8,7 +8,7 @@ import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
-import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
+import fr.pierrezemb.recordstore.utils.protobuf.ProtobufReflectionUtil;
 import io.grpc.ManagedChannel;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;

@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true">
+        <outputRelativeToContentRoot value="true" />
+      </profile>
+      <profile name="Gradle Imported" enabled="true">
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.auto.value/auto-value/1.7.2/895dbc8f1764f162c1dae34cc29e300220d6d4ba/auto-value-1.7.2.jar" />
+        </processorPath>
+        <module name="record-store.record-store.main" />
+      </profile>
+    </annotationProcessing>
     <bytecodeTargetLevel target="11">
       <module name="record-store.presto-connector" target="13" />
       <module name="record-store.presto-connector.main" target="13" />

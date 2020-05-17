@@ -25,6 +25,7 @@ repositories {
 ext {
   vertxVersion = '3.8.5'
   junitJupiterEngineVersion = '5.4.0'
+  autoValueVersion = '1.7.2'
 }
 
 application {
@@ -42,6 +43,8 @@ dependencies {
   implementation "io.vertx:vertx-junit5:$vertxVersion"
   implementation "io.vertx:vertx-grpc:$vertxVersion"
   implementation "io.vertx:vertx-web:$vertxVersion"
+  implementation "io.vertx:vertx-junit5-web-client:$vertxVersion"
+
   implementation 'org.foundationdb:fdb-record-layer-core-pb3:2.8.91.0'
   compile "io.vertx:vertx-micrometer-metrics:$vertxVersion"
   compile "io.micrometer:micrometer-registry-prometheus:1.4.2"
@@ -59,6 +62,13 @@ dependencies {
 
   // faker
   implementation 'com.github.javafaker:javafaker:1.0.2'
+
+  // dep from rejoiner
+  compile             "com.google.auto.value:auto-value-annotations:${autoValueVersion}"
+  annotationProcessor "com.google.auto.value:auto-value:${autoValueVersion}"
+
+  // 1. Use Guava in your implementation only:
+  implementation("com.google.guava:guava:29.0-jre")
 
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterEngineVersion"
   testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterEngineVersion"

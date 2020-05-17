@@ -9,7 +9,7 @@ import com.google.protobuf.Descriptors;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
-import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
+import fr.pierrezemb.recordstore.utils.protobuf.ProtobufReflectionUtil;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;

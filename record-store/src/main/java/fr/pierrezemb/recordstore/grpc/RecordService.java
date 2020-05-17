@@ -5,7 +5,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
-import fr.pierrezemb.recordstore.utils.RecordQueryGenerator;
+import fr.pierrezemb.recordstore.query.RecordQueryGenerator;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;

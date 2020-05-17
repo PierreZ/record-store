@@ -1,4 +1,4 @@
-package fr.pierrezemb.recordstore.utils;
+package fr.pierrezemb.recordstore.query;
 
 import com.apple.foundationdb.record.metadata.Key;
 import com.apple.foundationdb.record.metadata.expressions.VersionKeyExpression;

@@ -1,4 +1,4 @@
-package fr.pierrezemb.recordstore.utils;
+package fr.pierrezemb.recordstore.utils.protobuf;
 
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet.Builder;
