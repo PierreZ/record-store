@@ -33,12 +33,11 @@ import static io.vertx.junit5.web.TestRequest.testRequest;
 class GraphQLVerticleTest {
   public final int port = PortManager.nextFreePort();
   private final FoundationDBContainer container = new FoundationDBContainer();
-  private File clusterFile;
-
   @WebClientOptionsInject
   public WebClientOptions opts = new WebClientOptions()
     .setDefaultPort(port)
     .setDefaultHost("localhost");
+  private File clusterFile;
 
   @BeforeAll
   void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
@@ -61,6 +60,7 @@ class GraphQLVerticleTest {
 
   @Test
   public void getSchema(WebClient client, VertxTestContext testContext) throws Exception {
+    // Thread.sleep(99999999999L);
     testRequest(client, HttpMethod.GET, "/api/v0/" + DatasetsLoader.DEFAULT_DEMO_TENANT + "/" + "PERSONS" + "/schema")
       .expect(
         bodyResponse(Buffer.buffer("type Person {\n" +

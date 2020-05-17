@@ -32,6 +32,7 @@ public class GraphQLVerticle extends AbstractVerticle {
 
     Integer port = this.context.config().getInteger("graphql-listen-port", 8081);
     GraphiQLHandlerOptions options = new GraphiQLHandlerOptions()
+      .setQuery("{ allRecords { name } }")
       .setHeaders(ImmutableMap.of("tenant", "my-tenant", "container", "my-container"))
       .setEnabled(true);
 
@@ -61,7 +62,7 @@ public class GraphQLVerticle extends AbstractVerticle {
       routingContext.response().setStatusCode(400).end();
     }
     String container = routingContext.request().getParam("container");
-    if (container ==  null) {
+    if (container == null) {
       routingContext.response().setStatusCode(400).end();
     }
 

@@ -20,20 +20,16 @@ import graphql.schema.GraphQLScalarType;
  */
 public final class ProtoScalars {
 
-  private ProtoScalars() {}
-
   public static final GraphQLScalarType UINT_32 =
     GraphQLScalarType.newScalar(Scalars.GraphQLInt)
       .name("UInt32")
       .description("Scalar for proto type uint32. Uses variable-length encoding.")
       .build();
-
   public static final GraphQLScalarType UINT_64 =
     GraphQLScalarType.newScalar(Scalars.GraphQLLong)
       .name("UInt64")
       .description("Scalar for proto type uint64. Uses variable-length encoding.")
       .build();
-
   public static final GraphQLScalarType SINT_32 =
     GraphQLScalarType.newScalar(Scalars.GraphQLInt)
       .name("SInt32")
@@ -41,7 +37,6 @@ public final class ProtoScalars {
         "Scalar for proto type sint32. Uses variable-length encoding."
           + " Signed int value. These more efficiently encode negative numbers than regular int32s.")
       .build();
-
   public static final GraphQLScalarType SINT_64 =
     GraphQLScalarType.newScalar(Scalars.GraphQLLong)
       .name("SInt64")
@@ -49,7 +44,6 @@ public final class ProtoScalars {
         "Scalar for proto type sint64. Uses variable-length encoding. Signed int value."
           + " These more efficiently encode negative numbers than regular int64s.")
       .build();
-
   public static final GraphQLScalarType FIXED_32 =
     GraphQLScalarType.newScalar(Scalars.GraphQLLong)
       .name("Fixed32")
@@ -57,7 +51,6 @@ public final class ProtoScalars {
         "Scalar for proto type fixed32. Always four bytes."
           + " More efficient than uint32 if values are often greater than 2^28.")
       .build();
-
   public static final GraphQLScalarType FIXED_64 =
     GraphQLScalarType.newScalar(Scalars.GraphQLLong)
       .name("Fixed64")
@@ -65,19 +58,16 @@ public final class ProtoScalars {
         "Scalar for proto type fixed64. Always eight bytes."
           + " More efficient than uint64 if values are often greater than 2^56.")
       .build();
-
   public static final GraphQLScalarType S_FIXED_32 =
     GraphQLScalarType.newScalar(Scalars.GraphQLInt)
       .name("SFixed32")
       .description("Scalar for proto type sfixed32. Always four bytes.")
       .build();
-
   public static final GraphQLScalarType S_FIXED_64 =
     GraphQLScalarType.newScalar(Scalars.GraphQLLong)
       .name("SFixed64")
       .description("Scalar for proto type sfixed64. Always eight bytes.")
       .build();
-
   public static final GraphQLScalarType BYTES =
     GraphQLScalarType.newScalar()
       .coercing(
@@ -122,4 +112,7 @@ public final class ProtoScalars {
         "Scalar for proto type bytes."
           + " May contain any arbitrary sequence of bytes no longer than 2^32.")
       .build();
+
+  private ProtoScalars() {
+  }
 }

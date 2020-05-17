@@ -37,10 +37,10 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 
-/** Converts Protos to GraphQL Types. */
+/**
+ * Converts Protos to GraphQL Types.
+ */
 public final class ProtoToGql {
-
-  private ProtoToGql() {}
 
   private static final ImmutableMap<Type, GraphQLScalarType> PROTO_TYPE_MAP =
     new ImmutableMap.Builder<Type, GraphQLScalarType>()
@@ -60,7 +60,6 @@ public final class ProtoToGql {
       .put(Type.SFIXED32, ProtoScalars.S_FIXED_32)
       .put(Type.SFIXED64, ProtoScalars.S_FIXED_64)
       .build();
-
   private static final ImmutableMap<Type, GraphQLScalarType> TYPE_MAP =
     new ImmutableMap.Builder<Type, GraphQLScalarType>()
       .put(Type.BOOL, Scalars.GraphQLBoolean)
@@ -79,9 +78,11 @@ public final class ProtoToGql {
       .put(Type.SFIXED32, Scalars.GraphQLInt)
       .put(Type.SFIXED64, Scalars.GraphQLLong)
       .build();
-
   private static final ImmutableList<GraphQLFieldDefinition> STATIC_FIELD =
     ImmutableList.of(newFieldDefinition().type(GraphQLString).name("_").staticValue("-").build());
+
+  private ProtoToGql() {
+  }
 
   private static GraphQLFieldDefinition convertField(
     FieldDescriptor fieldDescriptor, SchemaOptions schemaOptions) {
@@ -99,7 +100,9 @@ public final class ProtoToGql {
     return builder.build();
   }
 
-  /** Returns a GraphQLOutputType generated from a FieldDescriptor. */
+  /**
+   * Returns a GraphQLOutputType generated from a FieldDescriptor.
+   */
   static GraphQLOutputType convertType(
     FieldDescriptor fieldDescriptor, SchemaOptions schemaOptions) {
     final GraphQLOutputType type;
@@ -155,12 +158,16 @@ public final class ProtoToGql {
     return builder.build();
   }
 
-  /** Returns the GraphQL name of the supplied proto. */
+  /**
+   * Returns the GraphQL name of the supplied proto.
+   */
   static String getReferenceName(GenericDescriptor descriptor) {
     return CharMatcher.anyOf(".").replaceFrom(descriptor.getFullName(), "_");
   }
 
-  /** Returns a reference to the GraphQL type corresponding to the supplied proto. */
+  /**
+   * Returns a reference to the GraphQL type corresponding to the supplied proto.
+   */
   static GraphQLTypeReference getReference(GenericDescriptor descriptor) {
     return new GraphQLTypeReference(getReferenceName(descriptor));
   }

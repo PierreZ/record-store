@@ -1,7 +1,7 @@
 package fr.pierrezemb.recordstore.graphql;
 
 import com.apple.foundationdb.record.RecordMetaData;
-import com.google.protobuf.Message;
+import com.apple.foundationdb.record.query.RecordQuery;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.utils.graphql.ProtoToGql;
 import fr.pierrezemb.recordstore.utils.graphql.SchemaOptions;
@@ -303,13 +303,17 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
       return null;
     }
 
+    schema += "\n type Query {" +
+      " allPersons: [Person]" +
+      "}";
+
     SchemaParser schemaParser = new SchemaParser();
     TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
 
     RuntimeWiring runtimeWiring = newRuntimeWiring()
       .type("Query", builder -> {
-        VertxDataFetcher<List<Message>> getAllRecords = new VertxDataFetcher<>(this::getAllRecords);
-        return builder.dataFetcher("allLinks", getAllRecords);
+        VertxDataFetcher<List<Map<String, Object>>> getAllRecords = new VertxDataFetcher<>(this::getAllRecords);
+        return builder.dataFetcher("allPersons", getAllRecords);
       })
       .build();
 
@@ -320,6 +324,11 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
       .build();
   }
 
-  private void getAllRecords(DataFetchingEnvironment env, Promise<List<Message>> future) {
+  private void getAllRecords(DataFetchingEnvironment env, Promise<List<Map<String, Object>>> future) {
+
+    RecordQuery query = RecordQuery.newBuilder()
+      .setRecordType("Person")
+      .build();
+    this.recordLayer.queryRecordsWithPromise("demo", "PERSONS", query, future);
   }
 }

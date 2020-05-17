@@ -37,12 +37,16 @@ import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import io.vertx.core.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -302,6 +306,43 @@ public class RecordLayer {
       .map(Message::toByteString)
       .forEach(e -> responseObserver.onNext(RecordStoreProtocol.QueryResponse.newBuilder().setRecord(e).build()))
       .join();
+  }
+
+  public void queryRecordsWithPromise(String tenantID, String container, RecordQuery query, Promise<List<Map<String, Object>>> future) {
+    FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
+    FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
+
+    Descriptors.Descriptor descriptor = r.getRecordMetaData().getRecordsDescriptor().findMessageTypeByName("Person");
+
+    List<Map<String, Object>> result = null;
+    try {
+      result = this.executeQuery(r, query, tenantID, container)
+        .map(e -> {
+          if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
+          }
+          return e;
+        })
+        .map(queriedRecord -> {
+          try {
+            return DynamicMessage.parseFrom(descriptor, queriedRecord.getStoredRecord().getRecord().toByteArray());
+          } catch (InvalidProtocolBufferException e) {
+            return null;
+          }
+        })
+        .filter(Objects::nonNull)
+
+        // TODO: can we replace `graphql.schema.PropertyDataFetcher` to avoid casting things as an HashMap?
+        .map(dynamicMessage -> {
+          Map<String, Object> results = new HashMap<>();
+          dynamicMessage.getAllFields().forEach((key, value) -> results.put(key.getName(), value));
+          return results;
+        })
+        .asList().get();
+      future.complete(result);
+    } catch (InterruptedException | ExecutionException e) {
+      future.fail(e);
+    }
   }
 
   private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query, String tenantID, String container) {
