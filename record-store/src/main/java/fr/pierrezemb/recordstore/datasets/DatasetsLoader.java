@@ -37,6 +37,10 @@ public class DatasetsLoader {
 
   public void LoadDataset(String datasetsToLoad) throws InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
 
+    if (datasetsToLoad == null) {
+      return;
+    }
+
     if (datasetsToLoad.length() > 0) {
       String[] d = datasetsToLoad.split(",");
       DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);

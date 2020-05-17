@@ -35,7 +35,6 @@ public class GraphQLVerticle extends AbstractVerticle {
       .setHeaders(ImmutableMap.of("tenant", "my-tenant", "container", "my-container"))
       .setEnabled(true);
 
-
     String clusterFilePath = this.context.config().getString("fdb-cluster-file", "/var/fdb/fdb.cluster");
     recordLayer = new RecordLayer(clusterFilePath, vertx.isMetricsEnabled());
 
