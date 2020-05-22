@@ -3,8 +3,7 @@ package fr.pierrezemb.recordstore.graphql;
 import com.apple.foundationdb.record.RecordMetaData;
 import com.apple.foundationdb.record.query.RecordQuery;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
-import fr.pierrezemb.recordstore.utils.graphql.ProtoToGql;
-import fr.pierrezemb.recordstore.utils.graphql.SchemaOptions;
+import fr.pierrezemb.recordstore.query.GraphQLQueryGenerator;
 import graphql.ExecutionInput;
 import graphql.GraphQL;
 import graphql.schema.DataFetchingEnvironment;
@@ -12,7 +11,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
-import graphql.schema.idl.SchemaPrinter;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import io.vertx.core.Context;
 import io.vertx.core.Promise;
@@ -30,6 +28,8 @@ import io.vertx.ext.web.handler.graphql.impl.GraphQLBatch;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLInput;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLQuery;
 import org.dataloader.DataLoaderRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Locale;
@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static fr.pierrezemb.recordstore.datasets.DatasetsLoader.DEFAULT_DEMO_TENANT;
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
@@ -49,6 +48,7 @@ import static java.util.stream.Collectors.toList;
  * Taken from https://github.com/vert-x3/vertx-web/blob/3.9/vertx-web-graphql/src/main/java/io/vertx/ext/web/handler/graphql/impl/GraphQLHandlerImpl.java
  */
 public class RecordStoreGraphQLHandler implements GraphQLHandler {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RecordStoreGraphQLHandler.class);
 
   private static final Function<RoutingContext, Object> DEFAULT_QUERY_CONTEXT_FACTORY = rc -> rc;
   private static final Function<RoutingContext, DataLoaderRegistry> DEFAULT_DATA_LOADER_REGISTRY_FACTORY = rc -> null;
@@ -294,18 +294,11 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
     RecordMetaData metadata;
     try {
       metadata = this.recordLayer.getSchema(tenant, container);
-      SchemaPrinter schemaPrinter = new SchemaPrinter();
-      schema = metadata.getRecordTypes().values().stream()
-        .map(e -> ProtoToGql.convert(e.getDescriptor(), SchemaOptions.defaultOptions()))
-        .map(schemaPrinter::print)
-        .collect(Collectors.joining("\n"));
+      schema = GraphQLSchemaGenerator.generate(metadata);
     } catch (RuntimeException e) {
+      LOGGER.error("cannot generate graphQL schema: {}", e.getMessage());
       return null;
     }
-
-    schema += "\n type Query {" +
-      " allPersons: [Person]" +
-      "}";
 
     SchemaParser schemaParser = new SchemaParser();
     TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
@@ -325,10 +318,7 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
   }
 
   private void getAllRecords(DataFetchingEnvironment env, Promise<List<Map<String, Object>>> future) {
-
-    RecordQuery query = RecordQuery.newBuilder()
-      .setRecordType("Person")
-      .build();
+    RecordQuery query = GraphQLQueryGenerator.generate(env);
     this.recordLayer.queryRecordsWithPromise("demo", "PERSONS", query, future);
   }
 }

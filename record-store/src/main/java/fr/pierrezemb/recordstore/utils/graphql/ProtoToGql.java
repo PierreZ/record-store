@@ -84,7 +84,7 @@ public final class ProtoToGql {
   private ProtoToGql() {
   }
 
-  private static GraphQLFieldDefinition convertField(
+  public static GraphQLFieldDefinition convertField(
     FieldDescriptor fieldDescriptor, SchemaOptions schemaOptions) {
     DataFetcher<?> dataFetcher = new ProtoDataFetcher(fieldDescriptor);
     GraphQLFieldDefinition.Builder builder =
@@ -103,7 +103,7 @@ public final class ProtoToGql {
   /**
    * Returns a GraphQLOutputType generated from a FieldDescriptor.
    */
-  static GraphQLOutputType convertType(
+  public static GraphQLOutputType convertType(
     FieldDescriptor fieldDescriptor, SchemaOptions schemaOptions) {
     final GraphQLOutputType type;
 

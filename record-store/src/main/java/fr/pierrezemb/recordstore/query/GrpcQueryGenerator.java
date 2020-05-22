@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class RecordQueryGenerator {
+public class GrpcQueryGenerator {
 
   public static RecordQuery generate(RecordStoreProtocol.QueryRequest request) {
     RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()

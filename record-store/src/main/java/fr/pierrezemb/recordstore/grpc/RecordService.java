@@ -5,7 +5,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
-import fr.pierrezemb.recordstore.query.RecordQueryGenerator;
+import fr.pierrezemb.recordstore.query.GrpcQueryGenerator;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -51,7 +51,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   public void query(RecordStoreProtocol.QueryRequest request, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
-    RecordQuery query = RecordQueryGenerator.generate(request);
+    RecordQuery query = GrpcQueryGenerator.generate(request);
 
     try {
       this.recordLayer.queryRecordsWithObserver(tenantID, container, query, responseObserver);
@@ -77,7 +77,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
       if (request.getDeleteAll()) {
         count = this.recordLayer.deleteAllRecords(tenantID, container);
       } else {
-        RecordQuery query = RecordQueryGenerator.generate(request);
+        RecordQuery query = GrpcQueryGenerator.generate(request);
         count = this.recordLayer.deleteRecords(tenantID, container, query);
       }
 
@@ -95,7 +95,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   public void getQueryPlan(RecordStoreProtocol.QueryRequest request, StreamObserver<RecordStoreProtocol.GetQueryPlanResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
-    RecordQuery query = RecordQueryGenerator.generate(request);
+    RecordQuery query = GrpcQueryGenerator.generate(request);
 
     try {
       String queryPlan = this.recordLayer.getQueryPlan(tenantID, container, query);
