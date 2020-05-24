@@ -6,9 +6,6 @@ import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.graphql.GraphQLSchemaGenerator;
 import fr.pierrezemb.recordstore.graphql.RecordStoreGraphQLHandler;
-import fr.pierrezemb.recordstore.utils.graphql.ProtoToGql;
-import fr.pierrezemb.recordstore.utils.graphql.SchemaOptions;
-import graphql.schema.idl.SchemaPrinter;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
@@ -17,8 +14,6 @@ import io.vertx.ext.web.handler.graphql.GraphiQLHandler;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.stream.Collectors;
 
 public class GraphQLVerticle extends AbstractVerticle {
   private static final Logger LOGGER = LoggerFactory.getLogger(GraphQLVerticle.class);
