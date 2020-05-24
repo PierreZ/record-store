@@ -1,7 +1,10 @@
 package fr.pierrezemb.recordstore;
 
+import com.apple.foundationdb.record.RecordMetaData;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
+import fr.pierrezemb.recordstore.fdb.RecordLayer;
+import fr.pierrezemb.recordstore.graphql.GraphQLSchemaGenerator;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -21,7 +24,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
+import static fr.pierrezemb.recordstore.datasets.DatasetsLoader.DEFAULT_DEMO_TENANT;
 import static io.vertx.junit5.web.TestRequest.bodyResponse;
 import static io.vertx.junit5.web.TestRequest.testRequest;
 
@@ -38,12 +44,14 @@ class GraphQLVerticleTest {
     .setDefaultPort(port)
     .setDefaultHost("localhost");
   private File clusterFile;
+  private RecordLayer recordLayer;
 
   @BeforeAll
-  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
+  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException, TimeoutException, ExecutionException {
 
     container.start();
     clusterFile = container.getClusterFile();
+    recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), vertx.isMetricsEnabled());
 
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()
@@ -60,16 +68,11 @@ class GraphQLVerticleTest {
 
   @Test
   public void getSchema(WebClient client, VertxTestContext testContext) throws Exception {
-    // Thread.sleep(99999999999L);
+    RecordMetaData metadata = this.recordLayer.getSchema(DEFAULT_DEMO_TENANT, "PERSONS");
+    String schema = GraphQLSchemaGenerator.generate(metadata);
     testRequest(client, HttpMethod.GET, "/api/v0/" + DatasetsLoader.DEFAULT_DEMO_TENANT + "/" + "PERSONS" + "/schema")
       .expect(
-        bodyResponse(Buffer.buffer("type Person {\n" +
-          "  email: String\n" +
-          "  id: Long\n" +
-          "  name: String\n" +
-          "}\n" +
-          "\n" +
-          ""), "text/plain")
+        bodyResponse(Buffer.buffer(schema), "text/plain")
       ).send(testContext);
   }
 }

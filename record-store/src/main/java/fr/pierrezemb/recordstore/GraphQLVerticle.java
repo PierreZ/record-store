@@ -4,6 +4,7 @@ import com.apple.foundationdb.record.RecordMetaData;
 import com.google.common.collect.ImmutableMap;
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
+import fr.pierrezemb.recordstore.graphql.GraphQLSchemaGenerator;
 import fr.pierrezemb.recordstore.graphql.RecordStoreGraphQLHandler;
 import fr.pierrezemb.recordstore.utils.graphql.ProtoToGql;
 import fr.pierrezemb.recordstore.utils.graphql.SchemaOptions;
@@ -68,14 +69,8 @@ public class GraphQLVerticle extends AbstractVerticle {
 
     try {
       RecordMetaData metadata = this.recordLayer.getSchema(tenant, container);
-      SchemaPrinter schemaPrinter = new SchemaPrinter();
-      String result = metadata.getRecordTypes().values().stream()
-        .map(e -> ProtoToGql.convert(e.getDescriptor(), SchemaOptions.defaultOptions()))
-        .map(schemaPrinter::print)
-        .collect(Collectors.joining("\n"));
-
-      LOGGER.debug(result);
-      routingContext.response().putHeader("Content-Type", "text/plain").setStatusCode(200).end(result);
+      String schema = GraphQLSchemaGenerator.generate(metadata);
+      routingContext.response().putHeader("Content-Type", "text/plain").setStatusCode(200).end(schema);
     } catch (RuntimeException e) {
       LOGGER.error(e.getMessage());
       routingContext.response().setStatusCode(500).end(e.getMessage());
