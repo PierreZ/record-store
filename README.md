@@ -1,4 +1,4 @@
-# record-store ![gradle build](https://github.com/PierreZ/record-store/workflows/gradle%20build/badge.svg?branch=master)
+# record-store ![record-store](https://github.com/PierreZ/record-store/workflows/record-store/badge.svg?branch=master) ![java-client](https://github.com/PierreZ/record-store/workflows/java-client/badge.svg?branch=master)
 
 ## Building
 
@@ -12,29 +12,20 @@
 
 ### Gradle cheat-sheet
 
+#### Record-store
+
 To launch your tests:
-```bash
-./gradlew clean test
+```
+./gradlew :record-store:test
 ```
 
 To package your application:
-```bash
-./gradlew clean assemble
+```
+./gradlew :record-store:assemble
 ```
 
 To run your application:
-```bash
-docker run -it --rm --name fdb -p 4500:4500 foundationdb/foundationdb:6.2.19
-docker exec fdb fdbcli --exec "configure new single memory"
-docker exec fdb fdbcli --exec "status"
-# wait for it to be healthy
-
-./gradlew clean run
+```
+./gradlew :record-store:run
 ```
 
-## Access
-
-`https://recordstore.pierrezemb.org`
-
-* pierre: CioIABIGdGVuYW50EgZwaWVycmUaFgoUCAQSBAgAEAASBAgAEAcSBAgAEAgaIK9qDfu3+WHNAzDqfNIbe5ANvWVo5ieppvu+T1y/hwc2
-* steven: CioIABIGdGVuYW50EgZzdGV2ZW4aFgoUCAQSBAgAEAASBAgAEAcSBAgAEAgaIAs7vb0irYUOrMig8hUhJ31j27X1C3RznDZl+Os29auU

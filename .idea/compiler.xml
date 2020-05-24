@@ -2,9 +2,9 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="11">
-      <module name="record-store.record-store" target="11" />
-      <module name="record-store.record-store.main" target="11" />
-      <module name="record-store.record-store.test" target="11" />
+      <module name="record-store.presto-connector" target="13" />
+      <module name="record-store.presto-connector.main" target="13" />
+      <module name="record-store.presto-connector.test" target="13" />
     </bytecodeTargetLevel>
   </component>
 </project>
