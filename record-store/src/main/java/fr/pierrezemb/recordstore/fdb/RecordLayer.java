@@ -7,6 +7,7 @@ import com.apple.foundationdb.record.IsolationLevel;
 import com.apple.foundationdb.record.RecordCursor;
 import com.apple.foundationdb.record.RecordMetaData;
 import com.apple.foundationdb.record.RecordMetaDataBuilder;
+import com.apple.foundationdb.record.RecordMetaDataProto;
 import com.apple.foundationdb.record.ScanProperties;
 import com.apple.foundationdb.record.TupleRange;
 import com.apple.foundationdb.record.metadata.Index;
@@ -196,14 +197,14 @@ public class RecordLayer {
           case VALUE:
             index = new Index(
               indexName,
-              Key.Expressions.field(indexDefinition.getField()),
+              Key.Expressions.field(indexDefinition.getField(), getFanType(indexDefinition.getFanType())),
               IndexTypes.VALUE);
             break;
           // https://github.com/FoundationDB/fdb-record-layer/blob/e70d3f9b5cec1cf37b6f540d4e673059f2a628ab/fdb-record-layer-core/src/main/java/com/apple/foundationdb/record/provider/foundationdb/indexes/TextIndexMaintainer.java#L81-L93
           case TEXT_DEFAULT_TOKENIZER:
             index = new Index(
               indexName,
-              Key.Expressions.field(indexDefinition.getField()),
+              Key.Expressions.field(indexDefinition.getField(), getFanType(indexDefinition.getFanType())),
               IndexTypes.TEXT);
             break;
           case VERSION:
@@ -229,6 +230,20 @@ public class RecordLayer {
       .setPrimaryKey(buildPrimaryKeyExpression(primaryKeyFields));
 
     return metadataBuilder.build();
+  }
+
+  private KeyExpression.FanType getFanType(RecordStoreProtocol.FanType fanType) {
+    if (fanType == null) {
+      return KeyExpression.FanType.None;
+    }
+
+    switch (fanType) {
+      case FAN_CONCATENATE:
+        return KeyExpression.FanType.Concatenate;
+      case FAN_OUT:
+        return KeyExpression.FanType.FanOut;
+    }
+    return KeyExpression.FanType.None;
   }
 
   private KeyExpression buildPrimaryKeyExpression(List<String> primaryKeyFields) {

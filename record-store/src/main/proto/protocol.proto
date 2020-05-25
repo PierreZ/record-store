@@ -124,12 +124,23 @@ message PutRecordRequest {
 message IndexDefinition {
   string field = 1;
   IndexType index_type = 2;
+  FanType fan_type = 3;
 }
 
 enum IndexType {
   VALUE = 0;
   TEXT_DEFAULT_TOKENIZER = 1;
   VERSION = 2;
+}
+
+enum FanType {
+  // Default when field is not repeated.
+  NONE = 0;
+
+  // Causes multiple keys to be created, one for each value of the field
+  FAN_OUT = 1;
+  // Causes multiple values to be concatenated into a nested tuple within a single element
+  FAN_CONCATENATE = 2;
 }
 
 message SelfDescribedMessage {
