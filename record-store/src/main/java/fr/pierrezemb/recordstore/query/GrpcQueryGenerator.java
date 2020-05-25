@@ -27,8 +27,11 @@ public class GrpcQueryGenerator {
         .map(e -> Key.Expressions.field(String.valueOf(e.toString()))).collect(Collectors.toList()));
     }
 
-    if (request.getSortBy().isInitialized()) {
+    if (request.hasSortBy()) {
+      System.out.println("sorting by" + request.getSortBy().getType());
       switch (request.getSortBy().getType()) {
+        case SORT_DISABLE:
+          break;
         case SORT_BY_OLDEST_VERSION_FIRST:
           queryBuilder.setSort(VersionKeyExpression.VERSION);
           break;
@@ -41,6 +44,7 @@ public class GrpcQueryGenerator {
         case SORT_BY_VALUE_REVERSED:
           queryBuilder.setSort(Key.Expressions.field(request.getSortBy().getField()), true);
         case UNRECOGNIZED:
+          System.out.println("unknown sort by");
           break;
       }
     }
