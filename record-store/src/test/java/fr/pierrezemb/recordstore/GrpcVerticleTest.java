@@ -71,8 +71,6 @@ public class GrpcVerticleTest {
   @Test
   public void testCreateSchema(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    Thread.sleep(99999999999999L);
-
     DescriptorProtos.FileDescriptorSet dependencies =
       ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
 

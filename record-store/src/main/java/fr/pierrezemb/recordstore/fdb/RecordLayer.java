@@ -256,6 +256,7 @@ public class RecordLayer {
         .setPrimaryKey(buildPrimaryKeyExpression(idxRequest.getPrimaryKeyFieldsList()));
     }
 
+
     if (oldMetadata == null) {
       metadataBuilder.addUniversalIndex(COUNT_INDEX);
       metadataBuilder.addUniversalIndex(COUNT_UPDATES_INDEX);
@@ -336,6 +337,22 @@ public class RecordLayer {
 
     r.saveRecord(msg);
     context.commit();
+  }
+
+  public List<Message> queryRecords(String tenantID, String container, RecordQuery query) {
+    FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
+    FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
+
+    return this.executeQuery(r, query, tenantID, container)
+      .map(e -> {
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
+        }
+        return e;
+      })
+      .map(FDBRecord::getRecord)
+      .asList()
+      .join();
   }
 
   public void queryRecordsWithObserver(String tenantID, String container, RecordQuery query, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {

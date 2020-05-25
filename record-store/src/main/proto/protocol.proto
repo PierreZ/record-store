@@ -55,6 +55,7 @@ message DeleteRecordResponse {
 message UpsertSchemaRequest {
   google.protobuf.FileDescriptorSet schema = 1;
   repeated IndexSchemaRequest index_request = 2;
+  string record_type_union_name = 3;
 }
 
 message IndexSchemaRequest {

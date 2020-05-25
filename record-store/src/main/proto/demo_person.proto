@@ -3,10 +3,12 @@ syntax = "proto3";
 option java_package = "fr.pierrezemb.recordstore.datasets.proto";
 option java_outer_classname = "DemoPersonProto";
 
+// Person is used as a test of what is possible to query
 message Person {
   int64 id = 1;
   string name = 2;
   string email = 3;
+  repeated string beers = 4;
 }
 
 message RecordTypeUnion {

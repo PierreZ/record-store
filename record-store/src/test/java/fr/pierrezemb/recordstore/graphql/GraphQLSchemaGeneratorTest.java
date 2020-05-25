@@ -48,7 +48,9 @@ class GraphQLSchemaGeneratorTest {
     System.out.println(schema);
 
     ImmutableList<String> shouldContains = ImmutableList.of(
-      "type Person {\n  email: String\n  id: Long\n  name: String\n}",
+      "type Person",
+      "email: String",
+      "id: Long",
       "type Query {",
       "allPersons(limit: Int): [Person!]!",
       "getPersonByEmail(email: String): Person!",
