@@ -6,6 +6,7 @@ package fr.pierrezemb.recordstore;
  */
 public abstract class AbstractFDBContainer {
   public static final FoundationDBContainer container;
+
   static {
     container = new FoundationDBContainer();
     container.start();

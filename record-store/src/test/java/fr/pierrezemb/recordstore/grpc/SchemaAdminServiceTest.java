@@ -2,7 +2,6 @@ package fr.pierrezemb.recordstore.grpc;
 
 import com.google.protobuf.DescriptorProtos;
 import fr.pierrezemb.recordstore.AbstractFDBContainer;
-import fr.pierrezemb.recordstore.FoundationDBContainer;
 import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.PortManager;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
