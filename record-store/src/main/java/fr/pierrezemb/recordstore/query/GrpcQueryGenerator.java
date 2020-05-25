@@ -1,4 +1,4 @@
-package fr.pierrezemb.recordstore.utils;
+package fr.pierrezemb.recordstore.query;
 
 import com.apple.foundationdb.record.metadata.Key;
 import com.apple.foundationdb.record.metadata.expressions.VersionKeyExpression;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class RecordQueryGenerator {
+public class GrpcQueryGenerator {
 
   public static RecordQuery generate(RecordStoreProtocol.QueryRequest request) {
     RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()

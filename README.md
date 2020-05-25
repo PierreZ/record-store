@@ -9,6 +9,9 @@
 * gradle 6.2.2
 * [FoundationDB Client Packages](https://www.foundationdb.org/download/)
 
+### Configure IntelliJ
+
+Please enable annotation processing and obtain them frm project classpath.
 
 ### Gradle cheat-sheet
 

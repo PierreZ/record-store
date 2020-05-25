@@ -4,11 +4,11 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
+import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
-import fr.pierrezemb.recordstore.proto.RecordStoreProtocolTest;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
-import fr.pierrezemb.recordstore.utils.ProtobufReflectionUtil;
+import fr.pierrezemb.recordstore.utils.protobuf.ProtobufReflectionUtil;
 import io.grpc.ManagedChannel;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class MainVerticleTest {
+public class GrpcVerticleTest {
 
   public static final String DEFAULT_TENANT = "my-tenant";
   public static final String DEFAULT_CONTAINER = "my-container";
@@ -50,7 +50,7 @@ public class MainVerticleTest {
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()
         .put("fdb-cluster-file", clusterFile.getAbsolutePath())
-        .put("listen-port", port));
+        .put("grpc-listen-port", port));
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
@@ -58,7 +58,7 @@ public class MainVerticleTest {
     BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, DEFAULT_CONTAINER);
 
     // deploy verticle
-    vertx.deployVerticle(new MainVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
+    vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
     ManagedChannel channel = VertxChannelBuilder
       .forAddress(vertx, "localhost", port)
       .usePlaintext(true)
@@ -72,7 +72,7 @@ public class MainVerticleTest {
   public void testCreateSchema(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(RecordStoreProtocolTest.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
@@ -98,7 +98,7 @@ public class MainVerticleTest {
   @Test
   public void testPut1(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    RecordStoreProtocolTest.Person person = RecordStoreProtocolTest.Person.newBuilder()
+    DemoPersonProto.Person person = DemoPersonProto.Person.newBuilder()
       .setId(1)
       .setName("PierreZ")
       .setEmail("toto@example.com")
@@ -157,9 +157,9 @@ public class MainVerticleTest {
     recordServiceVertxStub.query(request, response -> {
       response.handler(req -> {
         System.out.println("received a response");
-        RecordStoreProtocolTest.Person p = null;
+        DemoPersonProto.Person p = null;
         try {
-          p = RecordStoreProtocolTest.Person.parseFrom(req.getRecord());
+          p = DemoPersonProto.Person.parseFrom(req.getRecord());
           assertEquals("PierreZ", p.getName());
           assertEquals("toto@example.com", p.getEmail());
           assertEquals(1, p.getId());
@@ -203,9 +203,9 @@ public class MainVerticleTest {
     recordServiceVertxStub.query(request, response -> {
       response.handler(req -> {
         System.out.println("received a response");
-        RecordStoreProtocolTest.Person p = null;
+        DemoPersonProto.Person p = null;
         try {
-          p = RecordStoreProtocolTest.Person.parseFrom(req.getRecord());
+          p = DemoPersonProto.Person.parseFrom(req.getRecord());
           assertEquals("PierreZ", p.getName());
           assertEquals("toto@example.com", p.getEmail());
           assertEquals(1, p.getId());
@@ -284,12 +284,12 @@ public class MainVerticleTest {
       .build();
 
     recordServiceVertxStub.query(request, response -> {
-      List<RecordStoreProtocolTest.Person> results = new ArrayList<>();
+      List<DemoPersonProto.Person> results = new ArrayList<>();
       response.handler(req -> {
         System.out.println("received a response");
-        RecordStoreProtocolTest.Person p = null;
+        DemoPersonProto.Person p = null;
         try {
-          p = RecordStoreProtocolTest.Person.parseFrom(req.getRecord());
+          p = DemoPersonProto.Person.parseFrom(req.getRecord());
           results.add(p);
         } catch (InvalidProtocolBufferException e) {
           testContext.failNow(e);
@@ -314,12 +314,12 @@ public class MainVerticleTest {
       .build();
 
     recordServiceVertxStub.query(request, response -> {
-      List<RecordStoreProtocolTest.Person> results = new ArrayList<>();
+      List<DemoPersonProto.Person> results = new ArrayList<>();
       response.handler(req -> {
         System.out.println("received a response");
-        RecordStoreProtocolTest.Person p = null;
+        DemoPersonProto.Person p = null;
         try {
-          p = RecordStoreProtocolTest.Person.parseFrom(req.getRecord());
+          p = DemoPersonProto.Person.parseFrom(req.getRecord());
           results.add(p);
         } catch (InvalidProtocolBufferException e) {
           testContext.failNow(e);

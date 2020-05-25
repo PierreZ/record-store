@@ -22,7 +22,7 @@ import java.util.Collections;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class MainVerticleTestUnauthorized {
+public class GrpcVerticleTestUnauthorized {
 
   public static final String DEFAULT_TENANT = "my-tenant";
   public static final String DEFAULT_CONTAINER = "my-container";
@@ -40,14 +40,14 @@ public class MainVerticleTestUnauthorized {
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()
         .put("fdb-cluster-file", clusterFile.getAbsolutePath())
-        .put("listen-port", port));
+        .put("grpc-listen-port", port));
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
     BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT + "dsa", sealedBiscuit, DEFAULT_CONTAINER);
 
     // deploy verticle
-    vertx.deployVerticle(new MainVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
+    vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
     ManagedChannel channel = VertxChannelBuilder
       .forAddress(vertx, "localhost", port)
       .usePlaintext(true)
