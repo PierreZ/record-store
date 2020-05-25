@@ -31,20 +31,18 @@ import static org.junit.Assert.assertEquals;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class GrpcVerticleTest {
+public class GrpcVerticleTest extends AbstractFDBContainer {
 
   public static final String DEFAULT_TENANT = "my-tenant";
   public static final String DEFAULT_CONTAINER = "my-container";
   public final int port = PortManager.nextFreePort();
-  private final FoundationDBContainer container = new FoundationDBContainer();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
   private RecordServiceGrpc.RecordServiceVertxStub recordServiceVertxStub;
   private File clusterFile;
 
   @BeforeAll
-  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
+  void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
 
-    container.start();
     clusterFile = container.getClusterFile();
 
     DeploymentOptions options = new DeploymentOptions()
@@ -55,7 +53,7 @@ public class GrpcVerticleTest {
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
     System.out.println(sealedBiscuit);
-    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, DEFAULT_CONTAINER);
+    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, this.getClass().getName());
 
     // deploy verticle
     vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));

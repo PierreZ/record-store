@@ -1,6 +1,7 @@
 package fr.pierrezemb.recordstore.grpc;
 
 import com.google.protobuf.DescriptorProtos;
+import fr.pierrezemb.recordstore.AbstractFDBContainer;
 import fr.pierrezemb.recordstore.FoundationDBContainer;
 import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.PortManager;
@@ -34,10 +35,9 @@ import static org.junit.Assert.assertEquals;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class SchemaAdminServiceTest {
+public class SchemaAdminServiceTest extends AbstractFDBContainer {
 
   public final int port = PortManager.nextFreePort();
-  private final FoundationDBContainer container = new FoundationDBContainer();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
   private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
   private File clusterFile;
@@ -45,7 +45,6 @@ public class SchemaAdminServiceTest {
   @BeforeAll
   void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
 
-    container.start();
     clusterFile = container.getClusterFile();
 
     DeploymentOptions options = new DeploymentOptions()
@@ -55,7 +54,7 @@ public class SchemaAdminServiceTest {
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
-    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, DEFAULT_CONTAINER);
+    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, this.getClass().getName());
 
     // deploy verticle
     vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));

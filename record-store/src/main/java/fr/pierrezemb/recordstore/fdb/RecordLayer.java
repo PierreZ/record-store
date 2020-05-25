@@ -69,7 +69,6 @@ public class RecordLayer {
     db.performNoOpAsync().get(2, TimeUnit.SECONDS);
     System.out.println("connected to FDB!");
     timer = new FDBMetricsStoreTimer(enableMetrics);
-
   }
 
   /**
@@ -78,7 +77,6 @@ public class RecordLayer {
   public List<String> listContainers(String tenantID) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
     KeySpacePath tenantKeySpace = RecordStoreKeySpace.getApplicationKeySpacePath(tenantID);
-    System.out.println(tenantKeySpace);
     List<ResolvedKeySpacePath> containers = tenantKeySpace
       .listSubdirectory(context, "container", ScanProperties.FORWARD_SCAN);
     return containers.stream()
@@ -355,7 +353,7 @@ public class RecordLayer {
       .join();
   }
 
-  public void queryRecordsWithObserver(String tenantID, String container, RecordQuery query, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
+  public void queryRecords(String tenantID, String container, RecordQuery query, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
     FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
 
@@ -372,7 +370,7 @@ public class RecordLayer {
       .join();
   }
 
-  public void queryRecordsWithPromise(String tenantID, String container, RecordQuery query, Promise<List<Map<String, Object>>> future) {
+  public void queryRecords(String tenantID, String container, RecordQuery query, Promise<List<Map<String, Object>>> future) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
     FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
 

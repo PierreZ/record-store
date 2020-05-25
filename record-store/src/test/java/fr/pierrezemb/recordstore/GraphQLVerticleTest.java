@@ -36,9 +36,8 @@ import static io.vertx.junit5.web.TestRequest.testRequest;
   VertxWebClientExtension.class
 })
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class GraphQLVerticleTest {
+class GraphQLVerticleTest extends AbstractFDBContainer {
   public final int port = PortManager.nextFreePort();
-  private final FoundationDBContainer container = new FoundationDBContainer();
   @WebClientOptionsInject
   public WebClientOptions opts = new WebClientOptions()
     .setDefaultPort(port)
@@ -47,9 +46,8 @@ class GraphQLVerticleTest {
   private RecordLayer recordLayer;
 
   @BeforeAll
-  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException, TimeoutException, ExecutionException {
+  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws InterruptedException, TimeoutException, ExecutionException {
 
-    container.start();
     clusterFile = container.getClusterFile();
     recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), vertx.isMetricsEnabled());
 

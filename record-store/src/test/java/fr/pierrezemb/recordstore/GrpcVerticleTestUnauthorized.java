@@ -22,19 +22,16 @@ import java.util.Collections;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class GrpcVerticleTestUnauthorized {
+public class GrpcVerticleTestUnauthorized extends AbstractFDBContainer {
 
   public static final String DEFAULT_TENANT = "my-tenant";
-  public static final String DEFAULT_CONTAINER = "my-container";
   public final int port = PortManager.nextFreePort();
-  private final FoundationDBContainer container = new FoundationDBContainer();
   private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
   private File clusterFile;
 
   @BeforeAll
   void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
 
-    container.start();
     clusterFile = container.getClusterFile();
 
     DeploymentOptions options = new DeploymentOptions()
@@ -44,7 +41,7 @@ public class GrpcVerticleTestUnauthorized {
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
-    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT + "dsa", sealedBiscuit, DEFAULT_CONTAINER);
+    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT + "dsa", sealedBiscuit, this.getClass().getName());
 
     // deploy verticle
     vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
