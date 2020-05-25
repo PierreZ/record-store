@@ -135,6 +135,9 @@ enum IndexType {
   VALUE = 0;
   TEXT_DEFAULT_TOKENIZER = 1;
   VERSION = 2;
+  MAP_KEYS = 3;
+  MAP_VALUES = 4;
+  MAP_KEYS_AND_VALUES = 5;
 }
 
 enum FanType {

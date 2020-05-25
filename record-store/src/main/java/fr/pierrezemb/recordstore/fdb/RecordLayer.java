@@ -227,6 +227,24 @@ public class RecordLayer {
                 VersionKeyExpression.VERSION,
                 IndexTypes.VERSION);
               break;
+            case MAP_KEYS:
+              index = new Index(
+                indexName,
+                Key.Expressions.mapKeys(indexDefinition.getField())
+              );
+              break;
+            case MAP_VALUES:
+              index = new Index(
+                indexName,
+                Key.Expressions.mapValues(indexDefinition.getField())
+              );
+              break;
+            case MAP_KEYS_AND_VALUES:
+              index = new Index(
+                indexName,
+                Key.Expressions.mapKeyValues(indexDefinition.getField())
+              );
+              break;
             case UNRECOGNIZED:
               continue;
           }
