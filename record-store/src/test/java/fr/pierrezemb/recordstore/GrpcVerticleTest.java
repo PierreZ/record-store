@@ -76,13 +76,16 @@ public class GrpcVerticleTest {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
       .setSchema(dependencies)
-      // keep track of the versions
-      .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
-        .setIndexType(RecordStoreProtocol.IndexType.VERSION)
-        .build())
+      .addIndexRequest(
+        RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+          .setName("Person")
+          .addPrimaryKeyFields("id")
+          .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
+            .setIndexType(RecordStoreProtocol.IndexType.VERSION)
+            .build())
+          .build()
+      )
       .build();
 
     schemaServiceVertxStub.upsert(request, response -> {

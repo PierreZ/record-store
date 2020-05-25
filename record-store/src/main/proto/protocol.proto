@@ -53,10 +53,14 @@ message DeleteRecordResponse {
 }
 
 message UpsertSchemaRequest {
+  google.protobuf.FileDescriptorSet schema = 1;
+  repeated IndexSchemaRequest index_request = 2;
+}
+
+message IndexSchemaRequest {
   string name = 1;
   repeated string primary_key_fields = 2;
-  google.protobuf.FileDescriptorSet schema = 3;
-  repeated IndexDefinition index_definitions = 4;
+  repeated IndexDefinition index_definitions = 3;
 }
 
 message EmptyRequest {

@@ -77,8 +77,10 @@ public class SchemaAdminServiceTest {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
+      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+        .setName("Person")
+        .addPrimaryKeyFields("id")
+        .build())
       .setSchema(dependencies)
       .build();
 
@@ -114,11 +116,13 @@ public class SchemaAdminServiceTest {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
-      .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
-        .setField("name")
-        .setIndexType(RecordStoreProtocol.IndexType.VALUE)
+      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+        .setName("Person")
+        .addPrimaryKeyFields("id")
+        .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
+          .setField("name")
+          .setIndexType(RecordStoreProtocol.IndexType.VALUE)
+          .build())
         .build())
       .setSchema(dependencies)
       .build();
@@ -141,9 +145,11 @@ public class SchemaAdminServiceTest {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
-      // let's forget an index, this is working as we cannot delete an Index for now
+      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+        .setName("Person")
+        .addPrimaryKeyFields("id")
+        // let's forget an index, this is working as we cannot delete an Index for now
+        .build())
       .setSchema(dependencies)
       .build();
 
@@ -165,10 +171,12 @@ public class SchemaAdminServiceTest {
     // upsert old schema should be harmless
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
-      .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
-        .setField("name").build())
+      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+        .setName("Person")
+        .addPrimaryKeyFields("id")
+        .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
+          .setField("name").build())
+        .build())
       .setSchema(dependencies)
       .build();
 

@@ -28,17 +28,21 @@ public class PersonDataset implements Dataset {
     recordLayer.upsertSchema(
       tenant,
       container,
-      "Person",
       dependencies,
       ImmutableList.of(
-        RecordStoreProtocol.IndexDefinition.newBuilder()
-          .setIndexType(RecordStoreProtocol.IndexType.VALUE)
-          .setField("name").build(),
-        RecordStoreProtocol.IndexDefinition.newBuilder()
-          .setIndexType(RecordStoreProtocol.IndexType.VALUE)
-          .setField("email")
-          .build()),
-      ImmutableList.of("id")
+        RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+          .setName("Person")
+          .addAllIndexDefinitions(ImmutableList.of(
+            RecordStoreProtocol.IndexDefinition.newBuilder()
+              .setIndexType(RecordStoreProtocol.IndexType.VALUE)
+              .setField("name").build(),
+            RecordStoreProtocol.IndexDefinition.newBuilder()
+              .setIndexType(RecordStoreProtocol.IndexType.VALUE)
+              .setField("email")
+              .build()))
+          .addAllPrimaryKeyFields(ImmutableList.of("id"))
+          .build()
+      )
     );
 
     Faker faker = new Faker();
