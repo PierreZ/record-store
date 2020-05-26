@@ -100,6 +100,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     try {
       String queryPlan = this.recordLayer.getQueryPlan(tenantID, container, query);
       responseObserver.onNext(RecordStoreProtocol.GetQueryPlanResponse.newBuilder()
+        .setQueryPlan(query.toString())
         .setQueryPlan(queryPlan)
         .build());
       responseObserver.onCompleted();

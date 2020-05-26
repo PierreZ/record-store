@@ -39,6 +39,7 @@ message DeleteRecordRequest {
 
 message GetQueryPlanResponse {
   string query_plan = 1;
+  string parsedQuery = 2;
 }
 
 message ListContainerRequest {
