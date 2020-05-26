@@ -3,19 +3,24 @@ package fr.pierrezemb.recordstore.query;
 import com.apple.foundationdb.record.metadata.Key;
 import com.apple.foundationdb.record.metadata.expressions.VersionKeyExpression;
 import com.apple.foundationdb.record.query.RecordQuery;
+import com.apple.foundationdb.record.query.expressions.Field;
 import com.apple.foundationdb.record.query.expressions.Query;
 import com.apple.foundationdb.record.query.expressions.QueryComponent;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class GrpcQueryGenerator {
+  private static final Logger LOGGER = LoggerFactory.getLogger(GrpcQueryGenerator.class);
 
   public static RecordQuery generate(RecordStoreProtocol.QueryRequest request) {
     RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()
@@ -86,9 +91,39 @@ public class GrpcQueryGenerator {
         return Query.and(parseChildrenNodes(node.getAndNode()));
       case OR_NODE:
         return Query.or(parseChildrenNodes(node.getOrNode()));
+      case MAP_NODE:
+        return handleMapNode(node.getMapNode());
     }
     return null;
   }
+
+  private static QueryComponent handleMapNode(RecordStoreProtocol.MapNode mapNode) {
+
+    if (mapNode.hasKey() && !mapNode.hasValue()) {
+      return Query.field(mapNode.getField()).mapMatches(constructFunctionMatcher(mapNode.getKey()), null);
+    }
+
+    if (!mapNode.hasKey() && mapNode.hasValue()) {
+      return Query.field(mapNode.getField()).mapMatches(null, constructFunctionMatcher(mapNode.getValue()));
+    }
+
+    return Query.field(mapNode.getField()).mapMatches(
+      constructFunctionMatcher(mapNode.getKey()),
+      constructFunctionMatcher(mapNode.getValue())
+    );
+  }
+
+  private static Function<Field, QueryComponent> constructFunctionMatcher(RecordStoreProtocol.FieldNode node) {
+    return k -> {
+      try {
+        return switchOnOperations(k, node);
+      } catch (ParseException e) {
+        LOGGER.error("cannot parse key query of map {}: {}", node, e);
+        return null;
+      }
+    };
+  }
+
 
   private static List<QueryComponent> parseChildrenNodes(RecordStoreProtocol.OrNode node) throws ParseException {
     List<QueryComponent> queryComponents = new ArrayList<>();
@@ -110,25 +145,46 @@ public class GrpcQueryGenerator {
     if (node == null) {
       throw new ParseException("node is null", 0);
     }
+
+    Field temporaryQuery = Query.field(node.getField());
+
+    return switchOnOperations(temporaryQuery, node);
+  }
+
+  private static QueryComponent switchOnOperations(Field temporaryQuery, RecordStoreProtocol.FieldNode node) throws ParseException {
     switch (node.getOperation()) {
       case GREATER_THAN_OR_EQUALS:
-        return Query.field(node.getField()).greaterThanOrEquals(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated() ?
+          temporaryQuery.oneOfThem().greaterThanOrEquals(parseValue(node)) :
+          temporaryQuery.greaterThanOrEquals(parseValue(node));
       case LESS_THAN_OR_EQUALS:
-        return Query.field(node.getField()).lessThanOrEquals(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated() ?
+          temporaryQuery.oneOfThem().lessThanOrEquals(parseValue(node)) :
+          temporaryQuery.lessThanOrEquals(parseValue(node));
       case GREATER_THAN:
-        return Query.field(node.getField()).greaterThan(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated() ?
+          temporaryQuery.oneOfThem().greaterThan(parseValue(node)) :
+          temporaryQuery.greaterThan(parseValue(node));
       case LESS_THAN:
-        return Query.field(node.getField()).lessThan(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated() ?
+          temporaryQuery.oneOfThem().lessThan(parseValue(node)) :
+          temporaryQuery.lessThan(parseValue(node));
       case START_WITH:
-        return Query.field(node.getField()).startsWith(String.valueOf(parseValue(node)));
+        return node.getIsFieldDefinedAsRepeated() ?
+          temporaryQuery.oneOfThem().startsWith(String.valueOf(parseValue(node))) :
+          temporaryQuery.startsWith(String.valueOf(parseValue(node)));
       case IS_EMPTY:
         return Query.field(node.getField()).isEmpty();
       case IS_NULL:
         return Query.field(node.getField()).isNull();
       case EQUALS:
-        return Query.field(node.getField()).equalsValue(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated() ?
+          temporaryQuery.oneOfThem().equalsValue(parseValue(node)) :
+          temporaryQuery.equalsValue(parseValue(node));
       case NOT_EQUALS:
-        return Query.field(node.getField()).notEquals(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated() ?
+          temporaryQuery.oneOfThem().notEquals(parseValue(node)) :
+          temporaryQuery.notEquals(parseValue(node));
       case NOT_NULL:
         return Query.field(node.getField()).notNull();
       case MATCHES:
@@ -142,8 +198,9 @@ public class GrpcQueryGenerator {
         return Query.field(node.getField()).text().containsAll(node.getTokensList());
       case UNRECOGNIZED:
         throw new ParseException("unrecognized field on node " + node.toString(), 0);
+      default:
+        throw new IllegalStateException("Unexpected value: " + node.getOperation());
     }
-    return null;
   }
 
   private static Object parseValue(RecordStoreProtocol.FieldNode node) throws ParseException {

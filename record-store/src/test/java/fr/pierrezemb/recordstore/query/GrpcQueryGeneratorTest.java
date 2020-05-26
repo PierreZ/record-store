@@ -16,6 +16,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -42,13 +43,158 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
     RecordQuery query = GrpcQueryGenerator.generate(request);
 
     List<Message> results = this.recordLayer.queryRecords(DatasetsLoader.DEFAULT_DEMO_TENANT, "PERSONS", query);
-    Assert.assertEquals("bad length of results", expectedResult, results.size());
+    if (expectedResult == -1) {
+      Assert.assertTrue("empty results", results.size() > 0);
+    } else {
+      Assert.assertEquals("bad length of results", expectedResult, results.size());
+    }
   }
 
   private Stream<Arguments> generateRequest() {
     return Stream.of(
+      // all records
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
         .setTable("Person")
+        .build(), 100),
+
+      // get on id
+      Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
+        .setTable("Person")
+        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
+          .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+            .setField("id").setInt64Value(1)
+            .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+            .build())
+          .build())
+        .build(), 1),
+
+      // range
+      Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
+        .setTable("Person")
+        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
+          .setAndNode(RecordStoreProtocol.AndNode.newBuilder()
+            .addNodes(RecordStoreProtocol.Node.newBuilder()
+              .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+                .setField("id")
+                .setInt64Value(1)
+                .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+                .build())
+              .build())
+            .addNodes(RecordStoreProtocol.Node.newBuilder()
+              .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+                .setInt64Value(10)
+                .setField("id")
+                .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+                .build())
+              .build())
+            .build())
+          .build())
+        .build(), 10),
+
+      // or
+      Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
+        .setTable("Person")
+        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
+          .setOrNode(RecordStoreProtocol.OrNode.newBuilder()
+            .addNodes(RecordStoreProtocol.Node.newBuilder()
+              .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+                .setField("id")
+                .setInt64Value(1)
+                .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+                .build())
+              .build())
+            .addNodes(RecordStoreProtocol.Node.newBuilder()
+              .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+                .setInt64Value(10)
+                .setField("id")
+                .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+                .build())
+              .build())
+            .build())
+          .build())
+        .build(), 2),
+
+      // text index any
+      Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
+        .setTable("Person")
+        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
+          .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+            .setField("rick_and_morty_quotes")
+            .setOperation(RecordStoreProtocol.FieldOperation.TEXT_CONTAINS_ANY)
+            .addTokens("jerry")
+            .build())
+          .build())
+        .build(), -1),
+
+      // text index all
+      Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
+        .setTable("Person")
+        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
+          .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+            .setField("rick_and_morty_quotes")
+            .setOperation(RecordStoreProtocol.FieldOperation.TEXT_CONTAINS_ALL)
+            .addAllTokens(Arrays.asList("MR MEESEEKS LOOK AT ME".toLowerCase().split(" ")))
+            .build())
+          .build())
+        .build(), -1),
+
+      // query over a repeated field
+      Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
+        .setTable("Person")
+        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
+          .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+            .setField("beers")
+            .setIsFieldDefinedAsRepeated(true)
+            .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+            .setStringValue("Trappistes Rochefort 10")
+            .build())
+          .build())
+        .build(), -1),
+
+      // query over an indexed map with constraint on key and value
+      Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
+        .setTable("Person")
+        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
+          .setMapNode(RecordStoreProtocol.MapNode.newBuilder()
+            .setField("favorite_locations_from_tv")
+            .setKey(RecordStoreProtocol.FieldNode.newBuilder()
+              .setOperation(RecordStoreProtocol.FieldOperation.START_WITH)
+              .setStringValue("hitchhikers_guide")
+              .build())
+            .setValue(RecordStoreProtocol.FieldNode.newBuilder()
+              .setStringValue("Eroticon VI")
+              .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+              .build())
+            .build())
+          .build())
+        .build(), -1),
+
+      // query over an indexed map with constraint on value
+      Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
+        .setTable("Person")
+        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
+          .setMapNode(RecordStoreProtocol.MapNode.newBuilder()
+            .setField("favorite_locations_from_tv")
+            .setValue(RecordStoreProtocol.FieldNode.newBuilder()
+              .setStringValue("Earth")
+              .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+              .build())
+            .build())
+          .build())
+        .build(), -1),
+
+      // query over an indexed map with constraint on key
+      Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
+        .setTable("Person")
+        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
+          .setMapNode(RecordStoreProtocol.MapNode.newBuilder()
+            .setField("favorite_locations_from_tv")
+            .setKey(RecordStoreProtocol.FieldNode.newBuilder()
+              .setStringValue("hitch")
+              .setOperation(RecordStoreProtocol.FieldOperation.START_WITH)
+              .build())
+            .build())
+          .build())
         .build(), 100)
     );
   }

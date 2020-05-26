@@ -414,6 +414,8 @@ public class RecordLayer {
       throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("bad query"));
     }
 
+    LOGGER.info(query.toString());
+
     RecordQueryPlan plan = r.planQuery(query);
     LOGGER.info("running query for {}/{}: '{}'", tenantID, container, plan);
 

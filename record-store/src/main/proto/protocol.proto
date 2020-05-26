@@ -207,12 +207,27 @@ message Node {
     FieldNode field_node = 1;
     AndNode and_node = 2;
     OrNode or_node = 3;
+    // apply operation on a indexed map
+    MapNode map_node = 4;
   }
+}
+
+// apply operation on a indexed map
+// https://github.com/FoundationDB/fdb-record-layer/blob/8bb20ae0634c792b69ad35385fb26d232379b76b/fdb-record-layer-core/src/test/java-proto2/com/apple/foundationdb/record/provider/foundationdb/MapsTest.java#L108
+message MapNode {
+  // which field is holding the map
+  string field = 1;
+  // the query to perform on the key
+  FieldNode key = 2;
+  // the query to perform on the value
+  FieldNode value = 3;
 }
 
 message FieldNode {
   string field = 1;
   FieldOperation operation = 2;
+  // set this to true if your field is repeated
+  bool is_field_defined_as_repeated = 3;
   oneof value {
     string string_value = 11;
     int32 int32_value = 12;

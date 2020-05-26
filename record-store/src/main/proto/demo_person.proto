@@ -8,7 +8,12 @@ message Person {
   int64 id = 1;
   string name = 2;
   string email = 3;
+  // search over a repeated fields
   repeated string beers = 4;
+  // test of the text index
+  string rick_and_morty_quotes = 5;
+  // test of indexed map
+  map<string, string> favorite_locations_from_tv = 6;
 }
 
 message RecordTypeUnion {

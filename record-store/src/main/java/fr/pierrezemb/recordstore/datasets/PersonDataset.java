@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 public class PersonDataset implements Dataset {
@@ -42,6 +43,14 @@ public class PersonDataset implements Dataset {
             RecordStoreProtocol.IndexDefinition.newBuilder()
               .setIndexType(RecordStoreProtocol.IndexType.VALUE)
               .setField("email")
+              .build(),
+            RecordStoreProtocol.IndexDefinition.newBuilder()
+              .setIndexType(RecordStoreProtocol.IndexType.MAP_KEYS_AND_VALUES)
+              .setField("favorite_locations_from_tv")
+              .build(),
+            RecordStoreProtocol.IndexDefinition.newBuilder()
+              .setIndexType(RecordStoreProtocol.IndexType.TEXT_DEFAULT_TOKENIZER)
+              .setField("rick_and_morty_quotes")
               .build()))
           .addAllPrimaryKeyFields(ImmutableList.of("id"))
           .build()
@@ -52,17 +61,24 @@ public class PersonDataset implements Dataset {
 
     for (int i = 0; i < nbrRecord; i++) {
 
-      int maxBeers = i % 5;
       ArrayList<String> beers = new ArrayList<>();
-      for (int j = 0; j < maxBeers; j++) {
+      for (int j = 0; j < 5; j++) {
         beers.add(faker.beer().name());
       }
+
+      HashMap<String, String> favoritePlanets = new HashMap<>();
+      favoritePlanets.put("hitchhikers_guide_to_the_galaxy", faker.hitchhikersGuideToTheGalaxy().planet());
+      favoritePlanets.put("rick_and_morty", faker.rickAndMorty().location());
+      favoritePlanets.put("star_trek", faker.starTrek().location());
+
 
       DemoPersonProto.Person person = DemoPersonProto.Person.newBuilder()
         .setId(i)
         .setName(faker.funnyName().name())
         .setEmail(faker.internet().emailAddress())
         .addAllBeers(beers)
+        .setRickAndMortyQuotes(faker.rickAndMorty().quote())
+        .putAllFavoriteLocationsFromTv(favoritePlanets)
         .build();
 
       if (LOGGER.isTraceEnabled()) {
