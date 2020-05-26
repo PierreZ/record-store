@@ -201,51 +201,11 @@ public class RecordLayer {
       LOGGER.trace("adding indexes for {}", idxRequest.getName());
       // add new indexes
       for (RecordStoreProtocol.IndexDefinition indexDefinition : idxRequest.getIndexDefinitionsList()) {
-        String indexName = idxRequest.getName() + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString();
+
+        String indexName = generateIndexName(idxRequest.getName(), indexDefinition);
+        Index index = createIndex(indexDefinition, indexName);
         if (!oldIndexesNames.contains(indexName)) {
           LOGGER.trace("adding new index {} of type {}", indexName, indexDefinition.getIndexType());
-          Index index = null;
-          switch (indexDefinition.getIndexType()) {
-            case VALUE:
-              index = new Index(
-                indexName,
-                Key.Expressions.field(indexDefinition.getField(), getFanType(indexDefinition.getFanType())),
-                IndexTypes.VALUE);
-              break;
-            // https://github.com/FoundationDB/fdb-record-layer/blob/e70d3f9b5cec1cf37b6f540d4e673059f2a628ab/fdb-record-layer-core/src/main/java/com/apple/foundationdb/record/provider/foundationdb/indexes/TextIndexMaintainer.java#L81-L93
-            case TEXT_DEFAULT_TOKENIZER:
-              index = new Index(
-                indexName,
-                Key.Expressions.field(indexDefinition.getField(), getFanType(indexDefinition.getFanType())),
-                IndexTypes.TEXT);
-              break;
-            case VERSION:
-              index = new Index(
-                indexName,
-                VersionKeyExpression.VERSION,
-                IndexTypes.VERSION);
-              break;
-            case MAP_KEYS:
-              index = new Index(
-                indexName,
-                Key.Expressions.mapKeys(indexDefinition.getField())
-              );
-              break;
-            case MAP_VALUES:
-              index = new Index(
-                indexName,
-                Key.Expressions.mapValues(indexDefinition.getField())
-              );
-              break;
-            case MAP_KEYS_AND_VALUES:
-              index = new Index(
-                indexName,
-                Key.Expressions.mapKeyValues(indexDefinition.getField())
-              );
-              break;
-            case UNRECOGNIZED:
-              continue;
-          }
           metadataBuilder.addIndex(idxRequest.getName(), index);
         }
       }
@@ -261,6 +221,71 @@ public class RecordLayer {
     }
 
     return metadataBuilder.build();
+  }
+
+  private String generateIndexName(String name, RecordStoreProtocol.IndexDefinition indexDefinition) {
+    if (!indexDefinition.hasNestedIndex()) {
+      return name + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString();
+    }
+    return name + "_idx_" + indexDefinition.getField() + "_nested_" + generateIndexName(name, indexDefinition.getNestedIndex());
+  }
+
+  private Index createIndex(RecordStoreProtocol.IndexDefinition indexDefinition, String indexName) {
+    Index index = null;
+
+    if (indexDefinition.hasNestedIndex()) {
+      return new Index(
+        indexName,
+        Key.Expressions.field(indexDefinition.getField(), getFanType(indexDefinition.getFanType()))
+          .nest(createKeyExpressionFromIndexDefinition(indexDefinition.getNestedIndex())));
+    }
+
+    switch (indexDefinition.getIndexType()) {
+      case VALUE:
+        index = new Index(
+          indexName,
+          Key.Expressions.field(indexDefinition.getField(), getFanType(indexDefinition.getFanType())),
+          IndexTypes.VALUE);
+        break;
+      // https://github.com/FoundationDB/fdb-record-layer/blob/e70d3f9b5cec1cf37b6f540d4e673059f2a628ab/fdb-record-layer-core/src/main/java/com/apple/foundationdb/record/provider/foundationdb/indexes/TextIndexMaintainer.java#L81-L93
+      case TEXT_DEFAULT_TOKENIZER:
+        index = new Index(
+          indexName,
+          Key.Expressions.field(indexDefinition.getField(), getFanType(indexDefinition.getFanType())),
+          IndexTypes.TEXT);
+        break;
+      case VERSION:
+        index = new Index(
+          indexName,
+          VersionKeyExpression.VERSION,
+          IndexTypes.VERSION);
+        break;
+      case MAP_KEYS:
+        index = new Index(
+          indexName,
+          Key.Expressions.mapKeys(indexDefinition.getField())
+        );
+        break;
+      case MAP_VALUES:
+        index = new Index(
+          indexName,
+          Key.Expressions.mapValues(indexDefinition.getField())
+        );
+        break;
+      case MAP_KEYS_AND_VALUES:
+        index = new Index(
+          indexName,
+          Key.Expressions.mapKeyValues(indexDefinition.getField())
+        );
+        break;
+      case UNRECOGNIZED:
+        return null;
+    }
+    return index;
+  }
+
+  private KeyExpression createKeyExpressionFromIndexDefinition(RecordStoreProtocol.IndexDefinition nestedIndex) {
+    return Key.Expressions.field(nestedIndex.getField(), getFanType(nestedIndex.getFanType()));
   }
 
   private KeyExpression.FanType getFanType(RecordStoreProtocol.FanType fanType) {

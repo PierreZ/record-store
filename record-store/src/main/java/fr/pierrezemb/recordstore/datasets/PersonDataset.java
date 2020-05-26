@@ -51,6 +51,12 @@ public class PersonDataset implements Dataset {
             RecordStoreProtocol.IndexDefinition.newBuilder()
               .setIndexType(RecordStoreProtocol.IndexType.TEXT_DEFAULT_TOKENIZER)
               .setField("rick_and_morty_quotes")
+              .build(),
+            RecordStoreProtocol.IndexDefinition.newBuilder()
+              .setField("address")
+              .setNestedIndex(RecordStoreProtocol.IndexDefinition.newBuilder()
+                .setField("city")
+                .build())
               .build()))
           .addAllPrimaryKeyFields(ImmutableList.of("id"))
           .build()
@@ -71,6 +77,10 @@ public class PersonDataset implements Dataset {
       favoritePlanets.put("rick_and_morty", faker.rickAndMorty().location());
       favoritePlanets.put("star_trek", faker.starTrek().location());
 
+      DemoPersonProto.Address address = DemoPersonProto.Address.newBuilder()
+        .setFullAddress(faker.address().fullAddress())
+        .setCity(faker.address().cityName())
+        .build();
 
       DemoPersonProto.Person person = DemoPersonProto.Person.newBuilder()
         .setId(i)
@@ -79,6 +89,7 @@ public class PersonDataset implements Dataset {
         .addAllBeers(beers)
         .setRickAndMortyQuotes(faker.rickAndMorty().quote())
         .putAllFavoriteLocationsFromTv(favoritePlanets)
+        .setAddress(address)
         .build();
 
       if (LOGGER.isTraceEnabled()) {

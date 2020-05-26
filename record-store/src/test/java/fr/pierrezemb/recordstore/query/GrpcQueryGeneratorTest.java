@@ -195,7 +195,23 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
               .build())
             .build())
           .build())
-        .build(), 100)
+        .build(), 100),
+
+      // query over an indexed nested field
+      Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
+        .setTable("Person")
+        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
+          .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+            .setField("address")
+            .setOperation(RecordStoreProtocol.FieldOperation.MATCHES)
+            .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+              .setField("city")
+              .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+              .setStringValue("Antown")
+              .build())
+            .build())
+          .build())
+        .build(), -1)
     );
   }
 }

@@ -130,6 +130,9 @@ message IndexDefinition {
   string field = 1;
   IndexType index_type = 2;
   FanType fan_type = 3;
+  // the nestedIndex should point within the nested struct
+  // the nested index should only have field and fan_type set.
+  IndexDefinition nestedIndex = 4;
 }
 
 enum IndexType {

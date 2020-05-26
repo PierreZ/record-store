@@ -14,6 +14,13 @@ message Person {
   string rick_and_morty_quotes = 5;
   // test of indexed map
   map<string, string> favorite_locations_from_tv = 6;
+  // test of nested index and query
+  Address address = 7;
+}
+
+message Address {
+  string full_address = 1;
+  string city = 2;
 }
 
 message RecordTypeUnion {
