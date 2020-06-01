@@ -16,6 +16,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.junit5.web.VertxWebClientExtension;
 import io.vertx.junit5.web.WebClientOptionsInject;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -71,5 +72,11 @@ class GraphQLVerticleTest extends AbstractFDBContainer {
       .expect(
         bodyResponse(Buffer.buffer(schema), "text/plain")
       ).send(testContext);
+  }
+
+  @AfterAll
+  public void afterAll(Vertx vertx, VertxTestContext testContext) throws Exception {
+    vertx.close();
+    testContext.completeNow();
   }
 }

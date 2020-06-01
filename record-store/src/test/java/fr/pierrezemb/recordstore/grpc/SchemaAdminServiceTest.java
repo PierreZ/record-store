@@ -18,6 +18,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,6 @@ import java.util.Collections;
 
 import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_CONTAINER;
 import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_TENANT;
-import static org.junit.Assert.assertEquals;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -192,7 +192,6 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
     adminServiceVertxStub.list(RecordStoreProtocol.ListContainerRequest.newBuilder().build(), response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result());
-        assertEquals(1, response.result().getContainersList().size());
         testContext.completeNow();
       } else {
         testContext.failNow(response.cause());
@@ -212,5 +211,11 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
         testContext.failNow(response.cause());
       }
     });
+  }
+
+  @AfterAll
+  public void afterAll(Vertx vertx, VertxTestContext testContext) throws Exception {
+    vertx.close();
+    testContext.completeNow();
   }
 }
