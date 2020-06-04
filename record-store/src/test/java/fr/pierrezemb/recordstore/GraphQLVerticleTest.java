@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
@@ -49,7 +50,8 @@ class GraphQLVerticleTest extends AbstractFDBContainer {
   void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws InterruptedException, TimeoutException, ExecutionException {
 
     clusterFile = container.getClusterFile();
-    recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), vertx.isMetricsEnabled());
+    SecretKeySpec secretKey = new SecretKeySpec(GrpcVerticle.DEFAULT_ENCRYPTION_KEY.getBytes(), "AES");
+    recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), vertx.isMetricsEnabled(), secretKey);
 
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()

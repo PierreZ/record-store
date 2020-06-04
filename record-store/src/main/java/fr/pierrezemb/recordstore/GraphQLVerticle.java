@@ -15,6 +15,8 @@ import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.spec.SecretKeySpec;
+
 public class GraphQLVerticle extends AbstractVerticle {
   private static final Logger LOGGER = LoggerFactory.getLogger(GraphQLVerticle.class);
   private RecordLayer recordLayer;
@@ -33,7 +35,10 @@ public class GraphQLVerticle extends AbstractVerticle {
       .setEnabled(true);
 
     String clusterFilePath = this.context.config().getString("fdb-cluster-file", "/var/fdb/fdb.cluster");
-    recordLayer = new RecordLayer(clusterFilePath, vertx.isMetricsEnabled());
+    byte[] key = this.context.config().getString("encryption-key", GrpcVerticle.DEFAULT_ENCRYPTION_KEY).getBytes();
+    SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+
+    recordLayer = new RecordLayer(clusterFilePath, vertx.isMetricsEnabled(), secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
     datasetsLoader.LoadDataset(this.context.config().getString("load-demo", "PERSONS"));
