@@ -525,6 +525,7 @@ public class RecordLayer {
 
     TransformedRecordSerializer<Message> serializer = TransformedRecordSerializerJCE.newDefaultBuilder()
       .setEncryptWhenSerializing(true)
+      .setCompressWhenSerializing(true)
       .setEncryptionKey(key)
       .build();
 
