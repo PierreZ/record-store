@@ -308,16 +308,16 @@ public class RecordLayer {
   }
 
   private KeyExpression buildPrimaryKeyExpression(List<String> primaryKeyFields) {
-    if (primaryKeyFields.size() == 1) {
-      return Key.Expressions.field(primaryKeyFields.get(0));
-    }
+    List<KeyExpression> keyExpressions = primaryKeyFields
+      .stream()
+      .map(Key.Expressions::field)
+      .collect(Collectors.toList());
 
-    return Key.Expressions.concat(
-      primaryKeyFields
-        .stream()
-        .map(Key.Expressions::field)
-        .collect(Collectors.toList())
-    );
+    // adding the recordType in the key expressions. Following advices from
+    // https://forums.foundationdb.org/t/split-long-record-causes-conflict-with-other-record/2160/2?u=pierrez
+    keyExpressions.add(0, Key.Expressions.recordType());
+
+    return Key.Expressions.concat(keyExpressions);
   }
 
   public Tuple getCountAndCountUpdates(String tenantID, String container) {
@@ -539,6 +539,4 @@ public class RecordLayer {
 
     return recordStoreProvider.apply(context);
   }
-
-
 }
