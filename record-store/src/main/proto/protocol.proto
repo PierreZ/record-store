@@ -165,6 +165,12 @@ message QueryRequest {
   int64 resultLimit = 4;
   SortByRequest sort_by = 5;
   repeated string fields_to_return = 6;
+  QueryIsolationLevel query_isolation_level = 7;
+}
+
+enum QueryIsolationLevel {
+  SERIALIZABLE = 0;
+  SNAPSHOT = 1;
 }
 
 message SortByRequest {

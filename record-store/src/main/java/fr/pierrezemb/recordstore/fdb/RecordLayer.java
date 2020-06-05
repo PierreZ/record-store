@@ -390,16 +390,16 @@ public class RecordLayer {
       .join();
   }
 
-  public void queryRecords(String tenantID, String container, RecordQuery query, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
-    queryRecords(tenantID, container, query, defaultKey, responseObserver);
+  public void queryRecords(String tenantID, String container, RecordQuery query, IsolationLevel isolationLevel, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
+    queryRecords(tenantID, container, query, isolationLevel, defaultKey, responseObserver);
   }
 
-  public void queryRecords(String tenantID, String container, RecordQuery query, SecretKey key, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
+  public void queryRecords(String tenantID, String container, RecordQuery query, IsolationLevel isolationLevel, SecretKey key, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
     FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
     FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
 
-    this.executeQuery(r, query, tenantID, container)
+    this.executeQuery(r, query, isolationLevel, tenantID, container)
       .map(e -> {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
@@ -455,6 +455,10 @@ public class RecordLayer {
   }
 
   private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query, String tenantID, String container) {
+    return this.executeQuery(r, query, IsolationLevel.SERIALIZABLE, tenantID, container);
+  }
+
+  private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query, IsolationLevel isolationLevel, String tenantID, String container) {
     // TODO: handle errors instead of throwing null
     if (query == null) {
       LOGGER.error("query is null, skipping");
@@ -467,7 +471,7 @@ public class RecordLayer {
     LOGGER.info("running query for {}/{}: '{}'", tenantID, container, plan);
 
     ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
-      .setIsolationLevel(IsolationLevel.SERIALIZABLE)
+      .setIsolationLevel(isolationLevel)
       .setDefaultCursorStreamingMode(CursorStreamingMode.ITERATOR); // either WANT_ALL OR streaming mode
 
     executeProperties.setScannedBytesLimit(1_000_000); // 1MB

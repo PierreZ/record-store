@@ -1,5 +1,6 @@
 package fr.pierrezemb.recordstore.grpc;
 
+import com.apple.foundationdb.record.IsolationLevel;
 import com.apple.foundationdb.record.query.RecordQuery;
 import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
@@ -52,9 +53,12 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String container = GrpcContextKeys.getContainerOrFail();
     RecordQuery query = GrpcQueryGenerator.generate(request);
+    IsolationLevel isolationLevel = request
+      .getQueryIsolationLevel().equals(RecordStoreProtocol.QueryIsolationLevel.SERIALIZABLE) ?
+      IsolationLevel.SERIALIZABLE : IsolationLevel.SNAPSHOT;
 
     try {
-      this.recordLayer.queryRecords(tenantID, container, query, responseObserver);
+      this.recordLayer.queryRecords(tenantID, container, query, isolationLevel, responseObserver);
       responseObserver.onCompleted();
     } catch (RuntimeException e) {
       log.error(e.getMessage());
