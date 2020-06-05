@@ -24,11 +24,11 @@ import static com.clevercloud.biscuit.token.builder.Utils.rule;
 import static com.clevercloud.biscuit.token.builder.Utils.s;
 import static com.clevercloud.biscuit.token.builder.Utils.string;
 import static com.clevercloud.biscuit.token.builder.Utils.var;
+import static fr.pierrezemb.recordstore.Constants.CONFIG_BISCUIT_KEY_DEFAULT;
 import static io.vavr.API.Left;
 import static io.vavr.API.Right;
 
 public class BiscuitManager {
-  public static final String DEFAULT_BISCUIT_KEY = "3A8621F1847F19D6DAEAB5465CE8D3908B91C66FB9AF380D508FCF9253458907";
   private static final Logger LOGGER = LoggerFactory.getLogger(BiscuitManager.class);
   private final SymbolTable symbols;
   KeyPair root;
@@ -41,7 +41,7 @@ public class BiscuitManager {
   }
 
   public BiscuitManager() {
-    this(DEFAULT_BISCUIT_KEY);
+    this(CONFIG_BISCUIT_KEY_DEFAULT);
   }
 
   public String create(String tenant, List<String> authorizedContainers) {

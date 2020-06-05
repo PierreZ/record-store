@@ -4,7 +4,7 @@ import com.apple.foundationdb.record.query.RecordQuery;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import fr.pierrezemb.recordstore.AbstractFDBContainer;
-import fr.pierrezemb.recordstore.GrpcVerticle;
+import fr.pierrezemb.recordstore.Constants;
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
@@ -37,7 +37,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
   void beforeAll() throws IOException, InterruptedException, TimeoutException, ExecutionException, Descriptors.DescriptorValidationException {
 
     clusterFile = container.getClusterFile();
-    SecretKeySpec secretKey = new SecretKeySpec(GrpcVerticle.DEFAULT_ENCRYPTION_KEY.getBytes(), "AES");
+    SecretKeySpec secretKey = new SecretKeySpec(Constants.CONFIG_ENCRYPTION_KEY_DEFAULT.getBytes(), "AES");
     recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false, secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);

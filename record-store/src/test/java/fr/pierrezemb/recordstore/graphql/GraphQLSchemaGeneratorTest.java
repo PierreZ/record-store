@@ -4,7 +4,7 @@ import com.apple.foundationdb.record.RecordMetaData;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.AbstractFDBContainer;
-import fr.pierrezemb.recordstore.GrpcVerticle;
+import fr.pierrezemb.recordstore.Constants;
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,7 +29,7 @@ class GraphQLSchemaGeneratorTest extends AbstractFDBContainer {
   void setUp() throws InterruptedException, ExecutionException, TimeoutException, InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
     clusterFile = container.getClusterFile();
 
-    SecretKeySpec secretKey = new SecretKeySpec(GrpcVerticle.DEFAULT_ENCRYPTION_KEY.getBytes(), "AES");
+    SecretKeySpec secretKey = new SecretKeySpec(Constants.CONFIG_ENCRYPTION_KEY_DEFAULT.getBytes(), "AES");
     recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false, secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
