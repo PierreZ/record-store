@@ -1,34 +1,35 @@
 # record-store ![record-store](https://github.com/PierreZ/record-store/workflows/record-store/badge.svg?branch=master) ![java-client](https://github.com/PierreZ/record-store/workflows/java-client/badge.svg?branch=master)
 
-## Building
+A lightmulti-model, user-defined place for your data.
 
-### Requirements
+## Features
 
-* JDK 11 or more
-* Docker (for testing)
-* gradle 6.2.2
-* [FoundationDB Client Packages](https://www.foundationdb.org/download/)
+##### Light
 
-### Configure IntelliJ
+We created the notion of `container`, something that is lighter than a full table. Start a container for any kind of data than you need to manage.
 
-Please enable annotation processing and obtain them frm project classpath.
+With it, you can imagine start some `data containers` for each integrations tests. Or per environment. The choice is yours.
 
-### Gradle cheat-sheet
+##### Developer-oriented experience
 
-#### Record-store
+We care about developers, so we created the perfect place for them to store data.
 
-To launch your tests:
-```
-./gradlew :record-store:test
-```
+##### Scalable
 
-To package your application:
-```
-./gradlew :record-store:assemble
-```
+We are based on the same tech behind [CloudKit](https://www.foundationdb.org/files/record-layer-paper.pdf) called the Record Layer.
 
-To run your application:
-```
-./gradlew :record-store:run
-```
+> CloudKit uses the Record Layer to host billions of independent database
 
+The name of this project itself is a tribute to the Record Layer. We are exposing the layer within a gRPC protocol.
+
+##### Encrypted
+
+Data are encrypted by default.
+
+#### multi-model
+
+For each `container`, you can define a `schema`, which is in-fact only a `Protobuf` definition. You need to store some `users`, or a more complicated structure? If you can represent it as `Protobuf`, you are good to go!
+
+## Building and contribute
+
+See the following guide [./BUILDING.md](./BUILDING.md)
