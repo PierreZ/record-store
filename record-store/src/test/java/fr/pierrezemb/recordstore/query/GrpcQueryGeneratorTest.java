@@ -3,7 +3,6 @@ package fr.pierrezemb.recordstore.query;
 import com.apple.foundationdb.record.query.RecordQuery;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
-import fr.pierrezemb.recordstore.AbstractFDBContainer;
 import fr.pierrezemb.recordstore.Constants;
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
@@ -14,6 +13,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.testcontainers.containers.AbstractFDBContainer;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;

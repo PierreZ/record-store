@@ -1,0 +1,15 @@
+plugins {
+  id 'java-library'
+  id 'idea'
+}
+description = "TestContainers :: FoundationDB"
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile "org.testcontainers:testcontainers:1.14.3"
+}

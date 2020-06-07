@@ -1,17 +1,14 @@
-package fr.pierrezemb.recordstore;
+package fr.pierrezemb.recordstore.client;
 
+import fr.pierrezemb.recordstore.Constants;
+import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
-import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
-import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
-import io.grpc.ManagedChannel;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -19,20 +16,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.AbstractFDBContainer;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class GrpcVerticleTestUnauthorized extends AbstractFDBContainer {
+class RecordStoreClientTest extends AbstractFDBContainer {
 
   public static final String DEFAULT_TENANT = "my-tenant";
   public final int port = PortManager.nextFreePort();
-  private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
   private File clusterFile;
+  private BiscuitClientCredential credentials;
 
   @BeforeAll
-  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
+  void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
 
     clusterFile = container.getClusterFile();
 
@@ -43,33 +39,24 @@ public class GrpcVerticleTestUnauthorized extends AbstractFDBContainer {
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
-    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT + "dsa", sealedBiscuit, this.getClass().getName());
+    System.out.println(sealedBiscuit);
+    credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, this.getClass().getName());
 
     // deploy verticle
     vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
-    ManagedChannel channel = VertxChannelBuilder
-      .forAddress(vertx, "localhost", port)
-      .usePlaintext(true)
-      .build();
-
-    adminServiceVertxStub = AdminServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
   }
 
   @Test
-  public void testBadAuth(Vertx vertx, VertxTestContext testContext) throws Exception {
+  public void testCreateClient(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    adminServiceVertxStub.ping(RecordStoreProtocol.EmptyRequest.newBuilder().build(), response -> {
-      if (response.succeeded()) {
-        testContext.failNow(response.cause());
-      } else {
-        testContext.completeNow();
-      }
-    });
-  }
+    RecordStoreClient recordStoreClient = new RecordStoreClient.Builder()
+      .withContainer(this.getClass().getName())
+      .withTenant(DEFAULT_TENANT)
+      .withToken(credentials.toString())
+      .withAddress("localhost:" + port)
+      .build();
 
-  @AfterAll
-  public void afterAll(Vertx vertx, VertxTestContext testContext) throws Exception {
-    vertx.close();
     testContext.completeNow();
+
   }
 }

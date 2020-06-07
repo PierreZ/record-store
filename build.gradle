@@ -3,3 +3,8 @@ allprojects {
     mavenCentral()
   }
 }
+ext {
+  vertxVersion = '3.8.5'
+  junitJupiterEngineVersion = '5.4.0'
+  autoValueVersion = '1.7.2'
+}

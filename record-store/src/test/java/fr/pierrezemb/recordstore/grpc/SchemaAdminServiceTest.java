@@ -1,7 +1,6 @@
 package fr.pierrezemb.recordstore.grpc;
 
 import com.google.protobuf.DescriptorProtos;
-import fr.pierrezemb.recordstore.AbstractFDBContainer;
 import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.PortManager;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
@@ -24,9 +23,9 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.containers.AbstractFDBContainer;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 
 import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_CONTAINER;
@@ -42,7 +41,7 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
   private File clusterFile;
 
   @BeforeAll
-  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
+  void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
 
     clusterFile = container.getClusterFile();
 
