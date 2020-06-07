@@ -23,6 +23,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+/**
+ * GrpcQueryGeneratorTest is using the ./record-store/src/main/proto/demo_person.proto
+ * protobuf to test some queries
+ */
 class GrpcQueryGeneratorTest extends AbstractFDBContainer {
   private File clusterFile;
   private RecordLayer recordLayer;

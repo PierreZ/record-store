@@ -48,9 +48,9 @@ public class GrpcQueryGenerator {
           break;
         case SORT_BY_VALUE_REVERSED:
           queryBuilder.setSort(Key.Expressions.field(request.getSortBy().getField()), true);
-        case UNRECOGNIZED:
-          System.out.println("unknown sort by");
           break;
+        case UNRECOGNIZED:
+          throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("cannot recognize sortBy"));
       }
     }
 
