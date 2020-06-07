@@ -15,6 +15,8 @@ import com.apple.foundationdb.record.metadata.Key;
 import com.apple.foundationdb.record.metadata.MetaDataEvolutionValidator;
 import com.apple.foundationdb.record.metadata.expressions.KeyExpression;
 import com.apple.foundationdb.record.metadata.expressions.VersionKeyExpression;
+import com.apple.foundationdb.record.provider.common.TransformedRecordSerializer;
+import com.apple.foundationdb.record.provider.common.TransformedRecordSerializerJCE;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabase;
 import com.apple.foundationdb.record.provider.foundationdb.FDBDatabaseFactory;
 import com.apple.foundationdb.record.provider.foundationdb.FDBMetaDataStore;
@@ -41,6 +43,7 @@ import io.vertx.core.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.SecretKey;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,12 +66,14 @@ public class RecordLayer {
   private static final Logger LOGGER = LoggerFactory.getLogger(RecordLayer.class);
   private final FDBDatabase db;
   private final FDBMetricsStoreTimer timer;
+  private final SecretKey defaultKey;
 
-  public RecordLayer(String clusterFilePath, boolean enableMetrics) throws InterruptedException, ExecutionException, TimeoutException {
+  public RecordLayer(String clusterFilePath, boolean enableMetrics, SecretKey key) throws InterruptedException, ExecutionException, TimeoutException {
     db = FDBDatabaseFactory.instance().getDatabase(clusterFilePath);
     db.performNoOpAsync().get(2, TimeUnit.SECONDS);
     System.out.println("connected to FDB!");
     timer = new FDBMetricsStoreTimer(enableMetrics);
+    defaultKey = key;
   }
 
   /**
@@ -303,21 +308,26 @@ public class RecordLayer {
   }
 
   private KeyExpression buildPrimaryKeyExpression(List<String> primaryKeyFields) {
-    if (primaryKeyFields.size() == 1) {
-      return Key.Expressions.field(primaryKeyFields.get(0));
-    }
+    List<KeyExpression> keyExpressions = primaryKeyFields
+      .stream()
+      .map(Key.Expressions::field)
+      .collect(Collectors.toList());
 
-    return Key.Expressions.concat(
-      primaryKeyFields
-        .stream()
-        .map(Key.Expressions::field)
-        .collect(Collectors.toList())
-    );
+    // adding the recordType in the key expressions. Following advices from
+    // https://forums.foundationdb.org/t/split-long-record-causes-conflict-with-other-record/2160/2?u=pierrez
+    keyExpressions.add(0, Key.Expressions.recordType());
+
+    return Key.Expressions.concat(keyExpressions);
   }
 
   public Tuple getCountAndCountUpdates(String tenantID, String container) {
+    return getCountAndCountUpdates(tenantID, container, defaultKey);
+  }
+
+  public Tuple getCountAndCountUpdates(String tenantID, String container, SecretKey key) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
+    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
 
     CompletableFuture<Tuple> countFuture = r.evaluateAggregateFunction(
       EvaluationContext.EMPTY,
@@ -337,34 +347,36 @@ public class RecordLayer {
       -> Tuple.from(count.getLong(0), update.getLong(0))).join();
   }
 
-  public void putRecord(String tenantID, String container, String table, byte[] record) throws InvalidProtocolBufferException {
+  public void putRecord(String tenantID, String container, String table, byte[] record, SecretKey customKey) throws InvalidProtocolBufferException {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    // create recordStoreProvider
     FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
 
-    // Helper func
-    Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
-      .setMetaDataProvider(metaDataStore)
-      .setContext(context)
-      .setKeySpacePath(RecordStoreKeySpace.getDataKeySpacePath(tenantID, container))
-      .createOrOpen();
-
-    FDBRecordStore r = recordStoreProvider.apply(context);
     Descriptors.Descriptor descriptor = metaDataStore.getRecordMetaData().getRecordsDescriptor().findMessageTypeByName(table);
 
     if (descriptor == null) {
       throw new RuntimeException("cannot find descriptor for table " + table);
     }
 
+    FDBRecordStore r = createFDBRecordStore(context, metaDataStore, customKey, tenantID, container);
     DynamicMessage msg = DynamicMessage.parseFrom(descriptor, record);
 
     r.saveRecord(msg);
     context.commit();
   }
 
+
+  public void putRecord(String tenantID, String container, String table, byte[] record) throws InvalidProtocolBufferException {
+    putRecord(tenantID, container, table, record, defaultKey);
+  }
+
   public List<Message> queryRecords(String tenantID, String container, RecordQuery query) {
+    return queryRecords(tenantID, container, query, defaultKey);
+  }
+
+  public List<Message> queryRecords(String tenantID, String container, RecordQuery query, SecretKey key) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
+    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
 
     return this.executeQuery(r, query, tenantID, container)
       .map(e -> {
@@ -378,11 +390,16 @@ public class RecordLayer {
       .join();
   }
 
-  public void queryRecords(String tenantID, String container, RecordQuery query, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
-    FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
+  public void queryRecords(String tenantID, String container, RecordQuery query, IsolationLevel isolationLevel, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
+    queryRecords(tenantID, container, query, isolationLevel, defaultKey, responseObserver);
+  }
 
-    this.executeQuery(r, query, tenantID, container)
+  public void queryRecords(String tenantID, String container, RecordQuery query, IsolationLevel isolationLevel, SecretKey key, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
+    FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
+    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
+
+    this.executeQuery(r, query, isolationLevel, tenantID, container)
       .map(e -> {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
@@ -396,8 +413,13 @@ public class RecordLayer {
   }
 
   public void queryRecords(String tenantID, String container, RecordQuery query, Promise<List<Map<String, Object>>> future) {
+    queryRecords(tenantID, container, query, defaultKey, future);
+  }
+
+  public void queryRecords(String tenantID, String container, RecordQuery query, SecretKey encryptionKey, Promise<List<Map<String, Object>>> future) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
+    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBRecordStore r = createFDBRecordStore(context, metadataStore, encryptionKey, tenantID, container);
 
     Descriptors.Descriptor descriptor = r.getRecordMetaData().getRecordsDescriptor().findMessageTypeByName("Person");
 
@@ -433,6 +455,10 @@ public class RecordLayer {
   }
 
   private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query, String tenantID, String container) {
+    return this.executeQuery(r, query, IsolationLevel.SERIALIZABLE, tenantID, container);
+  }
+
+  private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query, IsolationLevel isolationLevel, String tenantID, String container) {
     // TODO: handle errors instead of throwing null
     if (query == null) {
       LOGGER.error("query is null, skipping");
@@ -445,7 +471,7 @@ public class RecordLayer {
     LOGGER.info("running query for {}/{}: '{}'", tenantID, container, plan);
 
     ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
-      .setIsolationLevel(IsolationLevel.SERIALIZABLE)
+      .setIsolationLevel(isolationLevel)
       .setDefaultCursorStreamingMode(CursorStreamingMode.ITERATOR); // either WANT_ALL OR streaming mode
 
     executeProperties.setScannedBytesLimit(1_000_000); // 1MB
@@ -454,16 +480,26 @@ public class RecordLayer {
   }
 
   public long deleteAllRecords(String tenantID, String container) {
+    return deleteAllRecords(tenantID, container, defaultKey);
+  }
+
+  public long deleteAllRecords(String tenantID, String container, SecretKey key) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
+    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
     r.deleteAllRecords();
     // TODO: return count of records with the call stats
     return 0;
   }
 
   public long deleteRecords(String tenantID, String container, RecordQuery query) {
+    return deleteRecords(tenantID, container, query, defaultKey);
+  }
+
+  public long deleteRecords(String tenantID, String container, RecordQuery query, SecretKey key) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
+    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
 
     Integer count = this.executeQuery(r, query, tenantID, container)
       .map(e -> {
@@ -479,24 +515,32 @@ public class RecordLayer {
   }
 
   public String getQueryPlan(String tenantID, String container, RecordQuery query) {
+    return getQueryPlan(tenantID, container, query, defaultKey);
+  }
+
+  public String getQueryPlan(String tenantID, String container, RecordQuery query, SecretKey key) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
+    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
     return r.planQuery(query).toString();
   }
 
-  private FDBRecordStore createFDBRecordStore(FDBRecordContext context, String tenantID, String container) {
+  private FDBRecordStore createFDBRecordStore(FDBRecordContext context, FDBMetaDataStore metaDataStore, SecretKey key, String tenantID, String container) {
 
-    // create recordStoreProvider
-    FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    TransformedRecordSerializer<Message> serializer = TransformedRecordSerializerJCE.newDefaultBuilder()
+      .setEncryptWhenSerializing(true)
+      .setCompressWhenSerializing(true)
+      .setEncryptionKey(key)
+      .build();
 
     // Helper func
     Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
       .setMetaDataProvider(metaDataStore)
       .setContext(context)
+      .setSerializer(serializer)
       .setKeySpacePath(RecordStoreKeySpace.getDataKeySpacePath(tenantID, container))
       .createOrOpen();
 
     return recordStoreProvider.apply(context);
   }
-
 }

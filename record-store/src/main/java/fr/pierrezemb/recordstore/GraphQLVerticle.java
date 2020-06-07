@@ -15,6 +15,8 @@ import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.spec.SecretKeySpec;
+
 public class GraphQLVerticle extends AbstractVerticle {
   private static final Logger LOGGER = LoggerFactory.getLogger(GraphQLVerticle.class);
   private RecordLayer recordLayer;
@@ -26,17 +28,20 @@ public class GraphQLVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
 
-    Integer port = this.context.config().getInteger("graphql-listen-port", 8081);
+    Integer port = this.context.config().getInteger(Constants.CONFIG_GRAPHQL_LISTEN_PORT, 8081);
     GraphiQLHandlerOptions options = new GraphiQLHandlerOptions()
       .setQuery("{ allRecords { name } }")
       .setHeaders(ImmutableMap.of("tenant", "my-tenant", "container", "my-container"))
       .setEnabled(true);
 
-    String clusterFilePath = this.context.config().getString("fdb-cluster-file", "/var/fdb/fdb.cluster");
-    recordLayer = new RecordLayer(clusterFilePath, vertx.isMetricsEnabled());
+    String clusterFilePath = this.context.config().getString(Constants.CONFIG_FDB_CLUSTER_FILE, Constants.CONFIG_FDB_CLUSTER_FILE_DEFAULT);
+    byte[] key = this.context.config().getString(Constants.CONFIG_ENCRYPTION_KEY_DEFAULT, Constants.CONFIG_ENCRYPTION_KEY_DEFAULT).getBytes();
+    SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+
+    recordLayer = new RecordLayer(clusterFilePath, vertx.isMetricsEnabled(), secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
-    datasetsLoader.LoadDataset(this.context.config().getString("load-demo", "PERSONS"));
+    datasetsLoader.LoadDataset(this.context.config().getString(Constants.CONFIG_LOAD_DEMO, "PERSONS"));
 
     Router router = Router.router(vertx);
     router.route("/api/v0/:tenant/:container/schema").handler(this::getSchema);

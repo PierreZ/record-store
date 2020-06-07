@@ -4,6 +4,7 @@ import com.apple.foundationdb.record.RecordMetaData;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.AbstractFDBContainer;
+import fr.pierrezemb.recordstore.Constants;
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import org.junit.jupiter.api.BeforeAll;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -27,7 +29,8 @@ class GraphQLSchemaGeneratorTest extends AbstractFDBContainer {
   void setUp() throws InterruptedException, ExecutionException, TimeoutException, InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
     clusterFile = container.getClusterFile();
 
-    recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false);
+    SecretKeySpec secretKey = new SecretKeySpec(Constants.CONFIG_ENCRYPTION_KEY_DEFAULT.getBytes(), "AES");
+    recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false, secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
     datasetsLoader.LoadDataset("PERSONS");

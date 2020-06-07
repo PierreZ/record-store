@@ -4,6 +4,7 @@ import com.apple.foundationdb.record.query.RecordQuery;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import fr.pierrezemb.recordstore.AbstractFDBContainer;
+import fr.pierrezemb.recordstore.Constants;
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
@@ -14,6 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -35,7 +37,8 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
   void beforeAll() throws IOException, InterruptedException, TimeoutException, ExecutionException, Descriptors.DescriptorValidationException {
 
     clusterFile = container.getClusterFile();
-    recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false);
+    SecretKeySpec secretKey = new SecretKeySpec(Constants.CONFIG_ENCRYPTION_KEY_DEFAULT.getBytes(), "AES");
+    recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false, secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
     datasetsLoader.LoadDataset("PERSONS");

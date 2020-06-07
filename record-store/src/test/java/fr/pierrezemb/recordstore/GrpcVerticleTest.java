@@ -47,8 +47,8 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
 
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()
-        .put("fdb-cluster-file", clusterFile.getAbsolutePath())
-        .put("grpc-listen-port", port));
+        .put(Constants.CONFIG_FDB_CLUSTER_FILE, clusterFile.getAbsolutePath())
+        .put(Constants.CONFIG_GRPC_LISTEN_PORT, port));
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
