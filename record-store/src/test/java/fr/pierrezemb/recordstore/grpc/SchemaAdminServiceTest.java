@@ -1,7 +1,7 @@
 package fr.pierrezemb.recordstore.grpc;
 
 import com.google.protobuf.DescriptorProtos;
-import fr.pierrezemb.recordstore.FoundationDBContainer;
+import fr.pierrezemb.recordstore.AbstractFDBContainer;
 import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.PortManager;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
@@ -18,6 +18,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
@@ -30,14 +31,12 @@ import java.util.Collections;
 
 import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_CONTAINER;
 import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_TENANT;
-import static org.junit.Assert.assertEquals;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class SchemaAdminServiceTest {
+public class SchemaAdminServiceTest extends AbstractFDBContainer {
 
   public final int port = PortManager.nextFreePort();
-  private final FoundationDBContainer container = new FoundationDBContainer();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
   private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
   private File clusterFile;
@@ -45,7 +44,6 @@ public class SchemaAdminServiceTest {
   @BeforeAll
   void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
 
-    container.start();
     clusterFile = container.getClusterFile();
 
     DeploymentOptions options = new DeploymentOptions()
@@ -55,7 +53,7 @@ public class SchemaAdminServiceTest {
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
-    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, DEFAULT_CONTAINER);
+    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, this.getClass().getName());
 
     // deploy verticle
     vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
@@ -77,8 +75,10 @@ public class SchemaAdminServiceTest {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
+      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+        .setName("Person")
+        .addPrimaryKeyFields("id")
+        .build())
       .setSchema(dependencies)
       .build();
 
@@ -114,11 +114,13 @@ public class SchemaAdminServiceTest {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
-      .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
-        .setField("name")
-        .setIndexType(RecordStoreProtocol.IndexType.VALUE)
+      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+        .setName("Person")
+        .addPrimaryKeyFields("id")
+        .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
+          .setField("name")
+          .setIndexType(RecordStoreProtocol.IndexType.VALUE)
+          .build())
         .build())
       .setSchema(dependencies)
       .build();
@@ -141,9 +143,11 @@ public class SchemaAdminServiceTest {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
-      // let's forget an index, this is working as we cannot delete an Index for now
+      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+        .setName("Person")
+        .addPrimaryKeyFields("id")
+        // let's forget an index, this is working as we cannot delete an Index for now
+        .build())
       .setSchema(dependencies)
       .build();
 
@@ -165,10 +169,12 @@ public class SchemaAdminServiceTest {
     // upsert old schema should be harmless
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
-      .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
-        .setField("name").build())
+      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+        .setName("Person")
+        .addPrimaryKeyFields("id")
+        .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
+          .setField("name").build())
+        .build())
       .setSchema(dependencies)
       .build();
 
@@ -186,7 +192,6 @@ public class SchemaAdminServiceTest {
     adminServiceVertxStub.list(RecordStoreProtocol.ListContainerRequest.newBuilder().build(), response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result());
-        assertEquals(1, response.result().getContainersList().size());
         testContext.completeNow();
       } else {
         testContext.failNow(response.cause());
@@ -206,5 +211,11 @@ public class SchemaAdminServiceTest {
         testContext.failNow(response.cause());
       }
     });
+  }
+
+  @AfterAll
+  public void afterAll(Vertx vertx, VertxTestContext testContext) throws Exception {
+    vertx.close();
+    testContext.completeNow();
   }
 }

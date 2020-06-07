@@ -39,6 +39,7 @@ message DeleteRecordRequest {
 
 message GetQueryPlanResponse {
   string query_plan = 1;
+  string parsedQuery = 2;
 }
 
 message ListContainerRequest {
@@ -53,10 +54,15 @@ message DeleteRecordResponse {
 }
 
 message UpsertSchemaRequest {
+  google.protobuf.FileDescriptorSet schema = 1;
+  repeated IndexSchemaRequest index_request = 2;
+  string record_type_union_name = 3;
+}
+
+message IndexSchemaRequest {
   string name = 1;
   repeated string primary_key_fields = 2;
-  google.protobuf.FileDescriptorSet schema = 3;
-  repeated IndexDefinition index_definitions = 4;
+  repeated IndexDefinition index_definitions = 3;
 }
 
 message EmptyRequest {
@@ -124,12 +130,29 @@ message PutRecordRequest {
 message IndexDefinition {
   string field = 1;
   IndexType index_type = 2;
+  FanType fan_type = 3;
+  // the nestedIndex should point within the nested struct
+  // the nested index should only have field and fan_type set.
+  IndexDefinition nestedIndex = 4;
 }
 
 enum IndexType {
   VALUE = 0;
   TEXT_DEFAULT_TOKENIZER = 1;
   VERSION = 2;
+  MAP_KEYS = 3;
+  MAP_VALUES = 4;
+  MAP_KEYS_AND_VALUES = 5;
+}
+
+enum FanType {
+  // Default when field is not repeated.
+  NONE = 0;
+
+  // Causes multiple keys to be created, one for each value of the field
+  FAN_OUT = 1;
+  // Causes multiple values to be concatenated into a nested tuple within a single element
+  FAN_CONCATENATE = 2;
 }
 
 message SelfDescribedMessage {
@@ -151,10 +174,11 @@ message SortByRequest {
 }
 
 enum SortByType {
-  SORT_BY_OLDEST_VERSION_FIRST = 0;
-  SORT_BY_NEWEST_VERSION_FIRST = 1;
-  SORT_BY_VALUE = 2;
-  SORT_BY_VALUE_REVERSED = 3;
+  SORT_DISABLE = 0;
+  SORT_BY_OLDEST_VERSION_FIRST = 1;
+  SORT_BY_NEWEST_VERSION_FIRST = 2;
+  SORT_BY_VALUE = 3;
+  SORT_BY_VALUE_REVERSED = 4;
 }
 
 message QueryResponse {
@@ -187,12 +211,27 @@ message Node {
     FieldNode field_node = 1;
     AndNode and_node = 2;
     OrNode or_node = 3;
+    // apply operation on a indexed map
+    MapNode map_node = 4;
   }
+}
+
+// apply operation on a indexed map
+// https://github.com/FoundationDB/fdb-record-layer/blob/8bb20ae0634c792b69ad35385fb26d232379b76b/fdb-record-layer-core/src/test/java-proto2/com/apple/foundationdb/record/provider/foundationdb/MapsTest.java#L108
+message MapNode {
+  // which field is holding the map
+  string field = 1;
+  // the query to perform on the key
+  FieldNode key = 2;
+  // the query to perform on the value
+  FieldNode value = 3;
 }
 
 message FieldNode {
   string field = 1;
   FieldOperation operation = 2;
+  // set this to true if your field is repeated
+  bool is_field_defined_as_repeated = 3;
   oneof value {
     string string_value = 11;
     int32 int32_value = 12;

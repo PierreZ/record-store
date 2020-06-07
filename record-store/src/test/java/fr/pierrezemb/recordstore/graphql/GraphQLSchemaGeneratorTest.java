@@ -3,10 +3,9 @@ package fr.pierrezemb.recordstore.graphql;
 import com.apple.foundationdb.record.RecordMetaData;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.InvalidProtocolBufferException;
-import fr.pierrezemb.recordstore.FoundationDBContainer;
+import fr.pierrezemb.recordstore.AbstractFDBContainer;
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -20,25 +19,18 @@ import static fr.pierrezemb.recordstore.datasets.DatasetsLoader.DEFAULT_DEMO_TEN
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class GraphQLSchemaGeneratorTest {
-  private final FoundationDBContainer container = new FoundationDBContainer();
+class GraphQLSchemaGeneratorTest extends AbstractFDBContainer {
   private File clusterFile;
   private RecordLayer recordLayer;
 
   @BeforeAll
   void setUp() throws InterruptedException, ExecutionException, TimeoutException, InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
-    container.start();
     clusterFile = container.getClusterFile();
 
     recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
     datasetsLoader.LoadDataset("PERSONS");
-  }
-
-  @AfterAll
-  void tearDown() {
-    container.stop();
   }
 
   @Test
@@ -48,7 +40,9 @@ class GraphQLSchemaGeneratorTest {
     System.out.println(schema);
 
     ImmutableList<String> shouldContains = ImmutableList.of(
-      "type Person {\n  email: String\n  id: Long\n  name: String\n}",
+      "type Person",
+      "email: String",
+      "id: Long",
       "type Query {",
       "allPersons(limit: Int): [Person!]!",
       "getPersonByEmail(email: String): Person!",

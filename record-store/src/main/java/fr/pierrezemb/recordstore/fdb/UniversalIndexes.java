@@ -8,9 +8,12 @@ import com.apple.foundationdb.record.metadata.expressions.GroupingKeyExpression;
 import com.apple.foundationdb.record.metadata.expressions.RecordTypeKeyExpression;
 
 public class UniversalIndexes {
-  public static final Index COUNT_INDEX = new Index("globalRecordCount",
+  public static final String COUNT_INDEX_NAME = "globalRecordCount";
+  public static final Index COUNT_INDEX = new Index(COUNT_INDEX_NAME,
     new GroupingKeyExpression(RecordTypeKeyExpression.RECORD_TYPE_KEY, 0), IndexTypes.COUNT);
-  public static final Index COUNT_UPDATES_INDEX = new Index("globalRecordUpdateCount",
+
+  public static final String COUNT_UPDATES_INDEX_NAME = "globalRecordUpdateCount";
+  public static final Index COUNT_UPDATES_INDEX = new Index(COUNT_UPDATES_INDEX_NAME,
     new GroupingKeyExpression(RecordTypeKeyExpression.RECORD_TYPE_KEY, 0), IndexTypes.COUNT_UPDATES);
 
   public static IndexAggregateFunction INDEX_COUNT_AGGREGATE_FUNCTION = new IndexAggregateFunction(

@@ -16,13 +16,13 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.junit5.web.VertxWebClientExtension;
 import io.vertx.junit5.web.WebClientOptionsInject;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -36,9 +36,8 @@ import static io.vertx.junit5.web.TestRequest.testRequest;
   VertxWebClientExtension.class
 })
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class GraphQLVerticleTest {
+class GraphQLVerticleTest extends AbstractFDBContainer {
   public final int port = PortManager.nextFreePort();
-  private final FoundationDBContainer container = new FoundationDBContainer();
   @WebClientOptionsInject
   public WebClientOptions opts = new WebClientOptions()
     .setDefaultPort(port)
@@ -47,9 +46,8 @@ class GraphQLVerticleTest {
   private RecordLayer recordLayer;
 
   @BeforeAll
-  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException, TimeoutException, ExecutionException {
+  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws InterruptedException, TimeoutException, ExecutionException {
 
-    container.start();
     clusterFile = container.getClusterFile();
     recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), vertx.isMetricsEnabled());
 
@@ -74,5 +72,11 @@ class GraphQLVerticleTest {
       .expect(
         bodyResponse(Buffer.buffer(schema), "text/plain")
       ).send(testContext);
+  }
+
+  @AfterAll
+  public void afterAll(Vertx vertx, VertxTestContext testContext) throws Exception {
+    vertx.close();
+    testContext.completeNow();
   }
 }

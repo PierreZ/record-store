@@ -11,6 +11,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -22,19 +23,16 @@ import java.util.Collections;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class GrpcVerticleTestUnauthorized {
+public class GrpcVerticleTestUnauthorized extends AbstractFDBContainer {
 
   public static final String DEFAULT_TENANT = "my-tenant";
-  public static final String DEFAULT_CONTAINER = "my-container";
   public final int port = PortManager.nextFreePort();
-  private final FoundationDBContainer container = new FoundationDBContainer();
   private AdminServiceGrpc.AdminServiceVertxStub adminServiceVertxStub;
   private File clusterFile;
 
   @BeforeAll
   void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
 
-    container.start();
     clusterFile = container.getClusterFile();
 
     DeploymentOptions options = new DeploymentOptions()
@@ -44,7 +42,7 @@ public class GrpcVerticleTestUnauthorized {
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
-    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT + "dsa", sealedBiscuit, DEFAULT_CONTAINER);
+    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT + "dsa", sealedBiscuit, this.getClass().getName());
 
     // deploy verticle
     vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
@@ -68,4 +66,9 @@ public class GrpcVerticleTestUnauthorized {
     });
   }
 
+  @AfterAll
+  public void afterAll(Vertx vertx, VertxTestContext testContext) throws Exception {
+    vertx.close();
+    testContext.completeNow();
+  }
 }

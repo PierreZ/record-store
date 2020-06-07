@@ -319,6 +319,6 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
 
   private void getAllRecords(DataFetchingEnvironment env, Promise<List<Map<String, Object>>> future) {
     RecordQuery query = GraphQLQueryGenerator.generate(env);
-    this.recordLayer.queryRecordsWithPromise("demo", "PERSONS", query, future);
+    this.recordLayer.queryRecords("demo", "PERSONS", query, future);
   }
 }

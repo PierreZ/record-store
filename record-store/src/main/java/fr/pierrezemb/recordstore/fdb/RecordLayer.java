@@ -69,7 +69,6 @@ public class RecordLayer {
     db.performNoOpAsync().get(2, TimeUnit.SECONDS);
     System.out.println("connected to FDB!");
     timer = new FDBMetricsStoreTimer(enableMetrics);
-
   }
 
   /**
@@ -78,7 +77,6 @@ public class RecordLayer {
   public List<String> listContainers(String tenantID) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
     KeySpacePath tenantKeySpace = RecordStoreKeySpace.getApplicationKeySpacePath(tenantID);
-    System.out.println(tenantKeySpace);
     List<ResolvedKeySpacePath> containers = tenantKeySpace
       .listSubdirectory(context, "container", ScanProperties.FORWARD_SCAN);
     return containers.stream()
@@ -125,7 +123,8 @@ public class RecordLayer {
       ).collect(Collectors.toList());
   }
 
-  public void upsertSchema(String tenantID, String container, String table, DescriptorProtos.FileDescriptorSet schema, List<RecordStoreProtocol.IndexDefinition> indexes, List<String> primaryKeyFields) throws Descriptors.DescriptorValidationException {
+  public void upsertSchema(String tenantID, String container, DescriptorProtos.FileDescriptorSet schema, List<RecordStoreProtocol.IndexSchemaRequest> indexes) throws Descriptors.DescriptorValidationException {
+
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
     FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
 
@@ -139,7 +138,7 @@ public class RecordLayer {
       LOGGER.info("missing metadata, creating one");
     }
 
-    RecordMetaData newRecordMetaData = createRecordMetaData(table, schema, indexes, primaryKeyFields, version, oldMetaData);
+    RecordMetaData newRecordMetaData = createRecordMetaData(schema, indexes, version, oldMetaData);
 
     // handling upgrade
     if (null != oldMetaData) {
@@ -158,12 +157,12 @@ public class RecordLayer {
 
   }
 
-  private RecordMetaData createRecordMetaData(String table, DescriptorProtos.FileDescriptorSet descriptorSet, List<RecordStoreProtocol.IndexDefinition> indexes, List<String> primaryKeyFields, int version, RecordMetaData oldMetadata) throws Descriptors.DescriptorValidationException {
+  private RecordMetaData createRecordMetaData(DescriptorProtos.FileDescriptorSet schema, List<RecordStoreProtocol.IndexSchemaRequest> indexes, int version, RecordMetaData oldMetadata) throws Descriptors.DescriptorValidationException {
 
     // retrieving protobuf descriptor
     RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
 
-    for (DescriptorProtos.FileDescriptorProto fdp : descriptorSet.getFileList()) {
+    for (DescriptorProtos.FileDescriptorProto fdp : schema.getFileList()) {
       Descriptors.FileDescriptor fd = Descriptors.FileDescriptor.buildFrom(fdp, new Descriptors.FileDescriptor[]{});
       // updating schema
       metadataBuilder.setRecords(fd);
@@ -183,52 +182,124 @@ public class RecordLayer {
     for (Index index : oldIndexes) {
       LOGGER.trace("adding old index {}", index.getName());
       oldIndexesNames.add(index.getName());
-      metadataBuilder.addIndex(table, index);
-    }
-
-    // add new indexes
-    for (RecordStoreProtocol.IndexDefinition indexDefinition : indexes) {
-      String indexName = table + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString();
-      if (!oldIndexesNames.contains(indexName)) {
-        LOGGER.trace("adding new index {} of type {}", indexName, indexDefinition.getIndexType());
-        Index index = null;
-        switch (indexDefinition.getIndexType()) {
-          case VALUE:
-            index = new Index(
-              indexName,
-              Key.Expressions.field(indexDefinition.getField()),
-              IndexTypes.VALUE);
-            break;
-          // https://github.com/FoundationDB/fdb-record-layer/blob/e70d3f9b5cec1cf37b6f540d4e673059f2a628ab/fdb-record-layer-core/src/main/java/com/apple/foundationdb/record/provider/foundationdb/indexes/TextIndexMaintainer.java#L81-L93
-          case TEXT_DEFAULT_TOKENIZER:
-            index = new Index(
-              indexName,
-              Key.Expressions.field(indexDefinition.getField()),
-              IndexTypes.TEXT);
-            break;
-          case VERSION:
-            index = new Index(
-              indexName,
-              VersionKeyExpression.VERSION,
-              IndexTypes.VERSION);
-            break;
-          case UNRECOGNIZED:
-            continue;
+      if (index.getName().equals(UniversalIndexes.COUNT_INDEX_NAME) || index.getName().equals(UniversalIndexes.COUNT_UPDATES_INDEX_NAME)) {
+        metadataBuilder.addUniversalIndex(index);
+      } else {
+        // we need to retrieve the record
+        String[] idxNameSplitted = index.getName().split("_", 4);
+        if (idxNameSplitted.length != 4) {
+          LOGGER.warn("strange idx name: '{}', skipping", index.getName());
+          continue;
         }
-        metadataBuilder.addIndex(table, index);
+        LOGGER.trace("adding already known index {}", idxNameSplitted[0]);
+        metadataBuilder.addIndex(idxNameSplitted[0], index);
       }
     }
+
+    // we need to loop through all index requests
+    for (RecordStoreProtocol.IndexSchemaRequest idxRequest : indexes) {
+      LOGGER.trace("adding indexes for {}", idxRequest.getName());
+      // add new indexes
+      for (RecordStoreProtocol.IndexDefinition indexDefinition : idxRequest.getIndexDefinitionsList()) {
+
+        String indexName = generateIndexName(idxRequest.getName(), indexDefinition);
+        Index index = createIndex(indexDefinition, indexName);
+        if (!oldIndexesNames.contains(indexName)) {
+          LOGGER.trace("adding new index {} of type {}", indexName, indexDefinition.getIndexType());
+          metadataBuilder.addIndex(idxRequest.getName(), index);
+        }
+      }
+      // set primary key
+      metadataBuilder.getRecordType(idxRequest.getName())
+        .setPrimaryKey(buildPrimaryKeyExpression(idxRequest.getPrimaryKeyFieldsList()));
+    }
+
 
     if (oldMetadata == null) {
       metadataBuilder.addUniversalIndex(COUNT_INDEX);
       metadataBuilder.addUniversalIndex(COUNT_UPDATES_INDEX);
     }
 
-    // set primary key
-    metadataBuilder.getRecordType(table)
-      .setPrimaryKey(buildPrimaryKeyExpression(primaryKeyFields));
-
     return metadataBuilder.build();
+  }
+
+  private String generateIndexName(String name, RecordStoreProtocol.IndexDefinition indexDefinition) {
+    if (!indexDefinition.hasNestedIndex()) {
+      return name + "_idx_" + indexDefinition.getField() + "_" + indexDefinition.getIndexType().toString();
+    }
+    return name + "_idx_" + indexDefinition.getField() + "_nested_" + generateIndexName(name, indexDefinition.getNestedIndex());
+  }
+
+  private Index createIndex(RecordStoreProtocol.IndexDefinition indexDefinition, String indexName) {
+    Index index = null;
+
+    if (indexDefinition.hasNestedIndex()) {
+      return new Index(
+        indexName,
+        Key.Expressions.field(indexDefinition.getField(), getFanType(indexDefinition.getFanType()))
+          .nest(createKeyExpressionFromIndexDefinition(indexDefinition.getNestedIndex())));
+    }
+
+    switch (indexDefinition.getIndexType()) {
+      case VALUE:
+        index = new Index(
+          indexName,
+          Key.Expressions.field(indexDefinition.getField(), getFanType(indexDefinition.getFanType())),
+          IndexTypes.VALUE);
+        break;
+      // https://github.com/FoundationDB/fdb-record-layer/blob/e70d3f9b5cec1cf37b6f540d4e673059f2a628ab/fdb-record-layer-core/src/main/java/com/apple/foundationdb/record/provider/foundationdb/indexes/TextIndexMaintainer.java#L81-L93
+      case TEXT_DEFAULT_TOKENIZER:
+        index = new Index(
+          indexName,
+          Key.Expressions.field(indexDefinition.getField(), getFanType(indexDefinition.getFanType())),
+          IndexTypes.TEXT);
+        break;
+      case VERSION:
+        index = new Index(
+          indexName,
+          VersionKeyExpression.VERSION,
+          IndexTypes.VERSION);
+        break;
+      case MAP_KEYS:
+        index = new Index(
+          indexName,
+          Key.Expressions.mapKeys(indexDefinition.getField())
+        );
+        break;
+      case MAP_VALUES:
+        index = new Index(
+          indexName,
+          Key.Expressions.mapValues(indexDefinition.getField())
+        );
+        break;
+      case MAP_KEYS_AND_VALUES:
+        index = new Index(
+          indexName,
+          Key.Expressions.mapKeyValues(indexDefinition.getField())
+        );
+        break;
+      case UNRECOGNIZED:
+        return null;
+    }
+    return index;
+  }
+
+  private KeyExpression createKeyExpressionFromIndexDefinition(RecordStoreProtocol.IndexDefinition nestedIndex) {
+    return Key.Expressions.field(nestedIndex.getField(), getFanType(nestedIndex.getFanType()));
+  }
+
+  private KeyExpression.FanType getFanType(RecordStoreProtocol.FanType fanType) {
+    if (fanType == null) {
+      return KeyExpression.FanType.None;
+    }
+
+    switch (fanType) {
+      case FAN_CONCATENATE:
+        return KeyExpression.FanType.Concatenate;
+      case FAN_OUT:
+        return KeyExpression.FanType.FanOut;
+    }
+    return KeyExpression.FanType.None;
   }
 
   private KeyExpression buildPrimaryKeyExpression(List<String> primaryKeyFields) {
@@ -291,7 +362,23 @@ public class RecordLayer {
     context.commit();
   }
 
-  public void queryRecordsWithObserver(String tenantID, String container, RecordQuery query, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
+  public List<Message> queryRecords(String tenantID, String container, RecordQuery query) {
+    FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
+    FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
+
+    return this.executeQuery(r, query, tenantID, container)
+      .map(e -> {
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
+        }
+        return e;
+      })
+      .map(FDBRecord::getRecord)
+      .asList()
+      .join();
+  }
+
+  public void queryRecords(String tenantID, String container, RecordQuery query, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
     FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
 
@@ -308,7 +395,7 @@ public class RecordLayer {
       .join();
   }
 
-  public void queryRecordsWithPromise(String tenantID, String container, RecordQuery query, Promise<List<Map<String, Object>>> future) {
+  public void queryRecords(String tenantID, String container, RecordQuery query, Promise<List<Map<String, Object>>> future) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
     FDBRecordStore r = createFDBRecordStore(context, tenantID, container);
 
@@ -351,6 +438,8 @@ public class RecordLayer {
       LOGGER.error("query is null, skipping");
       throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("bad query"));
     }
+
+    LOGGER.info(query.toString());
 
     RecordQueryPlan plan = r.planQuery(query);
     LOGGER.info("running query for {}/{}: '{}'", tenantID, container, plan);
@@ -409,4 +498,5 @@ public class RecordLayer {
 
     return recordStoreProvider.apply(context);
   }
+
 }

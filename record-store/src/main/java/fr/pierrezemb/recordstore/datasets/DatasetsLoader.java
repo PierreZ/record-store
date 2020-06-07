@@ -21,6 +21,7 @@ public class DatasetsLoader {
   }
 
   public void LoadDataset(List<DemoDatasetEnum> datasets) throws InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
+    List<String> alreadyLoadedDatasets = this.recordLayer.listContainers(DEFAULT_DEMO_TENANT);
     for (DemoDatasetEnum d : datasets) {
       Dataset dataset;
       switch (d) {
@@ -30,8 +31,12 @@ public class DatasetsLoader {
         default:
           continue;
       }
-      dataset.load(recordLayer, DEFAULT_DEMO_TENANT, d.toString(), this.nbrRecords);
-      LOGGER.info("successfully loaded {} records for {}", this.nbrRecords, d.toString());
+      if (!alreadyLoadedDatasets.contains(d.toString())) {
+        dataset.load(recordLayer, DEFAULT_DEMO_TENANT, d.toString(), this.nbrRecords);
+        LOGGER.info("successfully loaded {} records for {}", this.nbrRecords, d.toString());
+      } else {
+        LOGGER.info("dataset {} already loaded, skipping", d.toString());
+      }
     }
   }
 

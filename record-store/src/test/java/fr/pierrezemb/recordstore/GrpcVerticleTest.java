@@ -16,13 +16,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,20 +31,18 @@ import static org.junit.Assert.assertEquals;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class GrpcVerticleTest {
+public class GrpcVerticleTest extends AbstractFDBContainer {
 
   public static final String DEFAULT_TENANT = "my-tenant";
   public static final String DEFAULT_CONTAINER = "my-container";
   public final int port = PortManager.nextFreePort();
-  private final FoundationDBContainer container = new FoundationDBContainer();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
   private RecordServiceGrpc.RecordServiceVertxStub recordServiceVertxStub;
   private File clusterFile;
 
   @BeforeAll
-  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
+  void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
 
-    container.start();
     clusterFile = container.getClusterFile();
 
     DeploymentOptions options = new DeploymentOptions()
@@ -55,7 +53,7 @@ public class GrpcVerticleTest {
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
     System.out.println(sealedBiscuit);
-    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, DEFAULT_CONTAINER);
+    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, this.getClass().getName());
 
     // deploy verticle
     vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
@@ -76,13 +74,16 @@ public class GrpcVerticleTest {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .setName("Person")
-      .addPrimaryKeyFields("id")
       .setSchema(dependencies)
-      // keep track of the versions
-      .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
-        .setIndexType(RecordStoreProtocol.IndexType.VERSION)
-        .build())
+      .addIndexRequest(
+        RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+          .setName("Person")
+          .addPrimaryKeyFields("id")
+          .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
+            .setIndexType(RecordStoreProtocol.IndexType.VERSION)
+            .build())
+          .build()
+      )
       .build();
 
     schemaServiceVertxStub.upsert(request, response -> {
@@ -332,5 +333,11 @@ public class GrpcVerticleTest {
       });
       response.exceptionHandler(testContext::failNow);
     });
+  }
+
+  @AfterAll
+  public void afterAll(Vertx vertx, VertxTestContext testContext) throws Exception {
+    vertx.close();
+    testContext.completeNow();
   }
 }

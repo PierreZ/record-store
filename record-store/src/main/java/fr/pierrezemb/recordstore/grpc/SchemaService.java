@@ -4,7 +4,6 @@ import com.apple.foundationdb.record.RecordMetaData;
 import com.apple.foundationdb.record.metadata.MetaDataException;
 import com.apple.foundationdb.tuple.Tuple;
 import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
@@ -77,7 +76,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     String container = GrpcContextKeys.getContainerOrFail();
 
     try {
-      recordLayer.upsertSchema(tenantID, container, request.getName(), request.getSchema(), request.getIndexDefinitionsList(), request.getPrimaryKeyFieldsList().asByteStringList().stream().map(ByteString::toStringUtf8).collect(Collectors.toList()));
+      recordLayer.upsertSchema(tenantID, container, request.getSchema(), request.getIndexRequestList());
     } catch (MetaDataException | Descriptors.DescriptorValidationException e) {
       log.error(e.getMessage());
       throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));

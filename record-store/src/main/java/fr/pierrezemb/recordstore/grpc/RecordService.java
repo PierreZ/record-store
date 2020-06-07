@@ -54,7 +54,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     RecordQuery query = GrpcQueryGenerator.generate(request);
 
     try {
-      this.recordLayer.queryRecordsWithObserver(tenantID, container, query, responseObserver);
+      this.recordLayer.queryRecords(tenantID, container, query, responseObserver);
       responseObserver.onCompleted();
     } catch (RuntimeException e) {
       log.error(e.getMessage());
@@ -100,6 +100,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     try {
       String queryPlan = this.recordLayer.getQueryPlan(tenantID, container, query);
       responseObserver.onNext(RecordStoreProtocol.GetQueryPlanResponse.newBuilder()
+        .setQueryPlan(query.toString())
         .setQueryPlan(queryPlan)
         .build());
       responseObserver.onCompleted();
