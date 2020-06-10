@@ -11,6 +11,10 @@ import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 public class RecordStoreClient {
   private final String tenant;
   private final String container;
@@ -18,11 +22,11 @@ public class RecordStoreClient {
   private final String token;
   private final BiscuitClientCredential credentials;
   private final ManagedChannel channel;
-  private SchemaServiceGrpc.SchemaServiceFutureStub asyncSchemaStub;
-  private RecordServiceGrpc.RecordServiceFutureStub asyncRecordStub;
-  private AdminServiceGrpc.AdminServiceFutureStub asyncAdminStub;
+  private final SchemaServiceGrpc.SchemaServiceFutureStub asyncSchemaStub;
+  private final RecordServiceGrpc.RecordServiceFutureStub asyncRecordStub;
+  private final AdminServiceGrpc.AdminServiceFutureStub asyncAdminStub;
 
-  private RecordStoreClient(String tenant, String container, String address, String token) {
+  private RecordStoreClient(String tenant, String container, String address, String token) throws InterruptedException, ExecutionException, TimeoutException {
     this.tenant = tenant;
     this.container = container;
     this.address = address;
@@ -31,14 +35,12 @@ public class RecordStoreClient {
 
     // TODO: how to enable TLS
     channel = ManagedChannelBuilder.forTarget(this.address).usePlaintext().build();
-    createCnx(channel);
-  }
 
-
-  private void createCnx(ManagedChannel channel) {
     asyncSchemaStub = SchemaServiceGrpc.newFutureStub(channel).withCallCredentials(credentials);
     asyncRecordStub = RecordServiceGrpc.newFutureStub(channel).withCallCredentials(credentials);
     asyncAdminStub = AdminServiceGrpc.newFutureStub(channel).withCallCredentials(credentials);
+
+    this.ping().get(1, TimeUnit.SECONDS);
   }
 
   /**
@@ -96,7 +98,7 @@ public class RecordStoreClient {
       return this;
     }
 
-    public RecordStoreClient build() {
+    public RecordStoreClient connect() throws InterruptedException, ExecutionException, TimeoutException {
       return new RecordStoreClient(tenant, container, address, token);
     }
   }

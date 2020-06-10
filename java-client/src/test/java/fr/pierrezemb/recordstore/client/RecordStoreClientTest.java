@@ -62,7 +62,7 @@ class RecordStoreClientTest extends AbstractFDBContainer {
       .withTenant(DEFAULT_TENANT)
       .withToken(sealedBiscuit)
       .withAddress("localhost:" + port)
-      .build();
+      .connect();
 
     recordStoreClient.ping().get();
     testContext.completeNow();
