@@ -1,16 +1,50 @@
 package fr.pierrezemb.recordstore.client;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
+import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
+import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
+import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
+import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+
 public class RecordStoreClient {
   private final String tenant;
   private final String container;
   private final String address;
   private final String token;
+  private final BiscuitClientCredential credentials;
+  private final ManagedChannel channel;
+  private SchemaServiceGrpc.SchemaServiceFutureStub asyncSchemaStub;
+  private RecordServiceGrpc.RecordServiceFutureStub asyncRecordStub;
+  private AdminServiceGrpc.AdminServiceFutureStub asyncAdminStub;
 
   private RecordStoreClient(String tenant, String container, String address, String token) {
     this.tenant = tenant;
     this.container = container;
     this.address = address;
     this.token = token;
+    credentials = new BiscuitClientCredential(tenant, token, container);
+
+    // TODO: how to enable TLS
+    channel = ManagedChannelBuilder.forTarget(this.address).usePlaintext().build();
+    createCnx(channel);
+  }
+
+
+  private void createCnx(ManagedChannel channel) {
+    asyncSchemaStub = SchemaServiceGrpc.newFutureStub(channel).withCallCredentials(credentials);
+    asyncRecordStub = RecordServiceGrpc.newFutureStub(channel).withCallCredentials(credentials);
+    asyncAdminStub = AdminServiceGrpc.newFutureStub(channel).withCallCredentials(credentials);
+  }
+
+  /**
+   * Test connection to the record-store
+   * @return a future of an emptyResponse if everything is fine
+   */
+  public ListenableFuture<RecordStoreProtocol.EmptyResponse> ping() {
+    return this.asyncAdminStub.ping(RecordStoreProtocol.EmptyRequest.newBuilder().build());
   }
 
   public static class Builder {

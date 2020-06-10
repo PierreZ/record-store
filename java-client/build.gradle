@@ -5,7 +5,9 @@ plugins {
 dependencies {
   compile project(':record-store')
   compile project(':testcontainers-foundationdb')
+
   compile group: 'io.grpc', name: 'grpc-stub', version: '1.29.0'
+  compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.12.2'
 
   testImplementation "io.vertx:vertx-junit5:$vertxVersion"
   testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.7.0-M1'
