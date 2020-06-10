@@ -41,10 +41,15 @@ public class RecordStoreClient {
 
   /**
    * Test connection to the record-store
+   *
    * @return a future of an emptyResponse if everything is fine
    */
   public ListenableFuture<RecordStoreProtocol.EmptyResponse> ping() {
     return this.asyncAdminStub.ping(RecordStoreProtocol.EmptyRequest.newBuilder().build());
+  }
+
+  public ListenableFuture<RecordStoreProtocol.EmptyResponse> upsertSchema(RecordStoreProtocol.UpsertSchemaRequest request) {
+    return this.asyncSchemaStub.upsert(request);
   }
 
   public static class Builder {

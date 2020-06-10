@@ -2,7 +2,6 @@ package fr.pierrezemb.recordstore.client;
 
 import fr.pierrezemb.recordstore.Constants;
 import fr.pierrezemb.recordstore.GrpcVerticle;
-import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
 import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
@@ -12,30 +11,33 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.AbstractFDBContainer;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.ExecutionException;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class RecordStoreClientTest extends AbstractFDBContainer {
 
   public static final String DEFAULT_TENANT = "my-tenant";
   public final int port = PortManager.nextFreePort();
-  private File clusterFile;
   private String sealedBiscuit;
   private RecordStoreClient recordStoreClient;
 
   @BeforeAll
   void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
 
-    clusterFile = container.getClusterFile();
+    File clusterFile = container.getClusterFile();
 
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()
@@ -64,9 +66,19 @@ class RecordStoreClientTest extends AbstractFDBContainer {
     testContext.completeNow();
   }
 
-  @Test
   @Order(2)
-  public void testUploadSchema(Vertx vertx, VertxTestContext testContext) {
+  @RepeatedTest(3)
+  public void testUploadSchema(Vertx vertx, VertxTestContext testContext) throws ExecutionException, InterruptedException {
+
+    RecordStoreProtocol.UpsertSchemaRequest request = SchemaUtils.createSchemaRequest(
+      DemoPersonProto.Person.getDescriptor(), // descriptor
+      "Person",
+      "id",
+      "name",
+      RecordStoreProtocol.IndexType.VALUE);
+
+    recordStoreClient.upsertSchema(request).get();
+
     testContext.completeNow();
   }
 }
