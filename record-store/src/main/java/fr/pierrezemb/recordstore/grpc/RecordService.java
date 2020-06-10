@@ -31,7 +31,7 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
     String container = GrpcContextKeys.getContainerOrFail();
 
     try {
-      this.recordLayer.putRecord(tenantID, container, request.getTable(), request.getMessage().toByteArray());
+      this.recordLayer.putRecord(tenantID, container, request.getRecordTypeName(), request.getMessage().toByteArray());
     } catch (InvalidProtocolBufferException e) {
       throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("could not parse Protobuf: " + e.getMessage()));
     } catch (RuntimeException e) {

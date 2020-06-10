@@ -74,7 +74,7 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+      .addRecordTypeIndexDefinitions(RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
         .setName("Person")
         .addPrimaryKeyFields("id")
         .build())
@@ -94,7 +94,7 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
   @Test
   public void testCRUDSchema2(Vertx vertx, VertxTestContext testContext) throws Exception {
     schemaServiceVertxStub.get(RecordStoreProtocol.GetSchemaRequest.newBuilder()
-      .setTable("Person")
+      .setRecordTypeName("Person")
       .build(), response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result());
@@ -113,7 +113,7 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+      .addRecordTypeIndexDefinitions(RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
         .setName("Person")
         .addPrimaryKeyFields("id")
         .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
@@ -142,7 +142,7 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+      .addRecordTypeIndexDefinitions(RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
         .setName("Person")
         .addPrimaryKeyFields("id")
         // let's forget an index, this is working as we cannot delete an Index for now
@@ -168,7 +168,7 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
     // upsert old schema should be harmless
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+      .addRecordTypeIndexDefinitions(RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
         .setName("Person")
         .addPrimaryKeyFields("id")
         .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()

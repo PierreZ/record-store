@@ -30,7 +30,7 @@ public class PersonDataset implements Dataset {
       container,
       dependencies,
       ImmutableList.of(
-        RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+        RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
           .setName("Person")
           .addAllIndexDefinitions(ImmutableList.of(
             RecordStoreProtocol.IndexDefinition.newBuilder()

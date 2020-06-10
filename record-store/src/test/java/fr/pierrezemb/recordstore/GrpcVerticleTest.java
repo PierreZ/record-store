@@ -76,8 +76,8 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setSchema(dependencies)
-      .addIndexRequest(
-        RecordStoreProtocol.IndexSchemaRequest.newBuilder()
+      .addRecordTypeIndexDefinitions(
+        RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
           .setName("Person")
           .addPrimaryKeyFields("id")
           .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
@@ -107,7 +107,7 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
       .build();
 
     RecordStoreProtocol.PutRecordRequest request = RecordStoreProtocol.PutRecordRequest.newBuilder()
-      .setTable("Person")
+      .setRecordTypeName("Person")
       .setMessage(person.toByteString())
       .build();
 
@@ -152,7 +152,7 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setTable("Person")
+      .setRecordTypeName("Person")
       .setQueryNode(query)
       .build();
 
@@ -198,7 +198,7 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setTable("Person")
+      .setRecordTypeName("Person")
       .setQueryNode(query)
       .build();
 
@@ -244,7 +244,7 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
 
     RecordStoreProtocol.DeleteRecordRequest request = RecordStoreProtocol.DeleteRecordRequest.newBuilder()
       .setQueryNode(query)
-      .setTable("Person")
+      .setRecordTypeName("Person")
       .build();
 
     recordServiceVertxStub.delete(request, response -> {
@@ -281,7 +281,7 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setTable("Person")
+      .setRecordTypeName("Person")
       .setQueryNode(query)
       .build();
 
@@ -310,7 +310,7 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   public void testPut7(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setTable("Person")
+      .setRecordTypeName("Person")
       .setSortBy(RecordStoreProtocol.SortByRequest.newBuilder().setType(RecordStoreProtocol.SortByType.SORT_BY_NEWEST_VERSION_FIRST)
         .build())
       .build();

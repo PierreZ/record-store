@@ -24,7 +24,7 @@ public class GrpcQueryGenerator {
 
   public static RecordQuery generate(RecordStoreProtocol.QueryRequest request) {
     RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()
-      .setRecordType(request.getTable());
+      .setRecordType(request.getRecordTypeName());
 
     if (request.getFieldsToReturnCount() > 0) {
       queryBuilder.setRequiredResults(request.getFieldsToReturnList().asByteStringList()
@@ -64,7 +64,7 @@ public class GrpcQueryGenerator {
 
   public static RecordQuery generate(RecordStoreProtocol.DeleteRecordRequest request) {
     RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()
-      .setRecordType(request.getTable());
+      .setRecordType(request.getRecordTypeName());
 
     try {
       QueryComponent queryComponents = parseNode(request.getQueryNode());

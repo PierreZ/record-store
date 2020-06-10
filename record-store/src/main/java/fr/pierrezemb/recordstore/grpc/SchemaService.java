@@ -42,13 +42,13 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
       RecordMetaData metadataStore = recordLayer.getSchema(tenantID, container);
 
       List<RecordStoreProtocol.SchemaDescription> records =
-        ImmutableMap.of(request.getTable(), metadataStore.getRecordMetaData().getRecordType(request.getTable()))
+        ImmutableMap.of(request.getRecordTypeName(), metadataStore.getRecordMetaData().getRecordType(request.getRecordTypeName()))
           .entrySet()
           .stream()
           .map(e -> RecordStoreProtocol.SchemaDescription.newBuilder()
             .setName(e.getKey())
             .addAllIndexes(indexes)
-            .setPrimaryKeyField(e.getValue().getPrimaryKey().toKeyExpression().getField().getFieldName())
+            .addPrimaryKeyField(e.getValue().getPrimaryKey().toKeyExpression().getField().getFieldName())
             .setSchema(ProtobufReflectionUtil.protoFileDescriptorSet(e.getValue().getDescriptor()))
             .build())
           .collect(Collectors.toList());
@@ -76,7 +76,7 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     String container = GrpcContextKeys.getContainerOrFail();
 
     try {
-      recordLayer.upsertSchema(tenantID, container, request.getSchema(), request.getIndexRequestList());
+      recordLayer.upsertSchema(tenantID, container, request.getSchema(), request.getRecordTypeIndexDefinitionsList());
     } catch (MetaDataException | Descriptors.DescriptorValidationException e) {
       log.error(e.getMessage());
       throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));

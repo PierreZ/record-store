@@ -61,12 +61,12 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
     return Stream.of(
       // all records
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .build(), 100),
 
       // get on id
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .setQueryNode(RecordStoreProtocol.Node.newBuilder()
           .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
             .setField("id").setInt64Value(1)
@@ -77,7 +77,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // range
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .setQueryNode(RecordStoreProtocol.Node.newBuilder()
           .setAndNode(RecordStoreProtocol.AndNode.newBuilder()
             .addNodes(RecordStoreProtocol.Node.newBuilder()
@@ -100,7 +100,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // or
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .setQueryNode(RecordStoreProtocol.Node.newBuilder()
           .setOrNode(RecordStoreProtocol.OrNode.newBuilder()
             .addNodes(RecordStoreProtocol.Node.newBuilder()
@@ -123,7 +123,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // text index any
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .setQueryNode(RecordStoreProtocol.Node.newBuilder()
           .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
             .setField("rick_and_morty_quotes")
@@ -135,7 +135,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // text index all
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .setQueryNode(RecordStoreProtocol.Node.newBuilder()
           .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
             .setField("rick_and_morty_quotes")
@@ -147,7 +147,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over a repeated field
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .setQueryNode(RecordStoreProtocol.Node.newBuilder()
           .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
             .setField("beers")
@@ -160,7 +160,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed map with constraint on key and value
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .setQueryNode(RecordStoreProtocol.Node.newBuilder()
           .setMapNode(RecordStoreProtocol.MapNode.newBuilder()
             .setField("favorite_locations_from_tv")
@@ -178,7 +178,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed map with constraint on value
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .setQueryNode(RecordStoreProtocol.Node.newBuilder()
           .setMapNode(RecordStoreProtocol.MapNode.newBuilder()
             .setField("favorite_locations_from_tv")
@@ -192,7 +192,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed map with constraint on key
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .setQueryNode(RecordStoreProtocol.Node.newBuilder()
           .setMapNode(RecordStoreProtocol.MapNode.newBuilder()
             .setField("favorite_locations_from_tv")
@@ -206,7 +206,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed nested field
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("Person")
         .setQueryNode(RecordStoreProtocol.Node.newBuilder()
           .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
             .setField("address")
