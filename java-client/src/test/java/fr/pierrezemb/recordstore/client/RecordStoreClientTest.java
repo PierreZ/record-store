@@ -24,6 +24,8 @@ import java.io.File;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.assertEquals;
+
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -94,6 +96,17 @@ class RecordStoreClientTest extends AbstractFDBContainer {
       .build();
 
     recordStoreClient.putRecord(record).get();
+
+    testContext.completeNow();
+  }
+
+  @Test
+  @Order(4)
+  public void testGetStats(Vertx vertx, VertxTestContext testContext) throws ExecutionException, InterruptedException {
+
+    RecordStoreProtocol.StatResponse stats = recordStoreClient.getStats().get();
+    assertEquals("bad count of records", 1, stats.getCount());
+    assertEquals("bad number of updates", 3, stats.getCountUpdates());
 
     testContext.completeNow();
   }

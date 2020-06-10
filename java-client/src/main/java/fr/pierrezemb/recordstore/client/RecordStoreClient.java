@@ -65,6 +65,10 @@ public class RecordStoreClient {
       .build());
   }
 
+  public ListenableFuture<RecordStoreProtocol.StatResponse> getStats() {
+    return asyncSchemaStub.stat(RecordStoreProtocol.StatRequest.newBuilder().build());
+  }
+
   public static class Builder {
 
     private String tenant;
