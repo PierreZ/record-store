@@ -1,6 +1,8 @@
 package fr.pierrezemb.recordstore.client;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.Message;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
@@ -50,6 +52,17 @@ public class RecordStoreClient {
 
   public ListenableFuture<RecordStoreProtocol.EmptyResponse> upsertSchema(RecordStoreProtocol.UpsertSchemaRequest request) {
     return this.asyncSchemaStub.upsert(request);
+  }
+
+  public ListenableFuture<RecordStoreProtocol.EmptyResponse> putRecord(Message record) {
+    return this.putRecord(record.getClass().getSimpleName(), record.toByteArray());
+  }
+
+  public ListenableFuture<RecordStoreProtocol.EmptyResponse> putRecord(String recordTypeName, byte[] message) {
+    return this.asyncRecordStub.put(RecordStoreProtocol.PutRecordRequest.newBuilder()
+      .setMessage(ByteString.copyFrom(message))
+      .setRecordTypeName(recordTypeName)
+      .build());
   }
 
   public static class Builder {

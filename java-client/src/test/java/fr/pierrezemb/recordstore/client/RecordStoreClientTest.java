@@ -72,12 +72,28 @@ class RecordStoreClientTest extends AbstractFDBContainer {
 
     RecordStoreProtocol.UpsertSchemaRequest request = SchemaUtils.createSchemaRequest(
       DemoPersonProto.Person.getDescriptor(), // descriptor
-      "Person",
-      "id",
-      "name",
-      RecordStoreProtocol.IndexType.VALUE);
+      DemoPersonProto.Person.class.getSimpleName(), // name of the recordType
+      "id", // primary key field
+      "name", // index field
+      RecordStoreProtocol.IndexType.VALUE // index type
+    );
 
     recordStoreClient.upsertSchema(request).get();
+
+    testContext.completeNow();
+  }
+
+  @Order(3)
+  @RepeatedTest(3)
+  public void testPut(Vertx vertx, VertxTestContext testContext) throws ExecutionException, InterruptedException {
+
+    DemoPersonProto.Person record = DemoPersonProto.Person.newBuilder()
+      .setId(1)
+      .setName("Pierre Zemb")
+      .setEmail("pz@example.org")
+      .build();
+
+    recordStoreClient.putRecord(record).get();
 
     testContext.completeNow();
   }
