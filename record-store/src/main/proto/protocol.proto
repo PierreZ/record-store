@@ -46,7 +46,7 @@ message DeleteRecordRequest {
   // set this flag to delete all records
   bool delete_all = 2;
   // query node that will be runned to delete them
-  Node query_node = 3;
+  QueryFilterNode filter = 3;
 }
 
 message GetQueryPlanResponse {
@@ -202,7 +202,7 @@ message QueryRequest {
   // name of the queryType
   string record_type_name = 1;
   // the query itself
-  Node query_node = 2;
+  QueryFilterNode filter = 2;
   // the continuation, can be used to continue the query
   bytes continuation = 3;
   // number max of records to retrieve
@@ -265,28 +265,28 @@ enum FieldOperation {
   TEXT_CONTAINS_ALL = 12;
 }
 
-message Node {
+message QueryFilterNode {
   oneof Content {
-    FieldNode field_node = 1;
-    AndNode and_node = 2;
-    OrNode or_node = 3;
+    QueryFilterFieldNode field_node = 1;
+    QueryFilterAndNode and_node = 2;
+    QueryFilterOrNode or_node = 3;
     // apply operation on a indexed map
-    MapNode map_node = 4;
+    QueryFilterMapNode map_node = 4;
   }
 }
 
 // apply operation on a indexed map
 // https://github.com/FoundationDB/fdb-record-layer/blob/8bb20ae0634c792b69ad35385fb26d232379b76b/fdb-record-layer-core/src/test/java-proto2/com/apple/foundationdb/record/provider/foundationdb/MapsTest.java#L108
-message MapNode {
+message QueryFilterMapNode {
   // which field is holding the map
   string field = 1;
   // the query to perform on the key
-  FieldNode key = 2;
+  QueryFilterFieldNode key = 2;
   // the query to perform on the value
-  FieldNode value = 3;
+  QueryFilterFieldNode value = 3;
 }
 
-message FieldNode {
+message QueryFilterFieldNode {
   string field = 1;
   FieldOperation operation = 2;
   // set this to true if your field is repeated
@@ -303,16 +303,16 @@ message FieldNode {
     double double_value = 19;
     bool bool_value = 20;
     bytes bytes_value = 21;
-    FieldNode fieldNode = 22;
+    QueryFilterFieldNode fieldNode = 22;
   }
 
   repeated string tokens = 40;
 }
 
-message AndNode {
-  repeated Node nodes = 1;
+message QueryFilterAndNode {
+  repeated QueryFilterNode nodes = 1;
 }
 
-message OrNode {
-  repeated Node nodes = 2;
+message QueryFilterOrNode {
+  repeated QueryFilterNode nodes = 2;
 }

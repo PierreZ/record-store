@@ -143,8 +143,8 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   @Test
   public void testPut3(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
-      .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+    RecordStoreProtocol.QueryFilterNode query = RecordStoreProtocol.QueryFilterNode.newBuilder()
+      .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
         .setField("id")
         .setInt64Value(2)
         .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
@@ -153,7 +153,7 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
       .setRecordTypeName("Person")
-      .setQueryNode(query)
+      .setFilter(query)
       .build();
 
     recordServiceVertxStub.query(request, response -> {
@@ -178,28 +178,28 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   @Test
   public void testPut4(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    RecordStoreProtocol.AndNode andNode = RecordStoreProtocol.AndNode.newBuilder()
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+    RecordStoreProtocol.QueryFilterAndNode andNode = RecordStoreProtocol.QueryFilterAndNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(2)
           .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
           .build()).build())
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(1)
           .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
           .build()).build())
       .build();
 
-    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
+    RecordStoreProtocol.QueryFilterNode query = RecordStoreProtocol.QueryFilterNode.newBuilder()
       .setAndNode(andNode)
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
       .setRecordTypeName("Person")
-      .setQueryNode(query)
+      .setFilter(query)
       .build();
 
     recordServiceVertxStub.query(request, response -> {
@@ -223,27 +223,27 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
 
   @Test
   public void testPut5(Vertx vertx, VertxTestContext testContext) throws Exception {
-    RecordStoreProtocol.AndNode andNode = RecordStoreProtocol.AndNode.newBuilder()
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+    RecordStoreProtocol.QueryFilterAndNode andNode = RecordStoreProtocol.QueryFilterAndNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(2)
           .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
           .build()).build())
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(1)
           .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
           .build()).build())
       .build();
 
-    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
+    RecordStoreProtocol.QueryFilterNode query = RecordStoreProtocol.QueryFilterNode.newBuilder()
       .setAndNode(andNode)
       .build();
 
     RecordStoreProtocol.DeleteRecordRequest request = RecordStoreProtocol.DeleteRecordRequest.newBuilder()
-      .setQueryNode(query)
+      .setFilter(query)
       .setRecordTypeName("Person")
       .build();
 
@@ -261,28 +261,28 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   @Test
   public void testPut6(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    RecordStoreProtocol.AndNode andNode = RecordStoreProtocol.AndNode.newBuilder()
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+    RecordStoreProtocol.QueryFilterAndNode andNode = RecordStoreProtocol.QueryFilterAndNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(2)
           .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
           .build()).build())
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(1)
           .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
           .build()).build())
       .build();
 
-    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
+    RecordStoreProtocol.QueryFilterNode query = RecordStoreProtocol.QueryFilterNode.newBuilder()
       .setAndNode(andNode)
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
       .setRecordTypeName("Person")
-      .setQueryNode(query)
+      .setFilter(query)
       .build();
 
     recordServiceVertxStub.query(request, response -> {

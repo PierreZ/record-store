@@ -1,5 +1,6 @@
 package fr.pierrezemb.recordstore.client;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.Constants;
 import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
@@ -22,9 +23,11 @@ import org.testcontainers.containers.AbstractFDBContainer;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -107,6 +110,25 @@ class RecordStoreClientTest extends AbstractFDBContainer {
     RecordStoreProtocol.StatResponse stats = recordStoreClient.getStats().get();
     assertEquals("bad count of records", 1, stats.getCount());
     assertEquals("bad number of updates", 3, stats.getCountUpdates());
+
+    testContext.completeNow();
+  }
+
+  @Test
+  @Order(5)
+  public void testQuery(Vertx vertx, VertxTestContext testContext) throws ExecutionException, InterruptedException, InvalidProtocolBufferException {
+
+    RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
+      .setRecordTypeName(DemoPersonProto.Person.class.getSimpleName())
+      .setFilter(QueryUtils.field("id").lessThan(2))
+      .build();
+    Iterator<RecordStoreProtocol.QueryResponse> results = recordStoreClient.queryRecords(request);
+
+    assertTrue("bad length of results", results.hasNext());
+    DemoPersonProto.Person response = DemoPersonProto.Person.parseFrom(results.next().getRecord().toByteArray());
+    assertEquals("bad id", 1, response.getId());
+    assertEquals("bad name", "Pierre Zemb", response.getName());
+    assertEquals("bad mail", "pz@example.org", response.getEmail());
 
     testContext.completeNow();
   }

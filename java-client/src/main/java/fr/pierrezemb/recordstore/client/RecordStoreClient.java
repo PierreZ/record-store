@@ -11,6 +11,7 @@ import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -25,6 +26,7 @@ public class RecordStoreClient {
   private final SchemaServiceGrpc.SchemaServiceFutureStub asyncSchemaStub;
   private final RecordServiceGrpc.RecordServiceFutureStub asyncRecordStub;
   private final AdminServiceGrpc.AdminServiceFutureStub asyncAdminStub;
+  private final RecordServiceGrpc.RecordServiceBlockingStub syncRecordStub;
 
   private RecordStoreClient(String tenant, String container, String address, String token) throws InterruptedException, ExecutionException, TimeoutException {
     this.tenant = tenant;
@@ -37,6 +39,7 @@ public class RecordStoreClient {
     channel = ManagedChannelBuilder.forTarget(this.address).usePlaintext().build();
 
     asyncSchemaStub = SchemaServiceGrpc.newFutureStub(channel).withCallCredentials(credentials);
+    syncRecordStub = RecordServiceGrpc.newBlockingStub(channel).withCallCredentials(credentials);
     asyncRecordStub = RecordServiceGrpc.newFutureStub(channel).withCallCredentials(credentials);
     asyncAdminStub = AdminServiceGrpc.newFutureStub(channel).withCallCredentials(credentials);
 
@@ -69,6 +72,10 @@ public class RecordStoreClient {
 
   public ListenableFuture<RecordStoreProtocol.StatResponse> getStats() {
     return asyncSchemaStub.stat(RecordStoreProtocol.StatRequest.newBuilder().build());
+  }
+
+  public Iterator<RecordStoreProtocol.QueryResponse> queryRecords(RecordStoreProtocol.QueryRequest request) {
+    return syncRecordStub.query(request);
   }
 
   public static class Builder {
