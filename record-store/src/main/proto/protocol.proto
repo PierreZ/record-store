@@ -10,14 +10,19 @@ option go_package = ".;recordstorepb";
 
 // administrative part of the container
 service SchemaService {
+  // Upsert a schema
   rpc Upsert (UpsertSchemaRequest) returns (EmptyResponse);
+  // Retrieve the stats for a container
   rpc Stat (StatRequest) returns (StatResponse);
+  // Get the current schema for a container
   rpc Get (GetSchemaRequest) returns (GetSchemaResponse);
 }
 
 // Service which allow to list and delete containers
 service AdminService {
+  // return the list of containers attached to this tenant
   rpc List (ListContainerRequest) returns (ListContainerResponse);
+  // delete a container from a tenant
   rpc Delete (DeleteContainerRequest) returns (EmptyResponse);
   // can be used to check auth
   rpc Ping (EmptyRequest) returns (EmptyResponse);
@@ -25,20 +30,29 @@ service AdminService {
 
 // Service which manipulate records within a container
 service RecordService {
+  // put a record
   rpc Put (PutRecordRequest) returns (EmptyResponse);
+  // query records
   rpc Query (QueryRequest) returns (stream QueryResponse);
+  // return the queryPlan for a query
   rpc GetQueryPlan (QueryRequest) returns (GetQueryPlanResponse);
+  // Delete records
   rpc Delete (DeleteRecordRequest) returns (DeleteRecordResponse);
 }
 
 message DeleteRecordRequest {
-  string table = 1;
+  // name of the recordType
+  string record_type_name = 1;
+  // set this flag to delete all records
   bool delete_all = 2;
-  Node query_node = 3;
+  // query node that will be runned to delete them
+  QueryFilterNode filter = 3;
 }
 
 message GetQueryPlanResponse {
+  // query plan on the Record-Layer side
   string query_plan = 1;
+  // query after parsing
   string parsedQuery = 2;
 }
 
@@ -46,22 +60,30 @@ message ListContainerRequest {
 }
 
 message ListContainerResponse {
+  // list of containers available on this tenant
   repeated string containers = 1;
 }
 
 message DeleteRecordResponse {
+  // number of records deleted
   int64 deleted_count = 1;
 }
 
 message UpsertSchemaRequest {
+  // the schema used
   google.protobuf.FileDescriptorSet schema = 1;
-  repeated IndexSchemaRequest index_request = 2;
+  // list of index definitions
+  repeated RecordTypeIndexDefinition record_type_index_definitions = 2;
+  // optional field, used if you need to use another Union-type
   string record_type_union_name = 3;
 }
 
-message IndexSchemaRequest {
+message RecordTypeIndexDefinition {
+  // name of the recordType
   string name = 1;
+  // fields used for creating the primary key
   repeated string primary_key_fields = 2;
+  // list of index definitions
   repeated IndexDefinition index_definitions = 3;
 }
 
@@ -72,39 +94,47 @@ message EmptyResponse {
 }
 
 message DeleteContainerRequest {
+  // list of containers to delete
   repeated string containers = 1;
 }
 
 message GetSchemaRequest {
-  string table = 1;
+  // name of the recordType
+  string record_type_name = 1;
 }
 
 message GetSchemaResponse {
+  // retrieved schema
   SchemaDescription schemas = 1;
+  // version of the schema
   int64 version = 2;
-}
-
-message DeleteSchemaRequest {
-  string table = 1;
 }
 
 message ListSchemaRequest {
 }
 
 message ListSchemaResponse {
+  // list of schema retrieved for this container
   repeated SchemaDescription schemas = 1;
 }
 
 message SchemaDescription {
+  // name of the recordType
   string name = 1;
+  // schema definition
   google.protobuf.FileDescriptorSet schema = 2;
-  string primary_key_field = 3;
+  // list of primary key fields
+  repeated string primary_key_field = 3;
+  // list of indexes
   repeated IndexDescription indexes = 4;
 }
 
 message IndexDescription {
+  // name of the index
   string name = 1;
+  // type of the index
   string type = 2;
+  // status of the index
   IndexStatus status = 3;
 }
 
@@ -118,18 +148,25 @@ message StatRequest {
 }
 
 message StatResponse {
+  // number of records
   int64 count = 1;
+  // number of updates received
   int64 count_updates = 2;
 }
 
 message PutRecordRequest {
-  string table = 1;
+  // name of the recordType
+  string record_type_name = 1;
+  // serialized version of the record
   bytes message = 2;
 }
 
 message IndexDefinition {
+  // field of the index
   string field = 1;
+  // Type of the index
   IndexType index_type = 2;
+  // if it is a repeated type, how we should fan it
   FanType fan_type = 3;
   // the nestedIndex should point within the nested struct
   // the nested index should only have field and fan_type set.
@@ -137,11 +174,17 @@ message IndexDefinition {
 }
 
 enum IndexType {
+  // Index the value
   VALUE = 0;
+  // Index sentences by splitting on spaces
   TEXT_DEFAULT_TOKENIZER = 1;
+  // Index the version of a field
   VERSION = 2;
+  // Index the key of a map
   MAP_KEYS = 3;
+  // Index the values of a map
   MAP_VALUES = 4;
+  // Index the whole map
   MAP_KEYS_AND_VALUES = 5;
 }
 
@@ -155,25 +198,32 @@ enum FanType {
   FAN_CONCATENATE = 2;
 }
 
-message SelfDescribedMessage {
-}
-
 message QueryRequest {
-  string table = 1;
-  Node query_node = 2;
+  // name of the queryType
+  string record_type_name = 1;
+  // the query itself
+  QueryFilterNode filter = 2;
+  // the continuation, can be used to continue the query
   bytes continuation = 3;
+  // number max of records to retrieve
   int64 resultLimit = 4;
+  // sort results
   SortByRequest sort_by = 5;
+  // fields to returns
   repeated string fields_to_return = 6;
+  // isolation level to use on the query
   QueryIsolationLevel query_isolation_level = 7;
 }
 
 enum QueryIsolationLevel {
+  // default query isolation
   SERIALIZABLE = 0;
+  // weaker query isolation
   SNAPSHOT = 1;
 }
 
 message SortByRequest {
+  // sort by
   SortByType type = 1;
   // used when Type = Value
   string field = 2;
@@ -181,19 +231,22 @@ message SortByRequest {
 
 enum SortByType {
   SORT_DISABLE = 0;
+  // Sort oldest records first
   SORT_BY_OLDEST_VERSION_FIRST = 1;
+  // Sort newest records first
   SORT_BY_NEWEST_VERSION_FIRST = 2;
+  // sort by a field value
   SORT_BY_VALUE = 3;
+  // sort by a field value reversed
   SORT_BY_VALUE_REVERSED = 4;
 }
 
 message QueryResponse {
+  // the retrieved records
   bytes record = 1;
 }
 
-
-enum FieldOperation {
-
+enum FilterOperation {
   // valid for field query
   GREATER_THAN_OR_EQUALS = 0;
   LESS_THAN_OR_EQUALS = 1;
@@ -212,30 +265,30 @@ enum FieldOperation {
   TEXT_CONTAINS_ALL = 12;
 }
 
-message Node {
+message QueryFilterNode {
   oneof Content {
-    FieldNode field_node = 1;
-    AndNode and_node = 2;
-    OrNode or_node = 3;
+    QueryFilterFieldNode field_node = 1;
+    QueryFilterAndNode and_node = 2;
+    QueryFilterOrNode or_node = 3;
     // apply operation on a indexed map
-    MapNode map_node = 4;
+    QueryFilterMapNode map_node = 4;
   }
 }
 
 // apply operation on a indexed map
 // https://github.com/FoundationDB/fdb-record-layer/blob/8bb20ae0634c792b69ad35385fb26d232379b76b/fdb-record-layer-core/src/test/java-proto2/com/apple/foundationdb/record/provider/foundationdb/MapsTest.java#L108
-message MapNode {
+message QueryFilterMapNode {
   // which field is holding the map
   string field = 1;
   // the query to perform on the key
-  FieldNode key = 2;
+  QueryFilterFieldNode key = 2;
   // the query to perform on the value
-  FieldNode value = 3;
+  QueryFilterFieldNode value = 3;
 }
 
-message FieldNode {
+message QueryFilterFieldNode {
   string field = 1;
-  FieldOperation operation = 2;
+  FilterOperation operation = 2;
   // set this to true if your field is repeated
   bool is_field_defined_as_repeated = 3;
   oneof value {
@@ -250,16 +303,16 @@ message FieldNode {
     double double_value = 19;
     bool bool_value = 20;
     bytes bytes_value = 21;
-    FieldNode fieldNode = 22;
+    QueryFilterFieldNode fieldNode = 22;
   }
 
   repeated string tokens = 40;
 }
 
-message AndNode {
-  repeated Node nodes = 1;
+message QueryFilterAndNode {
+  repeated QueryFilterNode nodes = 1;
 }
 
-message OrNode {
-  repeated Node nodes = 2;
+message QueryFilterOrNode {
+  repeated QueryFilterNode nodes = 2;
 }

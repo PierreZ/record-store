@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.containers.AbstractFDBContainer;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
@@ -68,9 +69,9 @@ class GraphQLVerticleTest extends AbstractFDBContainer {
 
   @Test
   public void getSchema(WebClient client, VertxTestContext testContext) throws Exception {
-    RecordMetaData metadata = this.recordLayer.getSchema(DEFAULT_DEMO_TENANT, "PERSONS");
+    RecordMetaData metadata = this.recordLayer.getSchema(DEFAULT_DEMO_TENANT, "USER");
     String schema = GraphQLSchemaGenerator.generate(metadata);
-    testRequest(client, HttpMethod.GET, "/api/v0/" + DatasetsLoader.DEFAULT_DEMO_TENANT + "/" + "PERSONS" + "/schema")
+    testRequest(client, HttpMethod.GET, "/api/v0/" + DatasetsLoader.DEFAULT_DEMO_TENANT + "/" + "USER" + "/schema")
       .expect(
         bodyResponse(Buffer.buffer(schema), "text/plain")
       ).send(testContext);

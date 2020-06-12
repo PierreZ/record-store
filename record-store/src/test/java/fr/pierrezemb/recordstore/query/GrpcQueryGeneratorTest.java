@@ -3,7 +3,6 @@ package fr.pierrezemb.recordstore.query;
 import com.apple.foundationdb.record.query.RecordQuery;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
-import fr.pierrezemb.recordstore.AbstractFDBContainer;
 import fr.pierrezemb.recordstore.Constants;
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
@@ -14,6 +13,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.testcontainers.containers.AbstractFDBContainer;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
@@ -41,7 +41,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
     recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false, secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
-    datasetsLoader.LoadDataset("PERSONS");
+    datasetsLoader.loadDataset("USER");
   }
 
   @ParameterizedTest
@@ -49,7 +49,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
   public void testQuery(RecordStoreProtocol.QueryRequest request, int expectedResult) {
     RecordQuery query = GrpcQueryGenerator.generate(request);
 
-    List<Message> results = this.recordLayer.queryRecords(DatasetsLoader.DEFAULT_DEMO_TENANT, "PERSONS", query);
+    List<Message> results = this.recordLayer.queryRecords(DatasetsLoader.DEFAULT_DEMO_TENANT, "USER", query);
     if (expectedResult == -1) {
       Assert.assertTrue("empty results", results.size() > 0);
     } else {
@@ -61,37 +61,37 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
     return Stream.of(
       // all records
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
+        .setRecordTypeName("User")
         .build(), 100),
 
       // get on id
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
-        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
-          .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+        .setRecordTypeName("User")
+        .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
+          .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
             .setField("id").setInt64Value(1)
-            .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+            .setOperation(RecordStoreProtocol.FilterOperation.EQUALS)
             .build())
           .build())
         .build(), 1),
 
       // range
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
-        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
-          .setAndNode(RecordStoreProtocol.AndNode.newBuilder()
-            .addNodes(RecordStoreProtocol.Node.newBuilder()
-              .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+        .setRecordTypeName("User")
+        .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
+          .setAndNode(RecordStoreProtocol.QueryFilterAndNode.newBuilder()
+            .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+              .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
                 .setField("id")
                 .setInt64Value(1)
-                .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+                .setOperation(RecordStoreProtocol.FilterOperation.GREATER_THAN_OR_EQUALS)
                 .build())
               .build())
-            .addNodes(RecordStoreProtocol.Node.newBuilder()
-              .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+            .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+              .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
                 .setInt64Value(10)
                 .setField("id")
-                .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+                .setOperation(RecordStoreProtocol.FilterOperation.LESS_THAN_OR_EQUALS)
                 .build())
               .build())
             .build())
@@ -100,21 +100,21 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // or
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
-        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
-          .setOrNode(RecordStoreProtocol.OrNode.newBuilder()
-            .addNodes(RecordStoreProtocol.Node.newBuilder()
-              .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+        .setRecordTypeName("User")
+        .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
+          .setOrNode(RecordStoreProtocol.QueryFilterOrNode.newBuilder()
+            .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+              .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
                 .setField("id")
                 .setInt64Value(1)
-                .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+                .setOperation(RecordStoreProtocol.FilterOperation.EQUALS)
                 .build())
               .build())
-            .addNodes(RecordStoreProtocol.Node.newBuilder()
-              .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+            .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+              .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
                 .setInt64Value(10)
                 .setField("id")
-                .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+                .setOperation(RecordStoreProtocol.FilterOperation.EQUALS)
                 .build())
               .build())
             .build())
@@ -123,11 +123,11 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // text index any
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
-        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
-          .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+        .setRecordTypeName("User")
+        .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
+          .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
             .setField("rick_and_morty_quotes")
-            .setOperation(RecordStoreProtocol.FieldOperation.TEXT_CONTAINS_ANY)
+            .setOperation(RecordStoreProtocol.FilterOperation.TEXT_CONTAINS_ANY)
             .addTokens("jerry")
             .build())
           .build())
@@ -135,11 +135,11 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // text index all
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
-        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
-          .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+        .setRecordTypeName("User")
+        .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
+          .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
             .setField("rick_and_morty_quotes")
-            .setOperation(RecordStoreProtocol.FieldOperation.TEXT_CONTAINS_ALL)
+            .setOperation(RecordStoreProtocol.FilterOperation.TEXT_CONTAINS_ALL)
             .addAllTokens(Arrays.asList("MR MEESEEKS LOOK AT ME".toLowerCase().split(" ")))
             .build())
           .build())
@@ -147,12 +147,12 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over a repeated field
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
-        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
-          .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+        .setRecordTypeName("User")
+        .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
+          .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
             .setField("beers")
             .setIsFieldDefinedAsRepeated(true)
-            .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+            .setOperation(RecordStoreProtocol.FilterOperation.EQUALS)
             .setStringValue("Trappistes Rochefort 10")
             .build())
           .build())
@@ -160,17 +160,17 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed map with constraint on key and value
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
-        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
-          .setMapNode(RecordStoreProtocol.MapNode.newBuilder()
+        .setRecordTypeName("User")
+        .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
+          .setMapNode(RecordStoreProtocol.QueryFilterMapNode.newBuilder()
             .setField("favorite_locations_from_tv")
-            .setKey(RecordStoreProtocol.FieldNode.newBuilder()
-              .setOperation(RecordStoreProtocol.FieldOperation.START_WITH)
+            .setKey(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
+              .setOperation(RecordStoreProtocol.FilterOperation.START_WITH)
               .setStringValue("hitchhikers_guide")
               .build())
-            .setValue(RecordStoreProtocol.FieldNode.newBuilder()
+            .setValue(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
               .setStringValue("Eroticon VI")
-              .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+              .setOperation(RecordStoreProtocol.FilterOperation.EQUALS)
               .build())
             .build())
           .build())
@@ -178,13 +178,13 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed map with constraint on value
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
-        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
-          .setMapNode(RecordStoreProtocol.MapNode.newBuilder()
+        .setRecordTypeName("User")
+        .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
+          .setMapNode(RecordStoreProtocol.QueryFilterMapNode.newBuilder()
             .setField("favorite_locations_from_tv")
-            .setValue(RecordStoreProtocol.FieldNode.newBuilder()
+            .setValue(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
               .setStringValue("Earth")
-              .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+              .setOperation(RecordStoreProtocol.FilterOperation.EQUALS)
               .build())
             .build())
           .build())
@@ -192,13 +192,13 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed map with constraint on key
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
-        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
-          .setMapNode(RecordStoreProtocol.MapNode.newBuilder()
+        .setRecordTypeName("User")
+        .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
+          .setMapNode(RecordStoreProtocol.QueryFilterMapNode.newBuilder()
             .setField("favorite_locations_from_tv")
-            .setKey(RecordStoreProtocol.FieldNode.newBuilder()
+            .setKey(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
               .setStringValue("hitch")
-              .setOperation(RecordStoreProtocol.FieldOperation.START_WITH)
+              .setOperation(RecordStoreProtocol.FilterOperation.START_WITH)
               .build())
             .build())
           .build())
@@ -206,14 +206,14 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed nested field
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setTable("Person")
-        .setQueryNode(RecordStoreProtocol.Node.newBuilder()
-          .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+        .setRecordTypeName("User")
+        .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
+          .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
             .setField("address")
-            .setOperation(RecordStoreProtocol.FieldOperation.MATCHES)
-            .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+            .setOperation(RecordStoreProtocol.FilterOperation.MATCHES)
+            .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
               .setField("city")
-              .setOperation(RecordStoreProtocol.FieldOperation.EQUALS)
+              .setOperation(RecordStoreProtocol.FilterOperation.EQUALS)
               .setStringValue("Antown")
               .build())
             .build())

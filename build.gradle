@@ -3,3 +3,9 @@ allprojects {
     mavenCentral()
   }
 }
+ext {
+  vertxVersion = '3.9.1'
+  recordLayerVersion = '2.8.110.0'
+  junitJupiterEngineVersion = '5.4.0'
+  autoValueVersion = '1.7.2'
+}

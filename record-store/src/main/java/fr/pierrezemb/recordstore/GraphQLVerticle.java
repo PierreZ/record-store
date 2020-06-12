@@ -41,7 +41,7 @@ public class GraphQLVerticle extends AbstractVerticle {
     recordLayer = new RecordLayer(clusterFilePath, vertx.isMetricsEnabled(), secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
-    datasetsLoader.LoadDataset(this.context.config().getString(Constants.CONFIG_LOAD_DEMO, "PERSONS"));
+    datasetsLoader.loadDataset(this.context.config().getString(Constants.CONFIG_LOAD_DEMO, ""));
 
     Router router = Router.router(vertx);
     router.route("/api/v0/:tenant/:container/schema").handler(this::getSchema);

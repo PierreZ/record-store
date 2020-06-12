@@ -22,11 +22,6 @@ repositories {
   mavenCentral()
 }
 
-ext {
-  vertxVersion = '3.8.5'
-  junitJupiterEngineVersion = '5.4.0'
-  autoValueVersion = '1.7.2'
-}
 
 application {
   mainClassName = 'fr.pierrezemb.recordstore.Launcher'
@@ -40,12 +35,13 @@ def watchForChange = 'record-store/**/*'
 def doOnChange = './gradlew classes'
 
 dependencies {
+  compile project(':testcontainers-foundationdb')
   implementation "io.vertx:vertx-junit5:$vertxVersion"
   implementation "io.vertx:vertx-grpc:$vertxVersion"
   implementation "io.vertx:vertx-web:$vertxVersion"
   implementation "io.vertx:vertx-junit5-web-client:$vertxVersion"
 
-  implementation 'org.foundationdb:fdb-record-layer-core-pb3:2.8.91.0'
+  implementation "org.foundationdb:fdb-record-layer-core-pb3:$recordLayerVersion"
   compile "io.vertx:vertx-micrometer-metrics:$vertxVersion"
   compile "io.micrometer:micrometer-registry-prometheus:1.4.2"
   compile 'io.vertx:vertx-web-graphql:3.9.0'
@@ -55,8 +51,6 @@ dependencies {
   implementation 'com.clever-cloud:biscuit-java:0.2.6'
 
   testImplementation "io.vertx:vertx-junit5:$vertxVersion"
-  testCompile "org.testcontainers:testcontainers:1.13.0"
-  // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-params
   testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.7.0-M1'
 
   // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple

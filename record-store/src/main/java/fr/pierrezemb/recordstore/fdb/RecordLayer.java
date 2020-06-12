@@ -128,7 +128,7 @@ public class RecordLayer {
       ).collect(Collectors.toList());
   }
 
-  public void upsertSchema(String tenantID, String container, DescriptorProtos.FileDescriptorSet schema, List<RecordStoreProtocol.IndexSchemaRequest> indexes) throws Descriptors.DescriptorValidationException {
+  public void upsertSchema(String tenantID, String container, DescriptorProtos.FileDescriptorSet schema, List<RecordStoreProtocol.RecordTypeIndexDefinition> indexes) throws Descriptors.DescriptorValidationException {
 
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
     FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
@@ -162,7 +162,7 @@ public class RecordLayer {
 
   }
 
-  private RecordMetaData createRecordMetaData(DescriptorProtos.FileDescriptorSet schema, List<RecordStoreProtocol.IndexSchemaRequest> indexes, int version, RecordMetaData oldMetadata) throws Descriptors.DescriptorValidationException {
+  private RecordMetaData createRecordMetaData(DescriptorProtos.FileDescriptorSet schema, List<RecordStoreProtocol.RecordTypeIndexDefinition> indexes, int version, RecordMetaData oldMetadata) throws Descriptors.DescriptorValidationException {
 
     // retrieving protobuf descriptor
     RecordMetaDataBuilder metadataBuilder = RecordMetaData.newBuilder();
@@ -202,7 +202,7 @@ public class RecordLayer {
     }
 
     // we need to loop through all index requests
-    for (RecordStoreProtocol.IndexSchemaRequest idxRequest : indexes) {
+    for (RecordStoreProtocol.RecordTypeIndexDefinition idxRequest : indexes) {
       LOGGER.trace("adding indexes for {}", idxRequest.getName());
       // add new indexes
       for (RecordStoreProtocol.IndexDefinition indexDefinition : idxRequest.getIndexDefinitionsList()) {
@@ -421,7 +421,7 @@ public class RecordLayer {
     FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
     FDBRecordStore r = createFDBRecordStore(context, metadataStore, encryptionKey, tenantID, container);
 
-    Descriptors.Descriptor descriptor = r.getRecordMetaData().getRecordsDescriptor().findMessageTypeByName("Person");
+    Descriptors.Descriptor descriptor = r.getRecordMetaData().getRecordsDescriptor().findMessageTypeByName("User");
 
     List<Map<String, Object>> result = null;
     try {

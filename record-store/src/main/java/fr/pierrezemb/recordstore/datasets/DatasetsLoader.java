@@ -20,13 +20,13 @@ public class DatasetsLoader {
     nbrRecords = 100;
   }
 
-  public void LoadDataset(List<DemoDatasetEnum> datasets) throws InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
+  public void loadDataset(List<DemoDatasetEnum> datasets) throws InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
     List<String> alreadyLoadedDatasets = this.recordLayer.listContainers(DEFAULT_DEMO_TENANT);
     for (DemoDatasetEnum d : datasets) {
       Dataset dataset;
       switch (d) {
-        case PERSONS:
-          dataset = new PersonDataset();
+        case USER:
+          dataset = new UserDataset();
           break;
         default:
           continue;
@@ -40,7 +40,7 @@ public class DatasetsLoader {
     }
   }
 
-  public void LoadDataset(String datasetsToLoad) throws InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
+  public void loadDataset(String datasetsToLoad) throws InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
 
     if (datasetsToLoad == null) {
       return;
@@ -58,7 +58,7 @@ public class DatasetsLoader {
           LOGGER.error("cannot find dataset {}", dataset);
         }
       }
-      datasetsLoader.LoadDataset(datasets);
+      datasetsLoader.loadDataset(datasets);
     }
   }
 }

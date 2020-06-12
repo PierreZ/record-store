@@ -4,7 +4,7 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
-import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
+import fr.pierrezemb.recordstore.datasets.proto.DemoUserProto;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.containers.AbstractFDBContainer;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -70,14 +71,14 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   public void testCreateSchema(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoUserProto.User.getDescriptor());
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setSchema(dependencies)
-      .addIndexRequest(
-        RecordStoreProtocol.IndexSchemaRequest.newBuilder()
-          .setName("Person")
+      .addRecordTypeIndexDefinitions(
+        RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
+          .setName("User")
           .addPrimaryKeyFields("id")
           .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
             .setIndexType(RecordStoreProtocol.IndexType.VERSION)
@@ -99,14 +100,14 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   @Test
   public void testPut1(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    DemoPersonProto.Person person = DemoPersonProto.Person.newBuilder()
+    DemoUserProto.User person = DemoUserProto.User.newBuilder()
       .setId(1)
       .setName("PierreZ")
       .setEmail("toto@example.com")
       .build();
 
     RecordStoreProtocol.PutRecordRequest request = RecordStoreProtocol.PutRecordRequest.newBuilder()
-      .setTable("Person")
+      .setRecordTypeName("User")
       .setMessage(person.toByteString())
       .build();
 
@@ -142,25 +143,25 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   @Test
   public void testPut3(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
-      .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+    RecordStoreProtocol.QueryFilterNode query = RecordStoreProtocol.QueryFilterNode.newBuilder()
+      .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
         .setField("id")
         .setInt64Value(2)
-        .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+        .setOperation(RecordStoreProtocol.FilterOperation.LESS_THAN_OR_EQUALS)
         .build())
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setTable("Person")
-      .setQueryNode(query)
+      .setRecordTypeName("User")
+      .setFilter(query)
       .build();
 
     recordServiceVertxStub.query(request, response -> {
       response.handler(req -> {
         System.out.println("received a response");
-        DemoPersonProto.Person p = null;
+        DemoUserProto.User p = null;
         try {
-          p = DemoPersonProto.Person.parseFrom(req.getRecord());
+          p = DemoUserProto.User.parseFrom(req.getRecord());
           assertEquals("PierreZ", p.getName());
           assertEquals("toto@example.com", p.getEmail());
           assertEquals(1, p.getId());
@@ -177,36 +178,36 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   @Test
   public void testPut4(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    RecordStoreProtocol.AndNode andNode = RecordStoreProtocol.AndNode.newBuilder()
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+    RecordStoreProtocol.QueryFilterAndNode andNode = RecordStoreProtocol.QueryFilterAndNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(2)
-          .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.LESS_THAN_OR_EQUALS)
           .build()).build())
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(1)
-          .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.GREATER_THAN_OR_EQUALS)
           .build()).build())
       .build();
 
-    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
+    RecordStoreProtocol.QueryFilterNode query = RecordStoreProtocol.QueryFilterNode.newBuilder()
       .setAndNode(andNode)
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setTable("Person")
-      .setQueryNode(query)
+      .setRecordTypeName("User")
+      .setFilter(query)
       .build();
 
     recordServiceVertxStub.query(request, response -> {
       response.handler(req -> {
         System.out.println("received a response");
-        DemoPersonProto.Person p = null;
+        DemoUserProto.User p = null;
         try {
-          p = DemoPersonProto.Person.parseFrom(req.getRecord());
+          p = DemoUserProto.User.parseFrom(req.getRecord());
           assertEquals("PierreZ", p.getName());
           assertEquals("toto@example.com", p.getEmail());
           assertEquals(1, p.getId());
@@ -222,28 +223,28 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
 
   @Test
   public void testPut5(Vertx vertx, VertxTestContext testContext) throws Exception {
-    RecordStoreProtocol.AndNode andNode = RecordStoreProtocol.AndNode.newBuilder()
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+    RecordStoreProtocol.QueryFilterAndNode andNode = RecordStoreProtocol.QueryFilterAndNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(2)
-          .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.LESS_THAN_OR_EQUALS)
           .build()).build())
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(1)
-          .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.GREATER_THAN_OR_EQUALS)
           .build()).build())
       .build();
 
-    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
+    RecordStoreProtocol.QueryFilterNode query = RecordStoreProtocol.QueryFilterNode.newBuilder()
       .setAndNode(andNode)
       .build();
 
     RecordStoreProtocol.DeleteRecordRequest request = RecordStoreProtocol.DeleteRecordRequest.newBuilder()
-      .setQueryNode(query)
-      .setTable("Person")
+      .setFilter(query)
+      .setRecordTypeName("User")
       .build();
 
     recordServiceVertxStub.delete(request, response -> {
@@ -260,37 +261,37 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   @Test
   public void testPut6(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    RecordStoreProtocol.AndNode andNode = RecordStoreProtocol.AndNode.newBuilder()
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+    RecordStoreProtocol.QueryFilterAndNode andNode = RecordStoreProtocol.QueryFilterAndNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(2)
-          .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.LESS_THAN_OR_EQUALS)
           .build()).build())
-      .addNodes(RecordStoreProtocol.Node.newBuilder()
-        .setFieldNode(RecordStoreProtocol.FieldNode.newBuilder()
+      .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
+        .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(1)
-          .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.GREATER_THAN_OR_EQUALS)
           .build()).build())
       .build();
 
-    RecordStoreProtocol.Node query = RecordStoreProtocol.Node.newBuilder()
+    RecordStoreProtocol.QueryFilterNode query = RecordStoreProtocol.QueryFilterNode.newBuilder()
       .setAndNode(andNode)
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setTable("Person")
-      .setQueryNode(query)
+      .setRecordTypeName("User")
+      .setFilter(query)
       .build();
 
     recordServiceVertxStub.query(request, response -> {
-      List<DemoPersonProto.Person> results = new ArrayList<>();
+      List<DemoUserProto.User> results = new ArrayList<>();
       response.handler(req -> {
         System.out.println("received a response");
-        DemoPersonProto.Person p = null;
+        DemoUserProto.User p = null;
         try {
-          p = DemoPersonProto.Person.parseFrom(req.getRecord());
+          p = DemoUserProto.User.parseFrom(req.getRecord());
           results.add(p);
         } catch (InvalidProtocolBufferException e) {
           testContext.failNow(e);
@@ -309,18 +310,18 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   public void testPut7(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setTable("Person")
+      .setRecordTypeName("User")
       .setSortBy(RecordStoreProtocol.SortByRequest.newBuilder().setType(RecordStoreProtocol.SortByType.SORT_BY_NEWEST_VERSION_FIRST)
         .build())
       .build();
 
     recordServiceVertxStub.query(request, response -> {
-      List<DemoPersonProto.Person> results = new ArrayList<>();
+      List<DemoUserProto.User> results = new ArrayList<>();
       response.handler(req -> {
         System.out.println("received a response");
-        DemoPersonProto.Person p = null;
+        DemoUserProto.User p = null;
         try {
-          p = DemoPersonProto.Person.parseFrom(req.getRecord());
+          p = DemoUserProto.User.parseFrom(req.getRecord());
           results.add(p);
         } catch (InvalidProtocolBufferException e) {
           testContext.failNow(e);

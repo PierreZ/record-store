@@ -1,12 +1,11 @@
 package fr.pierrezemb.recordstore.grpc;
 
 import com.google.protobuf.DescriptorProtos;
-import fr.pierrezemb.recordstore.AbstractFDBContainer;
 import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.PortManager;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
-import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
+import fr.pierrezemb.recordstore.datasets.proto.DemoUserProto;
 import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
@@ -24,9 +23,9 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.containers.AbstractFDBContainer;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 
 import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_CONTAINER;
@@ -42,7 +41,7 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
   private File clusterFile;
 
   @BeforeAll
-  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
+  void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
 
     clusterFile = container.getClusterFile();
 
@@ -70,13 +69,13 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
   public void testCRUDSchema1(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoUserProto.User.getDescriptor());
 
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
-        .setName("Person")
+      .addRecordTypeIndexDefinitions(RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
+        .setName("User")
         .addPrimaryKeyFields("id")
         .build())
       .setSchema(dependencies)
@@ -95,7 +94,7 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
   @Test
   public void testCRUDSchema2(Vertx vertx, VertxTestContext testContext) throws Exception {
     schemaServiceVertxStub.get(RecordStoreProtocol.GetSchemaRequest.newBuilder()
-      .setTable("Person")
+      .setRecordTypeName("User")
       .build(), response -> {
       if (response.succeeded()) {
         System.out.println("Got the server response: " + response.result());
@@ -109,13 +108,13 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
   @Test
   public void testCRUDSchema3(Vertx vertx, VertxTestContext testContext) throws Exception {
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoUserProto.User.getDescriptor());
 
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
-        .setName("Person")
+      .addRecordTypeIndexDefinitions(RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
+        .setName("User")
         .addPrimaryKeyFields("id")
         .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
           .setField("name")
@@ -139,12 +138,12 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
   public void testCRUDSchema4(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoUserProto.User.getDescriptor());
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
-        .setName("Person")
+      .addRecordTypeIndexDefinitions(RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
+        .setName("User")
         .addPrimaryKeyFields("id")
         // let's forget an index, this is working as we cannot delete an Index for now
         .build())
@@ -164,13 +163,13 @@ public class SchemaAdminServiceTest extends AbstractFDBContainer {
   public void testCRUDSchema5(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoUserProto.User.getDescriptor());
 
     // upsert old schema should be harmless
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
-      .addIndexRequest(RecordStoreProtocol.IndexSchemaRequest.newBuilder()
-        .setName("Person")
+      .addRecordTypeIndexDefinitions(RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
+        .setName("User")
         .addPrimaryKeyFields("id")
         .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
           .setField("name").build())

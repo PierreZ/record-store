@@ -1,6 +1,7 @@
 package fr.pierrezemb.recordstore;
 
 
+import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.grpc.AdminService;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
@@ -40,6 +41,9 @@ public class GrpcVerticle extends AbstractVerticle {
     SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
 
     RecordLayer recordLayer = new RecordLayer(clusterFilePath, vertx.isMetricsEnabled(), secretKey);
+
+    DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
+    datasetsLoader.loadDataset(this.context.config().getString(Constants.CONFIG_LOAD_DEMO, ""));
 
     VertxServerBuilder serverBuilder = VertxServerBuilder
       .forAddress(vertx,

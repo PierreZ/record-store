@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.InvalidProtocolBufferException;
-import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
+import fr.pierrezemb.recordstore.datasets.proto.DemoUserProto;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.utils.protobuf.ProtobufReflectionUtil;
@@ -16,22 +16,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-public class PersonDataset implements Dataset {
-  private static final Logger LOGGER = LoggerFactory.getLogger(PersonDataset.class);
+public class UserDataset implements Dataset {
+  private static final Logger LOGGER = LoggerFactory.getLogger(UserDataset.class);
 
   @Override
   public void load(RecordLayer recordLayer, String tenant, String container, int nbrRecord) throws Descriptors.DescriptorValidationException, InvalidProtocolBufferException {
 
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoUserProto.User.getDescriptor());
 
     recordLayer.upsertSchema(
       tenant,
       container,
       dependencies,
       ImmutableList.of(
-        RecordStoreProtocol.IndexSchemaRequest.newBuilder()
-          .setName("Person")
+        RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
+          .setName("User")
           .addAllIndexDefinitions(ImmutableList.of(
             RecordStoreProtocol.IndexDefinition.newBuilder()
               .setIndexType(RecordStoreProtocol.IndexType.VALUE)
@@ -67,36 +67,41 @@ public class PersonDataset implements Dataset {
 
     for (int i = 0; i < nbrRecord; i++) {
 
-      ArrayList<String> beers = new ArrayList<>();
-      for (int j = 0; j < 5; j++) {
-        beers.add(faker.beer().name());
-      }
-
-      HashMap<String, String> favoritePlanets = new HashMap<>();
-      favoritePlanets.put("hitchhikers_guide_to_the_galaxy", faker.hitchhikersGuideToTheGalaxy().planet());
-      favoritePlanets.put("rick_and_morty", faker.rickAndMorty().location());
-      favoritePlanets.put("star_trek", faker.starTrek().location());
-
-      DemoPersonProto.Address address = DemoPersonProto.Address.newBuilder()
-        .setFullAddress(faker.address().fullAddress())
-        .setCity(faker.address().cityName())
-        .build();
-
-      DemoPersonProto.Person person = DemoPersonProto.Person.newBuilder()
-        .setId(i)
-        .setName(faker.funnyName().name())
-        .setEmail(faker.internet().emailAddress())
-        .addAllBeers(beers)
-        .setRickAndMortyQuotes(faker.rickAndMorty().quote())
-        .putAllFavoriteLocationsFromTv(favoritePlanets)
-        .setAddress(address)
-        .build();
+      DemoUserProto.User person = createUser(i, faker);
 
       if (LOGGER.isTraceEnabled()) {
-        LOGGER.trace("inserting Person '{}'", person);
+        LOGGER.trace("inserting User '{}'", person);
       }
 
-      recordLayer.putRecord(tenant, container, "Person", person.toByteArray());
+      recordLayer.putRecord(tenant, container, "User", person.toByteArray());
     }
+  }
+
+  public DemoUserProto.User createUser(long id, Faker faker) {
+
+    ArrayList<String> beers = new ArrayList<>();
+    for (int j = 0; j < 5; j++) {
+      beers.add(faker.beer().name());
+    }
+
+    HashMap<String, String> favoritePlanets = new HashMap<>();
+    favoritePlanets.put("hitchhikers_guide_to_the_galaxy", faker.hitchhikersGuideToTheGalaxy().planet());
+    favoritePlanets.put("rick_and_morty", faker.rickAndMorty().location());
+    favoritePlanets.put("star_trek", faker.starTrek().location());
+
+    DemoUserProto.Address address = DemoUserProto.Address.newBuilder()
+      .setFullAddress(faker.address().fullAddress())
+      .setCity(faker.address().cityName())
+      .build();
+
+    return DemoUserProto.User.newBuilder()
+      .setId(id)
+      .setName(faker.funnyName().name())
+      .setEmail(faker.internet().emailAddress())
+      .addAllBeers(beers)
+      .setRickAndMortyQuotes(faker.rickAndMorty().quote())
+      .putAllFavoriteLocationsFromTv(favoritePlanets)
+      .setAddress(address)
+      .build();
   }
 }

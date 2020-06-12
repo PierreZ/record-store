@@ -1,4 +1,4 @@
-package fr.pierrezemb.recordstore;
+package org.testcontainers.containers;
 
 /**
  * Use the singleton pattern to have only one FDB started
