@@ -246,7 +246,7 @@ message QueryResponse {
   bytes record = 1;
 }
 
-enum FieldOperation {
+enum FilterOperation {
   // valid for field query
   GREATER_THAN_OR_EQUALS = 0;
   LESS_THAN_OR_EQUALS = 1;
@@ -288,7 +288,7 @@ message QueryFilterMapNode {
 
 message QueryFilterFieldNode {
   string field = 1;
-  FieldOperation operation = 2;
+  FilterOperation operation = 2;
   // set this to true if your field is repeated
   bool is_field_defined_as_repeated = 3;
   oneof value {

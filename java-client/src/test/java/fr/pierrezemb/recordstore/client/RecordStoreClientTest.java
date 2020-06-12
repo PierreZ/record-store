@@ -122,7 +122,7 @@ class RecordStoreClientTest extends AbstractFDBContainer {
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
       .setRecordTypeName(DemoPersonProto.Person.class.getSimpleName())
-      .setFilter(RecordQuery.field("id").lessThan(1000))
+      .setFilter(RecordQuery.field("id").lessThan(1000L))
       .setResultLimit(1)
       .build();
 

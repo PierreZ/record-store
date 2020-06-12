@@ -147,7 +147,7 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
       .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
         .setField("id")
         .setInt64Value(2)
-        .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+        .setOperation(RecordStoreProtocol.FilterOperation.LESS_THAN_OR_EQUALS)
         .build())
       .build();
 
@@ -183,13 +183,13 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
         .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(2)
-          .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.LESS_THAN_OR_EQUALS)
           .build()).build())
       .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
         .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(1)
-          .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.GREATER_THAN_OR_EQUALS)
           .build()).build())
       .build();
 
@@ -228,13 +228,13 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
         .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(2)
-          .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.LESS_THAN_OR_EQUALS)
           .build()).build())
       .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
         .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(1)
-          .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.GREATER_THAN_OR_EQUALS)
           .build()).build())
       .build();
 
@@ -266,13 +266,13 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
         .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(2)
-          .setOperation(RecordStoreProtocol.FieldOperation.LESS_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.LESS_THAN_OR_EQUALS)
           .build()).build())
       .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
         .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
           .setField("id")
           .setInt64Value(1)
-          .setOperation(RecordStoreProtocol.FieldOperation.GREATER_THAN_OR_EQUALS)
+          .setOperation(RecordStoreProtocol.FilterOperation.GREATER_THAN_OR_EQUALS)
           .build()).build())
       .build();
 
