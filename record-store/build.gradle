@@ -41,7 +41,7 @@ dependencies {
   implementation "io.vertx:vertx-web:$vertxVersion"
   implementation "io.vertx:vertx-junit5-web-client:$vertxVersion"
 
-  implementation 'org.foundationdb:fdb-record-layer-core-pb3:2.8.91.0'
+  implementation "org.foundationdb:fdb-record-layer-core-pb3:$recordLayerVersion"
   compile "io.vertx:vertx-micrometer-metrics:$vertxVersion"
   compile "io.micrometer:micrometer-registry-prometheus:1.4.2"
   compile 'io.vertx:vertx-web-graphql:3.9.0'
