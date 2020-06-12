@@ -421,7 +421,7 @@ public class RecordLayer {
     FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
     FDBRecordStore r = createFDBRecordStore(context, metadataStore, encryptionKey, tenantID, container);
 
-    Descriptors.Descriptor descriptor = r.getRecordMetaData().getRecordsDescriptor().findMessageTypeByName("Person");
+    Descriptors.Descriptor descriptor = r.getRecordMetaData().getRecordsDescriptor().findMessageTypeByName("User");
 
     List<Map<String, Object>> result = null;
     try {

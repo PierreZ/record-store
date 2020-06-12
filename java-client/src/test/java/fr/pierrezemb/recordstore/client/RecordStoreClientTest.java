@@ -5,7 +5,7 @@ import fr.pierrezemb.recordstore.Constants;
 import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
-import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
+import fr.pierrezemb.recordstore.datasets.proto.DemoUserProto;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
@@ -47,7 +47,7 @@ class RecordStoreClientTest extends AbstractFDBContainer {
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()
         .put(Constants.CONFIG_FDB_CLUSTER_FILE, clusterFile.getAbsolutePath())
-        .put(Constants.CONFIG_LOAD_DEMO, "PERSONS")
+        .put(Constants.CONFIG_LOAD_DEMO, "USER")
         .put(Constants.CONFIG_GRPC_LISTEN_PORT, port));
 
     BiscuitManager biscuitManager = new BiscuitManager();
@@ -77,8 +77,8 @@ class RecordStoreClientTest extends AbstractFDBContainer {
   public void testUploadSchema(Vertx vertx, VertxTestContext testContext) throws ExecutionException, InterruptedException {
 
     RecordStoreProtocol.UpsertSchemaRequest request = SchemaUtils.createSchemaRequest(
-      DemoPersonProto.Person.getDescriptor(), // descriptor
-      DemoPersonProto.Person.class.getSimpleName(), // name of the recordType
+      DemoUserProto.User.getDescriptor(), // descriptor
+      DemoUserProto.User.class.getSimpleName(), // name of the recordType
       "id", // primary key field
       "name", // index field
       RecordStoreProtocol.IndexType.VALUE // index type
@@ -93,7 +93,7 @@ class RecordStoreClientTest extends AbstractFDBContainer {
   @RepeatedTest(3)
   public void testPut(Vertx vertx, VertxTestContext testContext) throws ExecutionException, InterruptedException {
 
-    DemoPersonProto.Person record = DemoPersonProto.Person.newBuilder()
+    DemoUserProto.User record = DemoUserProto.User.newBuilder()
       .setId(999)
       .setName("Pierre Zemb")
       .setEmail("pz@example.org")
@@ -121,7 +121,7 @@ class RecordStoreClientTest extends AbstractFDBContainer {
   public void testQuery(Vertx vertx, VertxTestContext testContext) throws ExecutionException, InterruptedException, InvalidProtocolBufferException {
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setRecordTypeName(DemoPersonProto.Person.class.getSimpleName())
+      .setRecordTypeName(DemoUserProto.User.class.getSimpleName())
       .setFilter(RecordQuery.field("id").lessThan(1000L))
       .setResultLimit(1)
       .build();
@@ -129,7 +129,7 @@ class RecordStoreClientTest extends AbstractFDBContainer {
     Iterator<RecordStoreProtocol.QueryResponse> results = recordStoreClient.queryRecords(request);
 
     assertTrue("bad length of results", results.hasNext());
-    DemoPersonProto.Person response = DemoPersonProto.Person.parseFrom(results.next().getRecord().toByteArray());
+    DemoUserProto.User response = DemoUserProto.User.parseFrom(results.next().getRecord().toByteArray());
     assertEquals("bad id", 999, response.getId());
     assertEquals("bad name", "Pierre Zemb", response.getName());
     assertEquals("bad mail", "pz@example.org", response.getEmail());

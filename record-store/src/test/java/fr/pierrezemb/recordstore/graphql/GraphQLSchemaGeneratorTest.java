@@ -33,23 +33,23 @@ class GraphQLSchemaGeneratorTest extends AbstractFDBContainer {
     recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false, secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
-    datasetsLoader.loadDataset("PERSONS");
+    datasetsLoader.loadDataset("USER");
   }
 
   @Test
   void generate() {
-    RecordMetaData metadata = this.recordLayer.getSchema(DEFAULT_DEMO_TENANT, "PERSONS");
+    RecordMetaData metadata = this.recordLayer.getSchema(DEFAULT_DEMO_TENANT, "USER");
     String schema = GraphQLSchemaGenerator.generate(metadata);
     System.out.println(schema);
 
     ImmutableList<String> shouldContains = ImmutableList.of(
-      "type Person",
+      "type User",
       "email: String",
       "id: Long",
       "type Query {",
-      "allPersons(limit: Int): [Person!]!",
-      "getPersonByEmail(email: String): Person!",
-      "getPersonByName(name: String): Person!"
+      "allUsers(limit: Int): [User!]!",
+      "getUserByEmail(email: String): User!",
+      "getUserByName(name: String): User!"
     );
     for (String shouldContain : shouldContains) {
       assertTrue(schema.contains(shouldContain), "schema does not contain '" + shouldContain + "'");

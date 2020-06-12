@@ -249,7 +249,7 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
       builder.locale(locale);
     }
 
-    GraphQL graphQL = createGraphQL(DEFAULT_DEMO_TENANT, "PERSONS");
+    GraphQL graphQL = createGraphQL(DEFAULT_DEMO_TENANT, "USER");
 
     return graphQL.executeAsync(builder.build()).thenApplyAsync(executionResult -> {
       return new JsonObject(executionResult.toSpecification());
@@ -306,7 +306,7 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
     RuntimeWiring runtimeWiring = newRuntimeWiring()
       .type("Query", builder -> {
         VertxDataFetcher<List<Map<String, Object>>> getAllRecords = new VertxDataFetcher<>(this::getAllRecords);
-        return builder.dataFetcher("allPersons", getAllRecords);
+        return builder.dataFetcher("allUsers", getAllRecords);
       })
       .build();
 
@@ -319,6 +319,6 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
 
   private void getAllRecords(DataFetchingEnvironment env, Promise<List<Map<String, Object>>> future) {
     RecordQuery query = GraphQLQueryGenerator.generate(env);
-    this.recordLayer.queryRecords("demo", "PERSONS", query, future);
+    this.recordLayer.queryRecords("demo", "USER", query, future);
   }
 }

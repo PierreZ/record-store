@@ -25,8 +25,8 @@ public class DatasetsLoader {
     for (DemoDatasetEnum d : datasets) {
       Dataset dataset;
       switch (d) {
-        case PERSONS:
-          dataset = new PersonDataset();
+        case USER:
+          dataset = new UserDataset();
           break;
         default:
           continue;

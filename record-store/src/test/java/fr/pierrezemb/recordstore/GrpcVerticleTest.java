@@ -4,7 +4,7 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
-import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
+import fr.pierrezemb.recordstore.datasets.proto.DemoUserProto;
 import fr.pierrezemb.recordstore.proto.RecordServiceGrpc;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
@@ -71,14 +71,14 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   public void testCreateSchema(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     DescriptorProtos.FileDescriptorSet dependencies =
-      ProtobufReflectionUtil.protoFileDescriptorSet(DemoPersonProto.Person.getDescriptor());
+      ProtobufReflectionUtil.protoFileDescriptorSet(DemoUserProto.User.getDescriptor());
 
     RecordStoreProtocol.UpsertSchemaRequest request = RecordStoreProtocol.UpsertSchemaRequest
       .newBuilder()
       .setSchema(dependencies)
       .addRecordTypeIndexDefinitions(
         RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
-          .setName("Person")
+          .setName("User")
           .addPrimaryKeyFields("id")
           .addIndexDefinitions(RecordStoreProtocol.IndexDefinition.newBuilder()
             .setIndexType(RecordStoreProtocol.IndexType.VERSION)
@@ -100,14 +100,14 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   @Test
   public void testPut1(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    DemoPersonProto.Person person = DemoPersonProto.Person.newBuilder()
+    DemoUserProto.User person = DemoUserProto.User.newBuilder()
       .setId(1)
       .setName("PierreZ")
       .setEmail("toto@example.com")
       .build();
 
     RecordStoreProtocol.PutRecordRequest request = RecordStoreProtocol.PutRecordRequest.newBuilder()
-      .setRecordTypeName("Person")
+      .setRecordTypeName("User")
       .setMessage(person.toByteString())
       .build();
 
@@ -152,16 +152,16 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setRecordTypeName("Person")
+      .setRecordTypeName("User")
       .setFilter(query)
       .build();
 
     recordServiceVertxStub.query(request, response -> {
       response.handler(req -> {
         System.out.println("received a response");
-        DemoPersonProto.Person p = null;
+        DemoUserProto.User p = null;
         try {
-          p = DemoPersonProto.Person.parseFrom(req.getRecord());
+          p = DemoUserProto.User.parseFrom(req.getRecord());
           assertEquals("PierreZ", p.getName());
           assertEquals("toto@example.com", p.getEmail());
           assertEquals(1, p.getId());
@@ -198,16 +198,16 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setRecordTypeName("Person")
+      .setRecordTypeName("User")
       .setFilter(query)
       .build();
 
     recordServiceVertxStub.query(request, response -> {
       response.handler(req -> {
         System.out.println("received a response");
-        DemoPersonProto.Person p = null;
+        DemoUserProto.User p = null;
         try {
-          p = DemoPersonProto.Person.parseFrom(req.getRecord());
+          p = DemoUserProto.User.parseFrom(req.getRecord());
           assertEquals("PierreZ", p.getName());
           assertEquals("toto@example.com", p.getEmail());
           assertEquals(1, p.getId());
@@ -244,7 +244,7 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
 
     RecordStoreProtocol.DeleteRecordRequest request = RecordStoreProtocol.DeleteRecordRequest.newBuilder()
       .setFilter(query)
-      .setRecordTypeName("Person")
+      .setRecordTypeName("User")
       .build();
 
     recordServiceVertxStub.delete(request, response -> {
@@ -281,17 +281,17 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
       .build();
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setRecordTypeName("Person")
+      .setRecordTypeName("User")
       .setFilter(query)
       .build();
 
     recordServiceVertxStub.query(request, response -> {
-      List<DemoPersonProto.Person> results = new ArrayList<>();
+      List<DemoUserProto.User> results = new ArrayList<>();
       response.handler(req -> {
         System.out.println("received a response");
-        DemoPersonProto.Person p = null;
+        DemoUserProto.User p = null;
         try {
-          p = DemoPersonProto.Person.parseFrom(req.getRecord());
+          p = DemoUserProto.User.parseFrom(req.getRecord());
           results.add(p);
         } catch (InvalidProtocolBufferException e) {
           testContext.failNow(e);
@@ -310,18 +310,18 @@ public class GrpcVerticleTest extends AbstractFDBContainer {
   public void testPut7(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
-      .setRecordTypeName("Person")
+      .setRecordTypeName("User")
       .setSortBy(RecordStoreProtocol.SortByRequest.newBuilder().setType(RecordStoreProtocol.SortByType.SORT_BY_NEWEST_VERSION_FIRST)
         .build())
       .build();
 
     recordServiceVertxStub.query(request, response -> {
-      List<DemoPersonProto.Person> results = new ArrayList<>();
+      List<DemoUserProto.User> results = new ArrayList<>();
       response.handler(req -> {
         System.out.println("received a response");
-        DemoPersonProto.Person p = null;
+        DemoUserProto.User p = null;
         try {
-          p = DemoPersonProto.Person.parseFrom(req.getRecord());
+          p = DemoUserProto.User.parseFrom(req.getRecord());
           results.add(p);
         } catch (InvalidProtocolBufferException e) {
           testContext.failNow(e);

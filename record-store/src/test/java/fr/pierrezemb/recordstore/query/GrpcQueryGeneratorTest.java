@@ -41,7 +41,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
     recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false, secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
-    datasetsLoader.loadDataset("PERSONS");
+    datasetsLoader.loadDataset("USER");
   }
 
   @ParameterizedTest
@@ -49,7 +49,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
   public void testQuery(RecordStoreProtocol.QueryRequest request, int expectedResult) {
     RecordQuery query = GrpcQueryGenerator.generate(request);
 
-    List<Message> results = this.recordLayer.queryRecords(DatasetsLoader.DEFAULT_DEMO_TENANT, "PERSONS", query);
+    List<Message> results = this.recordLayer.queryRecords(DatasetsLoader.DEFAULT_DEMO_TENANT, "USER", query);
     if (expectedResult == -1) {
       Assert.assertTrue("empty results", results.size() > 0);
     } else {
@@ -61,12 +61,12 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
     return Stream.of(
       // all records
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .build(), 100),
 
       // get on id
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
           .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
             .setField("id").setInt64Value(1)
@@ -77,7 +77,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // range
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
           .setAndNode(RecordStoreProtocol.QueryFilterAndNode.newBuilder()
             .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
@@ -100,7 +100,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // or
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
           .setOrNode(RecordStoreProtocol.QueryFilterOrNode.newBuilder()
             .addNodes(RecordStoreProtocol.QueryFilterNode.newBuilder()
@@ -123,7 +123,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // text index any
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
           .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
             .setField("rick_and_morty_quotes")
@@ -135,7 +135,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // text index all
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
           .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
             .setField("rick_and_morty_quotes")
@@ -147,7 +147,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over a repeated field
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
           .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
             .setField("beers")
@@ -160,7 +160,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed map with constraint on key and value
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
           .setMapNode(RecordStoreProtocol.QueryFilterMapNode.newBuilder()
             .setField("favorite_locations_from_tv")
@@ -178,7 +178,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed map with constraint on value
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
           .setMapNode(RecordStoreProtocol.QueryFilterMapNode.newBuilder()
             .setField("favorite_locations_from_tv")
@@ -192,7 +192,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed map with constraint on key
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
           .setMapNode(RecordStoreProtocol.QueryFilterMapNode.newBuilder()
             .setField("favorite_locations_from_tv")
@@ -206,7 +206,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
 
       // query over an indexed nested field
       Arguments.of(RecordStoreProtocol.QueryRequest.newBuilder()
-        .setRecordTypeName("Person")
+        .setRecordTypeName("User")
         .setFilter(RecordStoreProtocol.QueryFilterNode.newBuilder()
           .setFieldNode(RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
             .setField("address")
