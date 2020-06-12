@@ -4,6 +4,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.Constants;
 import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
+import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.datasets.proto.DemoPersonProto;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import io.vertx.core.DeploymentOptions;
@@ -34,7 +35,6 @@ import static org.junit.Assert.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class RecordStoreClientTest extends AbstractFDBContainer {
 
-  public static final String DEFAULT_TENANT = "my-tenant";
   public final int port = PortManager.nextFreePort();
   private String sealedBiscuit;
   private RecordStoreClient recordStoreClient;
@@ -47,10 +47,11 @@ class RecordStoreClientTest extends AbstractFDBContainer {
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()
         .put(Constants.CONFIG_FDB_CLUSTER_FILE, clusterFile.getAbsolutePath())
+        .put(Constants.CONFIG_LOAD_DEMO, "PERSONS")
         .put(Constants.CONFIG_GRPC_LISTEN_PORT, port));
 
     BiscuitManager biscuitManager = new BiscuitManager();
-    sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
+    sealedBiscuit = biscuitManager.create(DatasetsLoader.DEFAULT_DEMO_TENANT, Collections.emptyList());
 
     // deploy verticle
     vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
@@ -62,7 +63,7 @@ class RecordStoreClientTest extends AbstractFDBContainer {
 
     recordStoreClient = new RecordStoreClient.Builder()
       .withContainer(this.getClass().getName())
-      .withTenant(DEFAULT_TENANT)
+      .withTenant(DatasetsLoader.DEFAULT_DEMO_TENANT)
       .withToken(sealedBiscuit)
       .withAddress("localhost:" + port)
       .connect();
@@ -93,7 +94,7 @@ class RecordStoreClientTest extends AbstractFDBContainer {
   public void testPut(Vertx vertx, VertxTestContext testContext) throws ExecutionException, InterruptedException {
 
     DemoPersonProto.Person record = DemoPersonProto.Person.newBuilder()
-      .setId(1)
+      .setId(999)
       .setName("Pierre Zemb")
       .setEmail("pz@example.org")
       .build();
@@ -114,19 +115,22 @@ class RecordStoreClientTest extends AbstractFDBContainer {
     testContext.completeNow();
   }
 
+
   @Test
   @Order(5)
   public void testQuery(Vertx vertx, VertxTestContext testContext) throws ExecutionException, InterruptedException, InvalidProtocolBufferException {
 
     RecordStoreProtocol.QueryRequest request = RecordStoreProtocol.QueryRequest.newBuilder()
       .setRecordTypeName(DemoPersonProto.Person.class.getSimpleName())
-      .setFilter(QueryUtils.field("id").lessThan(2))
+      .setFilter(RecordQuery.field("id").lessThan(1000))
+      .setResultLimit(1)
       .build();
+
     Iterator<RecordStoreProtocol.QueryResponse> results = recordStoreClient.queryRecords(request);
 
     assertTrue("bad length of results", results.hasNext());
     DemoPersonProto.Person response = DemoPersonProto.Person.parseFrom(results.next().getRecord().toByteArray());
-    assertEquals("bad id", 1, response.getId());
+    assertEquals("bad id", 999, response.getId());
     assertEquals("bad name", "Pierre Zemb", response.getName());
     assertEquals("bad mail", "pz@example.org", response.getEmail());
 

@@ -67,30 +67,7 @@ public class PersonDataset implements Dataset {
 
     for (int i = 0; i < nbrRecord; i++) {
 
-      ArrayList<String> beers = new ArrayList<>();
-      for (int j = 0; j < 5; j++) {
-        beers.add(faker.beer().name());
-      }
-
-      HashMap<String, String> favoritePlanets = new HashMap<>();
-      favoritePlanets.put("hitchhikers_guide_to_the_galaxy", faker.hitchhikersGuideToTheGalaxy().planet());
-      favoritePlanets.put("rick_and_morty", faker.rickAndMorty().location());
-      favoritePlanets.put("star_trek", faker.starTrek().location());
-
-      DemoPersonProto.Address address = DemoPersonProto.Address.newBuilder()
-        .setFullAddress(faker.address().fullAddress())
-        .setCity(faker.address().cityName())
-        .build();
-
-      DemoPersonProto.Person person = DemoPersonProto.Person.newBuilder()
-        .setId(i)
-        .setName(faker.funnyName().name())
-        .setEmail(faker.internet().emailAddress())
-        .addAllBeers(beers)
-        .setRickAndMortyQuotes(faker.rickAndMorty().quote())
-        .putAllFavoriteLocationsFromTv(favoritePlanets)
-        .setAddress(address)
-        .build();
+      DemoPersonProto.Person person = createPerson(i, faker);
 
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("inserting Person '{}'", person);
@@ -98,5 +75,33 @@ public class PersonDataset implements Dataset {
 
       recordLayer.putRecord(tenant, container, "Person", person.toByteArray());
     }
+  }
+
+  public DemoPersonProto.Person createPerson(long id, Faker faker) {
+
+    ArrayList<String> beers = new ArrayList<>();
+    for (int j = 0; j < 5; j++) {
+      beers.add(faker.beer().name());
+    }
+
+    HashMap<String, String> favoritePlanets = new HashMap<>();
+    favoritePlanets.put("hitchhikers_guide_to_the_galaxy", faker.hitchhikersGuideToTheGalaxy().planet());
+    favoritePlanets.put("rick_and_morty", faker.rickAndMorty().location());
+    favoritePlanets.put("star_trek", faker.starTrek().location());
+
+    DemoPersonProto.Address address = DemoPersonProto.Address.newBuilder()
+      .setFullAddress(faker.address().fullAddress())
+      .setCity(faker.address().cityName())
+      .build();
+
+    return DemoPersonProto.Person.newBuilder()
+      .setId(id)
+      .setName(faker.funnyName().name())
+      .setEmail(faker.internet().emailAddress())
+      .addAllBeers(beers)
+      .setRickAndMortyQuotes(faker.rickAndMorty().quote())
+      .putAllFavoriteLocationsFromTv(favoritePlanets)
+      .setAddress(address)
+      .build();
   }
 }

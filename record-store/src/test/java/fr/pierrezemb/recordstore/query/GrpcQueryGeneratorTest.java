@@ -41,7 +41,7 @@ class GrpcQueryGeneratorTest extends AbstractFDBContainer {
     recordLayer = new RecordLayer(clusterFile.getAbsolutePath(), false, secretKey);
 
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
-    datasetsLoader.LoadDataset("PERSONS");
+    datasetsLoader.loadDataset("PERSONS");
   }
 
   @ParameterizedTest
