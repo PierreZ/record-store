@@ -32,7 +32,7 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     try {
       results = recordLayer.listContainers(tenantID);
     } catch (RuntimeException e) {
-      LOGGER.error("cannot list containers: {}", e);
+      LOGGER.error("cannot list recordSpaces: {}", e);
       throw new StatusRuntimeException(Status.INTERNAL.withCause(e));
     }
 
@@ -51,11 +51,11 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
 
     try {
-      for (String container : request.getContainersList()) {
-        recordLayer.deleteContainer(tenantID, container);
+      for (String recordSpace : request.getContainersList()) {
+        recordLayer.deleteContainer(tenantID, recordSpace);
       }
     } catch (RuntimeException runtimeException) {
-      LOGGER.error("could not delete container", runtimeException);
+      LOGGER.error("could not delete recordSpace", runtimeException);
       throw new StatusRuntimeException(Status.INTERNAL.withDescription(runtimeException.getMessage()));
     }
 

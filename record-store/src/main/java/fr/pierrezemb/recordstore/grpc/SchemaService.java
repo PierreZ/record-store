@@ -33,13 +33,13 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   @Override
   public void get(RecordStoreProtocol.GetSchemaRequest request, StreamObserver<RecordStoreProtocol.GetSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String container = GrpcContextKeys.getContainerOrFail();
+    String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     try {
 
-      List<RecordStoreProtocol.IndexDescription> indexes = recordLayer.getIndexes(tenantID, container);
+      List<RecordStoreProtocol.IndexDescription> indexes = recordLayer.getIndexes(tenantID, recordSpace);
 
-      RecordMetaData metadataStore = recordLayer.getSchema(tenantID, container);
+      RecordMetaData metadataStore = recordLayer.getSchema(tenantID, recordSpace);
 
       List<RecordStoreProtocol.SchemaDescription> records =
         ImmutableMap.of(request.getRecordTypeName(), metadataStore.getRecordMetaData().getRecordType(request.getRecordTypeName()))
@@ -73,10 +73,10 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   @Override
   public void upsert(RecordStoreProtocol.UpsertSchemaRequest request, StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String container = GrpcContextKeys.getContainerOrFail();
+    String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     try {
-      recordLayer.upsertSchema(tenantID, container, request.getSchema(), request.getRecordTypeIndexDefinitionsList());
+      recordLayer.upsertSchema(tenantID, recordSpace, request.getSchema(), request.getRecordTypeIndexDefinitionsList());
     } catch (MetaDataException | Descriptors.DescriptorValidationException e) {
       log.error(e.getMessage());
       throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
@@ -94,10 +94,10 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   @Override
   public void stat(RecordStoreProtocol.StatRequest request, StreamObserver<RecordStoreProtocol.StatResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String container = GrpcContextKeys.getContainerOrFail();
+    String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     try {
-      Tuple result = recordLayer.getCountAndCountUpdates(tenantID, container);
+      Tuple result = recordLayer.getCountAndCountUpdates(tenantID, recordSpace);
       responseObserver.onNext(RecordStoreProtocol.StatResponse.newBuilder()
         .setCount(result.getLong(0))
         .setCountUpdates(result.getLong(1))

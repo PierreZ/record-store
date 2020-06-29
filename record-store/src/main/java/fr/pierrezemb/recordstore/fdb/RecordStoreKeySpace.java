@@ -11,13 +11,13 @@ public class RecordStoreKeySpace {
     new KeySpace(
       new DirectoryLayerDirectory("application")
         .addSubdirectory(new KeySpaceDirectory("tenant", KeySpaceDirectory.KeyType.STRING)
-          .addSubdirectory(new KeySpaceDirectory("container", KeySpaceDirectory.KeyType.STRING)
+          .addSubdirectory(new KeySpaceDirectory("recordSpace", KeySpaceDirectory.KeyType.STRING)
             .addSubdirectory(new KeySpaceDirectory("metadata", KeySpaceDirectory.KeyType.STRING, "m"))
             .addSubdirectory(new KeySpaceDirectory("data", KeySpaceDirectory.KeyType.STRING, "d"))
           )));
 
-  public static KeySpacePath getMetaDataKeySpacePath(String tenant, String container) {
-    return getKeySpacePath(tenant, container, "metadata");
+  public static KeySpacePath getMetaDataKeySpacePath(String tenant, String recordSpace) {
+    return getKeySpacePath(tenant, recordSpace, "metadata");
   }
 
   public static KeySpacePath getApplicationKeySpacePath(String tenant) {
@@ -26,15 +26,15 @@ public class RecordStoreKeySpace {
       .add("tenant", tenant);
   }
 
-  public static KeySpacePath getDataKeySpacePath(String tenant, String container) {
-    return getKeySpacePath(tenant, container, "data");
+  public static KeySpacePath getDataKeySpacePath(String tenant, String recordSpace) {
+    return getKeySpacePath(tenant, recordSpace, "data");
   }
 
   private static KeySpacePath getKeySpacePath(String tenant, String env, String subDirectory) {
     return RS_KEY_SPACE
       .path("application", APPLICATION_NAME)
       .add("tenant", tenant)
-      .add("container", env)
+      .add("recordSpace", env)
       .add(subDirectory);
   }
 }

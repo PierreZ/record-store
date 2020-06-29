@@ -6,7 +6,7 @@ import io.grpc.Status;
 import java.util.concurrent.Executor;
 
 import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.AUTHORIZATION_METADATA_KEY;
-import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.CONTAINER_METADATA_KEY;
+import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.RECORDSPACE_METADATA_KEY;
 import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.TENANT_METADATA_KEY;
 
 public class BiscuitClientCredential extends io.grpc.CallCredentials {
@@ -14,12 +14,12 @@ public class BiscuitClientCredential extends io.grpc.CallCredentials {
 
   private final String tenant;
   private final String biscuit;
-  private final String container;
+  private final String recordSpace;
 
-  public BiscuitClientCredential(String tenant, String sealedBiscuit, String container) {
+  public BiscuitClientCredential(String tenant, String sealedBiscuit, String recordSpace) {
     this.tenant = tenant;
     this.biscuit = sealedBiscuit;
-    this.container = container;
+    this.recordSpace = recordSpace;
   }
 
   @Override
@@ -30,7 +30,7 @@ public class BiscuitClientCredential extends io.grpc.CallCredentials {
         try {
           Metadata headers = new Metadata();
           headers.put(AUTHORIZATION_METADATA_KEY, String.format("%s %s", BEARER_TYPE, biscuit));
-          headers.put(CONTAINER_METADATA_KEY, container);
+          headers.put(RECORDSPACE_METADATA_KEY, recordSpace);
           headers.put(TENANT_METADATA_KEY, tenant);
           applier.apply(headers);
 

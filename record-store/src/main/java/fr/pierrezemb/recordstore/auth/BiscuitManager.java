@@ -51,9 +51,9 @@ public class BiscuitManager {
     authority_builder.add_fact(
       fact("right", Arrays.asList(s("authority"), s("tenant"), s(tenant))));
 
-    // add containers in biscuit
+    // add recordSpaces in biscuit
     for (String s : authorizedContainers) {
-      authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("container"), s(s))));
+      authority_builder.add_fact(fact("right", Arrays.asList(s("authority"), s("recordSpace"), s(s))));
     }
 
     Either<Error, Biscuit> result = Biscuit.make(rng, root, Biscuit.default_symbol_table(), authority_builder.build());

@@ -22,13 +22,13 @@ import java.util.Map;
 public class AuthInterceptor implements ServerInterceptor {
   private static final Logger LOGGER = LoggerFactory.getLogger(AuthInterceptor.class);
   private static final Map<Metadata.Key<String>, Context.Key<String>> METADATA_KEY_TO_CONTEXT_KEY = ImmutableMap.of(
-    GrpcMetadataKeys.CONTAINER_METADATA_KEY, GrpcContextKeys.CONTAINER_NAME,
+    GrpcMetadataKeys.RECORDSPACE_METADATA_KEY, GrpcContextKeys.CONTAINER_NAME,
     GrpcMetadataKeys.TENANT_METADATA_KEY, GrpcContextKeys.TENANT_ID_KEY
   );
   private final BiscuitManager biscuitManager;
   private final List<Metadata.Key<String>> requiredKeys = Arrays.asList(
     GrpcMetadataKeys.AUTHORIZATION_METADATA_KEY,
-    GrpcMetadataKeys.CONTAINER_METADATA_KEY,
+    GrpcMetadataKeys.RECORDSPACE_METADATA_KEY,
     GrpcMetadataKeys.TENANT_METADATA_KEY
   );
 
@@ -91,13 +91,13 @@ public class AuthInterceptor implements ServerInterceptor {
       };
     }
 
-    // Admin calls does not need containers
+    // Admin calls does not need recordSpaces
     if (call.getMethodDescriptor().getFullMethodName().toLowerCase().contains("admin")) {
       return Contexts.interceptCall(context, call, headers, next);
     }
 
-    String container = getFromHeaders(headers, GrpcMetadataKeys.CONTAINER_METADATA_KEY);
-    context = context.withValue(GrpcContextKeys.CONTAINER_NAME, container);
+    String recordSpace = getFromHeaders(headers, GrpcMetadataKeys.RECORDSPACE_METADATA_KEY);
+    context = context.withValue(GrpcContextKeys.CONTAINER_NAME, recordSpace);
 
     return Contexts.interceptCall(context, call, headers, next);
   }

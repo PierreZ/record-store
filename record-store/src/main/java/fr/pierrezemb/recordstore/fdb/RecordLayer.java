@@ -77,34 +77,34 @@ public class RecordLayer {
   }
 
   /**
-   * List all containers for a tenant
+   * List all recordSpaces for a tenant
    */
   public List<String> listContainers(String tenantID) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
     KeySpacePath tenantKeySpace = RecordStoreKeySpace.getApplicationKeySpacePath(tenantID);
-    List<ResolvedKeySpacePath> containers = tenantKeySpace
-      .listSubdirectory(context, "container", ScanProperties.FORWARD_SCAN);
-    return containers.stream()
+    List<ResolvedKeySpacePath> recordSpaces = tenantKeySpace
+      .listSubdirectory(context, "recordSpace", ScanProperties.FORWARD_SCAN);
+    return recordSpaces.stream()
       .map(e -> e.getResolvedValue().toString())
       .collect(Collectors.toList());
   }
 
   /**
-   * delete a container for a tenant
+   * delete a recordSpace for a tenant
    */
-  public void deleteContainer(String tenantID, String container) {
+  public void deleteContainer(String tenantID, String recordSpace) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getDataKeySpacePath(tenantID, container));
-    FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getMetaDataKeySpacePath(tenantID, container));
+    FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getDataKeySpacePath(tenantID, recordSpace));
+    FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getMetaDataKeySpacePath(tenantID, recordSpace));
     context.commit();
   }
 
   /**
-   * get schema for a tenant and a container
+   * get schema for a tenant and a recordSpace
    */
-  public RecordMetaData getSchema(String tenantID, String container) {
+  public RecordMetaData getSchema(String tenantID, String recordSpace) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, recordSpace);
 
     List<RecordStoreProtocol.IndexDescription> indexes = metaDataStore.getRecordMetaData().getAllIndexes().stream()
       .filter(e -> !e.getName().startsWith("global"))
@@ -116,9 +116,9 @@ public class RecordLayer {
     return metaDataStore.getRecordMetaData();
   }
 
-  public List<RecordStoreProtocol.IndexDescription> getIndexes(String tenantID, String container) {
+  public List<RecordStoreProtocol.IndexDescription> getIndexes(String tenantID, String recordSpace) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, recordSpace);
 
     return metaDataStore.getRecordMetaData().getAllIndexes().stream()
       .filter(e -> !e.getName().startsWith("global"))
@@ -128,16 +128,16 @@ public class RecordLayer {
       ).collect(Collectors.toList());
   }
 
-  public void upsertSchema(String tenantID, String container, DescriptorProtos.FileDescriptorSet schema, List<RecordStoreProtocol.RecordTypeIndexDefinition> indexes) throws Descriptors.DescriptorValidationException {
+  public void upsertSchema(String tenantID, String recordSpace, DescriptorProtos.FileDescriptorSet schema, List<RecordStoreProtocol.RecordTypeIndexDefinition> indexes) throws Descriptors.DescriptorValidationException {
 
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, recordSpace);
 
     RecordMetaData oldMetaData = null;
     int version = 0;
     try {
       oldMetaData = metaDataStore.getRecordMetaData();
-      LOGGER.debug("metadata for {}:{} is in version {}", tenantID, container, oldMetaData.getVersion());
+      LOGGER.debug("metadata for {}:{} is in version {}", tenantID, recordSpace, oldMetaData.getVersion());
       version = oldMetaData.getVersion() + 1;
     } catch (FDBMetaDataStore.MissingMetaDataException e) {
       LOGGER.info("missing metadata, creating one");
@@ -320,14 +320,14 @@ public class RecordLayer {
     return Key.Expressions.concat(keyExpressions);
   }
 
-  public Tuple getCountAndCountUpdates(String tenantID, String container) {
-    return getCountAndCountUpdates(tenantID, container, defaultKey);
+  public Tuple getCountAndCountUpdates(String tenantID, String recordSpace) {
+    return getCountAndCountUpdates(tenantID, recordSpace, defaultKey);
   }
 
-  public Tuple getCountAndCountUpdates(String tenantID, String container, SecretKey key) {
+  public Tuple getCountAndCountUpdates(String tenantID, String recordSpace, SecretKey key) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
-    FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
+    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, recordSpace);
+    FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, recordSpace);
 
     CompletableFuture<Tuple> countFuture = r.evaluateAggregateFunction(
       EvaluationContext.EMPTY,
@@ -347,9 +347,9 @@ public class RecordLayer {
       -> Tuple.from(count.getLong(0), update.getLong(0))).join();
   }
 
-  public void putRecord(String tenantID, String container, String table, byte[] record, SecretKey customKey) throws InvalidProtocolBufferException {
+  public void putRecord(String tenantID, String recordSpace, String table, byte[] record, SecretKey customKey) throws InvalidProtocolBufferException {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
+    FDBMetaDataStore metaDataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, recordSpace);
 
     Descriptors.Descriptor descriptor = metaDataStore.getRecordMetaData().getRecordsDescriptor().findMessageTypeByName(table);
 
@@ -357,7 +357,7 @@ public class RecordLayer {
       throw new RuntimeException("cannot find descriptor for table " + table);
     }
 
-    FDBRecordStore r = createFDBRecordStore(context, metaDataStore, customKey, tenantID, container);
+    FDBRecordStore r = createFDBRecordStore(context, metaDataStore, customKey, tenantID, recordSpace);
     DynamicMessage msg = DynamicMessage.parseFrom(descriptor, record);
 
     r.saveRecord(msg);
@@ -365,23 +365,23 @@ public class RecordLayer {
   }
 
 
-  public void putRecord(String tenantID, String container, String table, byte[] record) throws InvalidProtocolBufferException {
-    putRecord(tenantID, container, table, record, defaultKey);
+  public void putRecord(String tenantID, String recordSpace, String table, byte[] record) throws InvalidProtocolBufferException {
+    putRecord(tenantID, recordSpace, table, record, defaultKey);
   }
 
-  public List<Message> queryRecords(String tenantID, String container, RecordQuery query) {
-    return queryRecords(tenantID, container, query, defaultKey);
+  public List<Message> queryRecords(String tenantID, String recordSpace, RecordQuery query) {
+    return queryRecords(tenantID, recordSpace, query, defaultKey);
   }
 
-  public List<Message> queryRecords(String tenantID, String container, RecordQuery query, SecretKey key) {
+  public List<Message> queryRecords(String tenantID, String recordSpace, RecordQuery query, SecretKey key) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
-    FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
+    FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, recordSpace);
+    FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, recordSpace);
 
-    return this.executeQuery(r, query, tenantID, container)
+    return this.executeQuery(r, query, tenantID, recordSpace)
       .map(e -> {
         if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
+          LOGGER.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, recordSpace);
         }
         return e;
       })
@@ -390,8 +390,8 @@ public class RecordLayer {
       .join();
   }
 
-  public void queryRecords(String tenantID, String container, RecordQuery query, IsolationLevel isolationLevel, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
-    queryRecords(tenantID, container, query, isolationLevel, defaultKey, responseObserver);
+  public void queryRecords(String tenantID, String recordSpace, RecordQuery query, IsolationLevel isolationLevel, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
+    queryRecords(tenantID, recordSpace, query, isolationLevel, defaultKey, responseObserver);
   }
 
   public void queryRecords(String tenantID, String container, RecordQuery query, IsolationLevel isolationLevel, SecretKey key, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {

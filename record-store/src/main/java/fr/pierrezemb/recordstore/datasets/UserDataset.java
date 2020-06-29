@@ -20,14 +20,14 @@ public class UserDataset implements Dataset {
   private static final Logger LOGGER = LoggerFactory.getLogger(UserDataset.class);
 
   @Override
-  public void load(RecordLayer recordLayer, String tenant, String container, int nbrRecord) throws Descriptors.DescriptorValidationException, InvalidProtocolBufferException {
+  public void load(RecordLayer recordLayer, String tenant, String recordSpace, int nbrRecord) throws Descriptors.DescriptorValidationException, InvalidProtocolBufferException {
 
     DescriptorProtos.FileDescriptorSet dependencies =
       ProtobufReflectionUtil.protoFileDescriptorSet(DemoUserProto.User.getDescriptor());
 
     recordLayer.upsertSchema(
       tenant,
-      container,
+      recordSpace,
       dependencies,
       ImmutableList.of(
         RecordStoreProtocol.RecordTypeIndexDefinition.newBuilder()
@@ -73,7 +73,7 @@ public class UserDataset implements Dataset {
         LOGGER.trace("inserting User '{}'", person);
       }
 
-      recordLayer.putRecord(tenant, container, "User", person.toByteArray());
+      recordLayer.putRecord(tenant, recordSpace, "User", person.toByteArray());
     }
   }
 

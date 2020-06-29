@@ -6,9 +6,9 @@ A lightmulti-model, user-defined place for your data.
 
 ##### Light
 
-We created the notion of `container`, something that is lighter than a full table. Start a container for any kind of data than you need to manage.
+We created the notion of `RecordSpace`, something that is lighter than a full table. Start a `RecordSpace` for any kind of data than you need to manage.
 
-With it, you can imagine start some `data containers` for each integrations tests. Or per environment. The choice is yours.
+With it, you can imagine start some `RecordSpaces` for each integrations tests. Or per environment. The choice is yours.
 
 ##### Developer-oriented experience
 
@@ -28,7 +28,7 @@ Data are encrypted by default.
 
 #### multi-model
 
-For each `container`, you can define a `schema`, which is in-fact only a `Protobuf` definition. You need to store some `users`, or a more complicated structure? If you can represent it as `Protobuf`, you are good to go!
+For each `RecordSpace`, you can define a `schema`, which is in-fact only a `Protobuf` definition. You need to store some `users`, or a more complicated structure? If you can represent it as `Protobuf`, you are good to go!
 
 ## Building and contribute
 
