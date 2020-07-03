@@ -44,7 +44,7 @@ public class GraphQLVerticle extends AbstractVerticle {
     datasetsLoader.loadDataset(this.context.config().getString(Constants.CONFIG_LOAD_DEMO, ""));
 
     Router router = Router.router(vertx);
-    router.route("/api/v0/:tenant/:recordSpace/schema").handler(this::getSchema);
+    router.route("/api/v0/:tenant/:recordspace/schema").handler(this::getSchema);
     router.route("/graphiql/*").handler(GraphiQLHandler.create(options));
     router.route("/graphql").handler(new RecordStoreGraphQLHandler(recordLayer));
 
@@ -62,7 +62,7 @@ public class GraphQLVerticle extends AbstractVerticle {
     if (tenant == null) {
       routingContext.response().setStatusCode(400).end();
     }
-    String recordSpace = routingContext.request().getParam("recordSpace");
+    String recordSpace = routingContext.request().getParam("recordspace");
     if (recordSpace == null) {
       routingContext.response().setStatusCode(400).end();
     }

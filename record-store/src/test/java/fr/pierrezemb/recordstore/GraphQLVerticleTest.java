@@ -56,6 +56,7 @@ class GraphQLVerticleTest extends AbstractFDBContainer {
 
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(new JsonObject()
+        .put(Constants.CONFIG_LOAD_DEMO, "User")
         .put(Constants.CONFIG_FDB_CLUSTER_FILE, clusterFile.getAbsolutePath())
         .put(Constants.CONFIG_GRAPHQL_LISTEN_PORT, port));
 
@@ -71,6 +72,7 @@ class GraphQLVerticleTest extends AbstractFDBContainer {
   public void getSchema(WebClient client, VertxTestContext testContext) throws Exception {
     RecordMetaData metadata = this.recordLayer.getSchema(DEFAULT_DEMO_TENANT, "USER");
     String schema = GraphQLSchemaGenerator.generate(metadata);
+    System.out.println(schema);
     testRequest(client, HttpMethod.GET, "/api/v0/" + DatasetsLoader.DEFAULT_DEMO_TENANT + "/" + "USER" + "/schema")
       .expect(
         bodyResponse(Buffer.buffer(schema), "text/plain")
