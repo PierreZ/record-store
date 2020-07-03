@@ -1,3 +1,7 @@
+---
+title: Writing a Record-Store client
+---
+
 # Writing a Record-Store client
 
 ## Requirement
