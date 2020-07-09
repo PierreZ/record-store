@@ -28,10 +28,10 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   @Override
   public void put(RecordStoreProtocol.PutRecordRequest request, StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String container = GrpcContextKeys.getContainerOrFail();
+    String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     try {
-      this.recordLayer.putRecord(tenantID, container, request.getRecordTypeName(), request.getMessage().toByteArray());
+      this.recordLayer.putRecord(tenantID, recordSpace, request.getRecordTypeName(), request.getMessage().toByteArray());
     } catch (InvalidProtocolBufferException e) {
       throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("could not parse Protobuf: " + e.getMessage()));
     } catch (RuntimeException e) {
@@ -51,14 +51,14 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   @Override
   public void query(RecordStoreProtocol.QueryRequest request, StreamObserver<RecordStoreProtocol.QueryResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String container = GrpcContextKeys.getContainerOrFail();
+    String recordSpace = GrpcContextKeys.getContainerOrFail();
     RecordQuery query = GrpcQueryGenerator.generate(request);
     IsolationLevel isolationLevel = request
       .getQueryIsolationLevel().equals(RecordStoreProtocol.QueryIsolationLevel.SERIALIZABLE) ?
       IsolationLevel.SERIALIZABLE : IsolationLevel.SNAPSHOT;
 
     try {
-      this.recordLayer.queryRecords(tenantID, container, query, isolationLevel, responseObserver);
+      this.recordLayer.queryRecords(tenantID, recordSpace, query, isolationLevel, responseObserver);
       responseObserver.onCompleted();
     } catch (RuntimeException e) {
       log.error(e.getMessage());
@@ -74,15 +74,15 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   @Override
   public void delete(RecordStoreProtocol.DeleteRecordRequest request, StreamObserver<RecordStoreProtocol.DeleteRecordResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String container = GrpcContextKeys.getContainerOrFail();
+    String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     long count = 0L;
     try {
       if (request.getDeleteAll()) {
-        count = this.recordLayer.deleteAllRecords(tenantID, container);
+        count = this.recordLayer.deleteAllRecords(tenantID, recordSpace);
       } else {
         RecordQuery query = GrpcQueryGenerator.generate(request);
-        count = this.recordLayer.deleteRecords(tenantID, container, query);
+        count = this.recordLayer.deleteRecords(tenantID, recordSpace, query);
       }
 
       responseObserver.onNext(RecordStoreProtocol.DeleteRecordResponse.newBuilder()
@@ -98,11 +98,11 @@ public class RecordService extends RecordServiceGrpc.RecordServiceImplBase {
   @Override
   public void getQueryPlan(RecordStoreProtocol.QueryRequest request, StreamObserver<RecordStoreProtocol.GetQueryPlanResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
-    String container = GrpcContextKeys.getContainerOrFail();
+    String recordSpace = GrpcContextKeys.getContainerOrFail();
     RecordQuery query = GrpcQueryGenerator.generate(request);
 
     try {
-      String queryPlan = this.recordLayer.getQueryPlan(tenantID, container, query);
+      String queryPlan = this.recordLayer.getQueryPlan(tenantID, recordSpace, query);
       responseObserver.onNext(RecordStoreProtocol.GetQueryPlanResponse.newBuilder()
         .setQueryPlan(query.toString())
         .setQueryPlan(queryPlan)

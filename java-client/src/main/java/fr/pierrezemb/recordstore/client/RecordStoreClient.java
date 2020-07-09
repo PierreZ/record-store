@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
 
 public class RecordStoreClient {
   private final String tenant;
-  private final String container;
+  private final String recordSpace;
   private final String address;
   private final String token;
   private final BiscuitClientCredential credentials;
@@ -28,12 +28,12 @@ public class RecordStoreClient {
   private final AdminServiceGrpc.AdminServiceFutureStub asyncAdminStub;
   private final RecordServiceGrpc.RecordServiceBlockingStub syncRecordStub;
 
-  private RecordStoreClient(String tenant, String container, String address, String token) throws InterruptedException, ExecutionException, TimeoutException {
+  private RecordStoreClient(String tenant, String recordSpace, String address, String token) throws InterruptedException, ExecutionException, TimeoutException {
     this.tenant = tenant;
-    this.container = container;
+    this.recordSpace = recordSpace;
     this.address = address;
     this.token = token;
-    credentials = new BiscuitClientCredential(tenant, token, container);
+    credentials = new BiscuitClientCredential(tenant, token, recordSpace);
 
     // TODO: how to enable TLS
     channel = ManagedChannelBuilder.forTarget(this.address).usePlaintext().build();
@@ -81,7 +81,7 @@ public class RecordStoreClient {
   public static class Builder {
 
     private String tenant;
-    private String container;
+    private String recordSpace;
     private String address;
     private String token;
 
@@ -90,8 +90,8 @@ public class RecordStoreClient {
       return this;
     }
 
-    public Builder withContainer(String container) {
-      this.container = container;
+    public Builder withRecordSpace(String recordSpace) {
+      this.recordSpace = recordSpace;
       return this;
     }
 
@@ -106,7 +106,7 @@ public class RecordStoreClient {
     }
 
     public RecordStoreClient connect() throws InterruptedException, ExecutionException, TimeoutException {
-      return new RecordStoreClient(tenant, container, address, token);
+      return new RecordStoreClient(tenant, recordSpace, address, token);
     }
   }
 }

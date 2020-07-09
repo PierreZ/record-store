@@ -31,7 +31,7 @@ public class GraphQLVerticle extends AbstractVerticle {
     Integer port = this.context.config().getInteger(Constants.CONFIG_GRAPHQL_LISTEN_PORT, 8081);
     GraphiQLHandlerOptions options = new GraphiQLHandlerOptions()
       .setQuery("{ allRecords { name } }")
-      .setHeaders(ImmutableMap.of("tenant", "my-tenant", "container", "my-container"))
+      .setHeaders(ImmutableMap.of("tenant", "my-tenant", "recordSpace", "my-recordSpace"))
       .setEnabled(true);
 
     String clusterFilePath = this.context.config().getString(Constants.CONFIG_FDB_CLUSTER_FILE, Constants.CONFIG_FDB_CLUSTER_FILE_DEFAULT);
@@ -44,7 +44,7 @@ public class GraphQLVerticle extends AbstractVerticle {
     datasetsLoader.loadDataset(this.context.config().getString(Constants.CONFIG_LOAD_DEMO, ""));
 
     Router router = Router.router(vertx);
-    router.route("/api/v0/:tenant/:container/schema").handler(this::getSchema);
+    router.route("/api/v0/:tenant/:recordspace/schema").handler(this::getSchema);
     router.route("/graphiql/*").handler(GraphiQLHandler.create(options));
     router.route("/graphql").handler(new RecordStoreGraphQLHandler(recordLayer));
 
@@ -62,13 +62,13 @@ public class GraphQLVerticle extends AbstractVerticle {
     if (tenant == null) {
       routingContext.response().setStatusCode(400).end();
     }
-    String container = routingContext.request().getParam("container");
-    if (container == null) {
+    String recordSpace = routingContext.request().getParam("recordspace");
+    if (recordSpace == null) {
       routingContext.response().setStatusCode(400).end();
     }
 
     try {
-      RecordMetaData metadata = this.recordLayer.getSchema(tenant, container);
+      RecordMetaData metadata = this.recordLayer.getSchema(tenant, recordSpace);
       String schema = GraphQLSchemaGenerator.generate(metadata);
       routingContext.response().putHeader("Content-Type", "text/plain").setStatusCode(200).end(schema);
     } catch (RuntimeException e) {

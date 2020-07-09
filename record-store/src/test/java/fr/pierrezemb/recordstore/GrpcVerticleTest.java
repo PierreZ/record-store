@@ -35,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 public class GrpcVerticleTest extends AbstractFDBContainer {
 
   public static final String DEFAULT_TENANT = "my-tenant";
-  public static final String DEFAULT_CONTAINER = "my-container";
+  public static final String DEFAULT_CONTAINER = "my-recordSpace";
   public final int port = PortManager.nextFreePort();
   private SchemaServiceGrpc.SchemaServiceVertxStub schemaServiceVertxStub;
   private RecordServiceGrpc.RecordServiceVertxStub recordServiceVertxStub;

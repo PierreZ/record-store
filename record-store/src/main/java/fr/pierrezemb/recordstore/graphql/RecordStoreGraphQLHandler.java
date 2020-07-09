@@ -288,12 +288,12 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
     return command -> ctx.runOnContext(v -> command.run());
   }
 
-  private GraphQL createGraphQL(String tenant, String container) {
+  private GraphQL createGraphQL(String tenant, String recordSpace) {
 
     String schema = "";
     RecordMetaData metadata;
     try {
-      metadata = this.recordLayer.getSchema(tenant, container);
+      metadata = this.recordLayer.getSchema(tenant, recordSpace);
       schema = GraphQLSchemaGenerator.generate(metadata);
     } catch (RuntimeException e) {
       LOGGER.error("cannot generate graphQL schema: {}", e.getMessage());

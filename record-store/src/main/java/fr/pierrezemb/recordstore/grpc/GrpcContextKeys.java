@@ -9,7 +9,7 @@ public class GrpcContextKeys {
    * Key for accessing requested tenant id
    */
   public static final Context.Key<String> TENANT_ID_KEY = Context.key("tenant");
-  public static final Context.Key<String> CONTAINER_NAME = Context.key("container");
+  public static final Context.Key<String> CONTAINER_NAME = Context.key("recordSpace");
 
   public static String getTenantIDOrFail() throws StatusRuntimeException {
     String tenantId = GrpcContextKeys.TENANT_ID_KEY.get();
@@ -20,10 +20,10 @@ public class GrpcContextKeys {
   }
 
   public static String getContainerOrFail() throws StatusRuntimeException {
-    String container = GrpcContextKeys.CONTAINER_NAME.get();
-    if (container == null) {
-      throw new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("missing container"));
+    String recordSpace = GrpcContextKeys.CONTAINER_NAME.get();
+    if (recordSpace == null) {
+      throw new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("missing recordSpace"));
     }
-    return container;
+    return recordSpace;
   }
 }

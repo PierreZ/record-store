@@ -62,7 +62,7 @@ class RecordStoreClientTest extends AbstractFDBContainer {
   public void testCreateClient(Vertx vertx, VertxTestContext testContext) throws Exception {
 
     recordStoreClient = new RecordStoreClient.Builder()
-      .withContainer(this.getClass().getName())
+      .withRecordSpace(this.getClass().getName())
       .withTenant(DatasetsLoader.DEFAULT_DEMO_TENANT)
       .withToken(sealedBiscuit)
       .withAddress("localhost:" + port)
