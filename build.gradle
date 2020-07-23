@@ -1,6 +1,15 @@
+plugins {
+  id "com.github.hierynomus.license" version"0.15.0"
+}
+
 allprojects {
+  apply plugin: 'com.github.hierynomus.license'
   repositories {
     mavenCentral()
+  }
+  license {
+    header rootProject.file('HEADER')
+    include "**/*.java"
   }
 }
 ext {
