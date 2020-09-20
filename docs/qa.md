@@ -1,11 +1,12 @@
 ---
+title: Questions and Answers
 ---
 
 # Questions and Answers
 
 ### What is Record-Store?
 
-Record-Store is a layer running on top of FoundationDB that provide a new kind of abstractions for storing data. We like to think that we are offering something between a SQL table and a MongoDB collections.
+Record-Store is a layer running on top of FoundationDB that provide a new kind of abstractions for storing data. We like to think that we are offering something between an SQL table and a MongoDB collections.
 
 ### Why?
 
@@ -35,15 +36,45 @@ Please see the [query capabilities page](/query-capabilities).
 * `tenant` is your account
 * `RecordSpace` is like a virtual SQL table, it is a logical place where you have `schemas` and `data`. If you know your way around distributed key-value store, it can be also view as a keySpace, except that you are manipulating records instead of keys.
 * `RecordType` is the name of the message structure defined in protobuf
-* `Record` is a protobuf message
+* `Record` is an instance of a protobuf message
 
 ### Is it production-ready?
 
 It is experimental.
 
-### What is the status of this project?
+### What is working for now?
 
-We are now focusing on the clients and GraphQL support.
+#### Working:
+
+* multi-tenancy
+* encryption
+* access with crypto-tokens
+* gRPC endpoint
+* schema upload/upgrade
+* push data
+* retrieve data
+* GraphQL proof-of-concept (converting a Protobuf schema to GraphQL and allowed queries based on the indexes)
+
+#### Work in progress:
+
+* working GraphQL
+* Java/Go/Rust/(your language) clients
+
+### Can I test it?
+
+This will be tricky as we have (yet) no usable clients but we are focusing on those. If you want to contribute, please see [the dedicated page](/write-client).
+
+### Why gRPC?
+
+Because the Record-Layer is already massively using Protobuf.
+
+### Why GraphQL?
+
+We think that offering an GraphQL interface will allow web developers to use the Record-Store.
+
+### Can I disable encryption?
+
+No.
 
 ### Why FoundationDB?
 
