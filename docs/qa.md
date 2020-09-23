@@ -10,7 +10,7 @@ Record-Store is a layer running on top of FoundationDB that provide a new kind o
 
 ### Why?
 
-Please see the [motivation page](/motivations).
+Please see the [motivation page](/record-store/motivations).
 
 ### What can I do with it?
 
@@ -29,7 +29,7 @@ You need another `KeySpace` to store another type of data, or maybe a KeySpace d
 
 ### How complicated queries can be?
 
-Please see the [query capabilities page](/query-capabilities).
+Please see the [query capabilities page](/record-store/query-capabilities).
 
 ### What is the terminology used within Record-Store?
 
@@ -62,7 +62,7 @@ It is experimental.
 
 ### Can I test it?
 
-This will be tricky as we have (yet) no usable clients but we are focusing on those. If you want to contribute, please see [the dedicated page](/write-client).
+This will be tricky as we have (yet) no usable clients but we are focusing on those. If you want to contribute, please see [the dedicated page](/record-store/write-client).
 
 ### Why gRPC?
 
