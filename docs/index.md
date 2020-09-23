@@ -28,3 +28,5 @@ A light, multi-model, user-defined place for your data.
 
 * **Index-defined queries** Your queries's capabilities are defined by the indexes you put on your schema.
 
+* **Secured** We are using [Biscuit](https://github.com/CleverCloud/biscuit), a mix of `JWT` and `Macaroons` to ensure auth{entication, orization}.
+
