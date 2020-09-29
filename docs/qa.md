@@ -18,7 +18,7 @@ You can use the Record-Store to create as many data holders(called RecordSpace) 
 
 We would like to have this kind of flow for developers:
 
-1. Opening KeySpace, for example `prod/users`
+1. Opening RecordSpace, for example `prod/users`
 2. Create a protobuf definition which will be used as schema
 3. Upsert schema
 4. Push records
