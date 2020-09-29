@@ -8,7 +8,7 @@ option java_package = "fr.pierrezemb.recordstore.proto";
 option java_outer_classname = "RecordStoreProtocol";
 option go_package = ".;recordstorepb";
 
-// administrative part of the container
+// administrative part of the recordSpace
 service SchemaService {
   // Upsert a schema
   rpc Upsert (UpsertSchemaRequest) returns (EmptyResponse);
@@ -28,7 +28,7 @@ service AdminService {
   rpc Ping (EmptyRequest) returns (EmptyResponse);
 }
 
-// Service which manipulate records within a container
+// Service which manipulate records within a recordSpace
 service RecordService {
   // put a record
   rpc Put (PutRecordRequest) returns (EmptyResponse);

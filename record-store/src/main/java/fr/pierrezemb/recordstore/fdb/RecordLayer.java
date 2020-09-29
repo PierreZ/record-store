@@ -69,7 +69,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static fr.pierrezemb.recordstore.fdb.UniversalIndexes.COUNT_INDEX;
@@ -540,7 +539,9 @@ public class RecordLayer {
     return r.planQuery(query).toString();
   }
 
-  private FDBRecordStore createFDBRecordStore(FDBRecordContext context, FDBMetaDataStore metaDataStore, SecretKey key, String tenantID, String container) {
+  private FDBRecordStore createFDBRecordStore(FDBRecordContext context,
+                                              FDBMetaDataStore metaDataStore,
+                                              SecretKey key, String tenantID, String container) {
 
     TransformedRecordSerializer<Message> serializer = TransformedRecordSerializerJCE.newDefaultBuilder()
       .setEncryptWhenSerializing(true)
@@ -548,14 +549,11 @@ public class RecordLayer {
       .setEncryptionKey(key)
       .build();
 
-    // Helper func
-    Function<FDBRecordContext, FDBRecordStore> recordStoreProvider = context2 -> FDBRecordStore.newBuilder()
+    return FDBRecordStore.newBuilder()
       .setMetaDataProvider(metaDataStore)
       .setContext(context)
       .setSerializer(serializer)
       .setKeySpacePath(RecordStoreKeySpace.getDataKeySpacePath(tenantID, container))
       .createOrOpen();
-
-    return recordStoreProvider.apply(context);
   }
 }
