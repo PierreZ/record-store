@@ -1,6 +1,9 @@
 # record-store [![status](https://img.shields.io/badge/status-experimental-red)](https://github.com/PierreZ/record-store) ![record-store](https://github.com/PierreZ/record-store/workflows/record-store/badge.svg?branch=master) ![java-client](https://github.com/PierreZ/record-store/workflows/java-client/badge.svg?branch=master) ![testcontainers-foundationdb](https://github.com/PierreZ/record-store/workflows/testcontainers-foundationdb/badge.svg?branch=master)
 
+![Logo](./docs/art/logo.png)
+
 A light, multi-model, user-defined place for your data.
+
 
 ## Features
 
