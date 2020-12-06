@@ -95,7 +95,7 @@ public class RecordLayer {
    */
   public List<String> listContainers(String tenantID) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    KeySpacePath tenantKeySpace = RecordStoreKeySpace.getApplicationKeySpacePath(tenantID);
+    KeySpacePath tenantKeySpace = RecordStoreKeySpace.getManagedKeySpacePath(tenantID);
     List<ResolvedKeySpacePath> recordSpaces = tenantKeySpace
       .listSubdirectory(context, "recordSpace", ScanProperties.FORWARD_SCAN);
     return recordSpaces.stream()
@@ -108,7 +108,7 @@ public class RecordLayer {
    */
   public void deleteContainer(String tenantID, String recordSpace) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getDataKeySpacePath(tenantID, recordSpace));
+    FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getUnManagedDataKeySpacePath(tenantID, recordSpace));
     FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getMetaDataKeySpacePath(tenantID, recordSpace));
     context.commit();
   }
@@ -383,6 +383,43 @@ public class RecordLayer {
     putRecord(tenantID, recordSpace, table, record, defaultKey);
   }
 
+  public void putRecord(String tenantID, String recordSpace, RecordMetaData recordMetaData, Message message) {
+    putRecord(tenantID, recordSpace, recordMetaData, message, defaultKey);
+  }
+
+  public void putRecord(String tenantID, String recordSpace, RecordMetaData recordMetaData, Message message, SecretKey secretKey) {
+    FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
+    FDBRecordStore r = createFDBRecordStore(context, recordMetaData, secretKey, tenantID, recordSpace);
+
+    LOGGER.info("saving {} for {}/{}", r.saveRecord(message).toString(), tenantID, recordSpace);
+    context.commit();
+  }
+  public List<Message> scanRecords(String tenantID, String recordSpace, RecordMetaData recordMetaData, RecordQuery query) {
+    return scanRecords(tenantID, recordSpace, recordMetaData, query, defaultKey);
+  }
+
+  public List<Message> scanRecords(String tenantID, String recordSpace, RecordMetaData recordMetaData, RecordQuery query, SecretKey secretKey) {
+    FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
+    FDBRecordStore r = createFDBRecordStore(context, recordMetaData, secretKey, tenantID, recordSpace);
+
+    return this.executeQuery(r, query, tenantID, recordSpace)
+      .map(FDBRecord::getRecord)
+      .filter(Objects::nonNull)
+      .asList()
+      .join();
+  }
+
+  public boolean deleteRecord(String tenantID, String recordSpace, RecordMetaData recordMetaData, Tuple primaryKey) {
+    return deleteRecord(tenantID, recordSpace, recordMetaData, primaryKey, defaultKey);
+  }
+
+  public boolean deleteRecord(String tenantID, String recordSpace, RecordMetaData recordMetaData, Tuple primaryKey, SecretKey secretKey) {
+    FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
+    FDBRecordStore r = createFDBRecordStore(context, recordMetaData, secretKey, tenantID, recordSpace);
+
+    return r.deleteRecord(primaryKey);
+  }
+
   public List<Message> queryRecords(String tenantID, String recordSpace, RecordQuery query) {
     return queryRecords(tenantID, recordSpace, query, defaultKey);
   }
@@ -553,7 +590,26 @@ public class RecordLayer {
       .setMetaDataProvider(metaDataStore)
       .setContext(context)
       .setSerializer(serializer)
-      .setKeySpacePath(RecordStoreKeySpace.getDataKeySpacePath(tenantID, container))
+      .setKeySpacePath(RecordStoreKeySpace.getUnManagedDataKeySpacePath(tenantID, container))
       .createOrOpen();
   }
+
+  private FDBRecordStore createFDBRecordStore(FDBRecordContext context,
+                                              RecordMetaData recordMetaData,
+                                              SecretKey key, String tenantID, String container) {
+
+    TransformedRecordSerializer<Message> serializer = TransformedRecordSerializerJCE.newDefaultBuilder()
+      .setEncryptWhenSerializing(true)
+      .setCompressWhenSerializing(true)
+      .setEncryptionKey(key)
+      .build();
+
+    return FDBRecordStore.newBuilder()
+      .setMetaDataProvider(recordMetaData)
+      .setContext(context)
+      .setSerializer(serializer)
+      .setKeySpacePath(RecordStoreKeySpace.getManagedDataKeySpacePath(tenantID, container))
+      .createOrOpen();
+  }
+
 }

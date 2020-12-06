@@ -26,29 +26,35 @@ public class RecordStoreKeySpace {
     new KeySpace(
       new DirectoryLayerDirectory("application")
         .addSubdirectory(new KeySpaceDirectory("tenant", KeySpaceDirectory.KeyType.STRING)
-          .addSubdirectory(new KeySpaceDirectory("recordSpace", KeySpaceDirectory.KeyType.STRING)
-            .addSubdirectory(new KeySpaceDirectory("metadata", KeySpaceDirectory.KeyType.STRING, "m"))
-            .addSubdirectory(new KeySpaceDirectory("data", KeySpaceDirectory.KeyType.STRING, "d"))
-          )));
+          .addSubdirectory(new KeySpaceDirectory("recordSpaceType", KeySpaceDirectory.KeyType.STRING)
+            .addSubdirectory(new KeySpaceDirectory("recordSpace", KeySpaceDirectory.KeyType.STRING)
+              .addSubdirectory(new KeySpaceDirectory("metadata", KeySpaceDirectory.KeyType.STRING, "m"))
+              .addSubdirectory(new KeySpaceDirectory("data", KeySpaceDirectory.KeyType.STRING, "d"))
+            ))));
 
   public static KeySpacePath getMetaDataKeySpacePath(String tenant, String recordSpace) {
-    return getKeySpacePath(tenant, recordSpace, "metadata");
+    return getKeySpacePath(tenant, recordSpace, "unmanaged",  "metadata");
   }
 
-  public static KeySpacePath getApplicationKeySpacePath(String tenant) {
+  public static KeySpacePath getManagedKeySpacePath(String tenant) {
     return RS_KEY_SPACE
       .path("application", APPLICATION_NAME)
-      .add("tenant", tenant);
+      .add("tenant", tenant).add("recordSpaceType", "managed");
   }
 
-  public static KeySpacePath getDataKeySpacePath(String tenant, String recordSpace) {
-    return getKeySpacePath(tenant, recordSpace, "data");
+  public static KeySpacePath getManagedDataKeySpacePath(String tenant, String recordSpace) {
+    return getKeySpacePath(tenant, recordSpace, "managed",  "data");
   }
 
-  private static KeySpacePath getKeySpacePath(String tenant, String env, String subDirectory) {
+  public static KeySpacePath getUnManagedDataKeySpacePath(String tenant, String recordSpace) {
+    return getKeySpacePath(tenant, recordSpace, "unmanaged",  "data");
+  }
+
+  private static KeySpacePath getKeySpacePath(String tenant, String env, String recordSpaceType, String subDirectory) {
     return RS_KEY_SPACE
       .path("application", APPLICATION_NAME)
       .add("tenant", tenant)
+      .add("recordSpaceType", recordSpaceType)
       .add("recordSpace", env)
       .add(subDirectory);
   }

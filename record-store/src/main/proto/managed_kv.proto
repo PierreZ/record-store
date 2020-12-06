@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package managed_kv;
+
+option java_package = "fr.pierrezemb.recordstore.proto.managed.kv";
+option java_outer_classname = "ManagedKVProto";
+
+service ManagedKV {
+  rpc put(KeyValue) returns (EmptyResponse);
+  rpc delete(DeleteRequest) returns (EmptyResponse);
+  rpc scan(ScanRequest) returns (stream KeyValue);
+}
+
+// gRPC part
+message EmptyResponse {}
+
+message DeleteRequest {
+  bytes key_to_delete = 1;
+}
+
+message ScanRequest {
+  bytes start_key = 1;
+  bytes end_key = 2;
+}
+
+// Record-layer part
+message KeyValue {
+  bytes key = 1;
+  bytes value = 2;
+}
+
+message RecordTypeUnion {
+  KeyValue _KeyValue = 1;
+}

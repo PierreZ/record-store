@@ -29,4 +29,7 @@ public class Constants {
 
   public static final String CONFIG_GRAPHQL_LISTEN_PORT = "graphql-listen-port";
   public static final String CONFIG_LOAD_DEMO = "load-demo";
+
+  public static final String CONFIG_ENABLE_MANAGED_KV = "enable-managed-kv";
+  public static final Boolean CONFIG_ENABLE_MANAGED_KV_DEFAULT = true;
 }

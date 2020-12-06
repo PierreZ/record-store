@@ -20,6 +20,7 @@ import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.grpc.AdminService;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
+import fr.pierrezemb.recordstore.grpc.ManagedKVService;
 import fr.pierrezemb.recordstore.grpc.RecordService;
 import fr.pierrezemb.recordstore.grpc.SchemaService;
 import io.vertx.core.AbstractVerticle;
@@ -42,7 +43,9 @@ public class GrpcVerticle extends AbstractVerticle {
   public void start(Promise<Void> startPromise) throws Exception {
 
     String clusterFilePath = this.context.config().getString(Constants.CONFIG_FDB_CLUSTER_FILE, Constants.CONFIG_FDB_CLUSTER_FILE_DEFAULT);
-    System.out.println("connecting to fdb@" + clusterFilePath);
+    LOGGER.info("connecting to fdb@" + clusterFilePath);
+
+    boolean enableManagedKV = this.context.config().getBoolean(Constants.CONFIG_ENABLE_MANAGED_KV, Constants.CONFIG_ENABLE_MANAGED_KV_DEFAULT);
 
     String tokenKey = this.context.config().getString(Constants.CONFIG_BISCUIT_KEY, CONFIG_BISCUIT_KEY_DEFAULT);
     if (tokenKey.equals(CONFIG_BISCUIT_KEY_DEFAULT)) {
@@ -68,6 +71,11 @@ public class GrpcVerticle extends AbstractVerticle {
       .addService(new AdminService(recordLayer))
       .addService(new SchemaService(recordLayer))
       .addService(new RecordService(recordLayer));
+
+    if (enableManagedKV) {
+      LOGGER.info("enabling ManagedKV");
+      serverBuilder.addService(new ManagedKVService(recordLayer));
+    }
 
     VertxServer server = serverBuilder.build();
 
