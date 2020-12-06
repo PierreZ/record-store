@@ -1,11 +1,11 @@
-/*
- * Copyright (c) 2020 Pierre Zemb
+/**
+ * Copyright 2020 Pierre Zemb
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package fr.pierrezemb.recordstore.grpc;
 
-import com.apple.foundationdb.map.BunchedMap;
-import com.apple.foundationdb.record.metadata.expressions.VersionKeyExpression;
 import com.google.protobuf.ByteString;
 import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.PortManager;
 import fr.pierrezemb.recordstore.auth.BiscuitClientCredential;
 import fr.pierrezemb.recordstore.auth.BiscuitManager;
-import fr.pierrezemb.recordstore.proto.AdminServiceGrpc;
-import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import fr.pierrezemb.recordstore.proto.managed.kv.ManagedKVGrpc;
 import fr.pierrezemb.recordstore.proto.managed.kv.ManagedKVProto;
 import io.grpc.ManagedChannel;
@@ -45,13 +40,10 @@ import org.testcontainers.containers.AbstractFDBContainer;
 
 import java.io.File;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_TENANT;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

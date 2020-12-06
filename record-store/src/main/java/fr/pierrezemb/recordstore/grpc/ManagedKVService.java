@@ -13,24 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package fr.pierrezemb.recordstore.grpc;
 
 import com.apple.foundationdb.record.RecordMetaData;
 import com.apple.foundationdb.record.RecordMetaDataBuilder;
-import com.apple.foundationdb.record.RecordMetaDataProto;
-import com.apple.foundationdb.record.metadata.Index;
-import com.apple.foundationdb.record.metadata.IndexTypes;
 import com.apple.foundationdb.record.metadata.Key;
-import com.apple.foundationdb.record.metadata.expressions.EmptyKeyExpression;
-import com.apple.foundationdb.record.metadata.expressions.GroupingKeyExpression;
-import com.apple.foundationdb.record.metadata.expressions.KeyExpression;
 import com.apple.foundationdb.record.query.RecordQuery;
 import com.apple.foundationdb.record.query.expressions.Query;
 import com.apple.foundationdb.tuple.Tuple;
-import com.google.protobuf.Message;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
-import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.managed.kv.ManagedKVGrpc;
 import fr.pierrezemb.recordstore.proto.managed.kv.ManagedKVProto;
 import io.grpc.Status;
@@ -38,9 +29,6 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.security.KeyException;
-import java.util.List;
 
 public class ManagedKVService extends ManagedKVGrpc.ManagedKVImplBase {
   private static final Logger LOGGER = LoggerFactory.getLogger(ManagedKVService.class);

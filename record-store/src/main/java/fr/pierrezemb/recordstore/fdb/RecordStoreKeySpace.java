@@ -33,7 +33,7 @@ public class RecordStoreKeySpace {
             ))));
 
   public static KeySpacePath getMetaDataKeySpacePath(String tenant, String recordSpace) {
-    return getKeySpacePath(tenant, recordSpace, "unmanaged",  "metadata");
+    return getKeySpacePath(tenant, recordSpace, "unmanaged", "metadata");
   }
 
   public static KeySpacePath getManagedKeySpacePath(String tenant) {
@@ -43,11 +43,11 @@ public class RecordStoreKeySpace {
   }
 
   public static KeySpacePath getManagedDataKeySpacePath(String tenant, String recordSpace) {
-    return getKeySpacePath(tenant, recordSpace, "managed",  "data");
+    return getKeySpacePath(tenant, recordSpace, "managed", "data");
   }
 
   public static KeySpacePath getUnManagedDataKeySpacePath(String tenant, String recordSpace) {
-    return getKeySpacePath(tenant, recordSpace, "unmanaged",  "data");
+    return getKeySpacePath(tenant, recordSpace, "unmanaged", "data");
   }
 
   private static KeySpacePath getKeySpacePath(String tenant, String env, String recordSpaceType, String subDirectory) {

@@ -394,6 +394,7 @@ public class RecordLayer {
     LOGGER.info("saving {} for {}/{}", r.saveRecord(message).toString(), tenantID, recordSpace);
     context.commit();
   }
+
   public List<Message> scanRecords(String tenantID, String recordSpace, RecordMetaData recordMetaData, RecordQuery query) {
     return scanRecords(tenantID, recordSpace, recordMetaData, query, defaultKey);
   }
