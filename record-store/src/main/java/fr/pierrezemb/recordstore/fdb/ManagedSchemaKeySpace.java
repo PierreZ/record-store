@@ -20,7 +20,7 @@ import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpace;
 import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpaceDirectory;
 import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpacePath;
 
-public class RecordStoreKeySpace {
+public class ManagedSchemaKeySpace {
   public static final String APPLICATION_NAME = "record-store";
   public static final KeySpace RS_KEY_SPACE =
       new KeySpace(
@@ -28,31 +28,27 @@ public class RecordStoreKeySpace {
               .addSubdirectory(
                   new KeySpaceDirectory("tenant", KeySpaceDirectory.KeyType.STRING)
                       .addSubdirectory(
-                          new KeySpaceDirectory("recordSpace", KeySpaceDirectory.KeyType.STRING)
+                          new KeySpaceDirectory(
+                                  "managedSchemaType", KeySpaceDirectory.KeyType.STRING)
                               .addSubdirectory(
                                   new KeySpaceDirectory(
-                                      "metadata", KeySpaceDirectory.KeyType.STRING, "m"))
-                              .addSubdirectory(
-                                  new KeySpaceDirectory(
-                                      "data", KeySpaceDirectory.KeyType.STRING, "d")))));
+                                          "managedSchema", KeySpaceDirectory.KeyType.STRING)
+                                      .addSubdirectory(
+                                          new KeySpaceDirectory(
+                                              "data", KeySpaceDirectory.KeyType.STRING, "d"))))));
 
-  public static KeySpacePath openMetaDataKeySpacePath(String tenant, String recordSpace) {
-    return openKeySpacePath(tenant, recordSpace, "metadata");
+  public static KeySpacePath openDataKeySpacePath(
+      String tenant, String managedSchemaType, String managedSchema) {
+    return openKeySpacePath(tenant, managedSchemaType, managedSchema);
   }
 
-  public static KeySpacePath openKeySpacePath(String tenant) {
-    return RS_KEY_SPACE.path("application", APPLICATION_NAME).add("tenant", tenant);
-  }
-
-  public static KeySpacePath openDataKeySpacePath(String tenant, String recordSpace) {
-    return openKeySpacePath(tenant, recordSpace, "data");
-  }
-
-  private static KeySpacePath openKeySpacePath(String tenant, String env, String subDirectory) {
+  private static KeySpacePath openKeySpacePath(
+      String tenant, String managedSchemaType, String managedSchema) {
     return RS_KEY_SPACE
         .path("application", APPLICATION_NAME)
         .add("tenant", tenant)
-        .add("recordSpace", env)
-        .add(subDirectory);
+        .add("managedSchemaType", managedSchemaType)
+        .add("managedSchema", managedSchema)
+        .add("data");
   }
 }

@@ -20,10 +20,9 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
 public class GrpcContextKeys {
-  /**
-   * Key for accessing requested tenant id
-   */
+  /** Key for accessing requested tenant id */
   public static final Context.Key<String> TENANT_ID_KEY = Context.key("tenant");
+
   public static final Context.Key<String> CONTAINER_NAME = Context.key("recordSpace");
 
   public static String getTenantIDOrFail() throws StatusRuntimeException {
@@ -37,7 +36,8 @@ public class GrpcContextKeys {
   public static String getContainerOrFail() throws StatusRuntimeException {
     String recordSpace = GrpcContextKeys.CONTAINER_NAME.get();
     if (recordSpace == null) {
-      throw new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("missing recordSpace"));
+      throw new StatusRuntimeException(
+          Status.FAILED_PRECONDITION.withDescription("missing recordSpace"));
     }
     return recordSpace;
   }

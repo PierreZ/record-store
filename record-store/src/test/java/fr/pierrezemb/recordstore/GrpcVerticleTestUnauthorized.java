@@ -26,16 +26,15 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.AbstractFDBContainer;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -47,25 +46,29 @@ public class GrpcVerticleTestUnauthorized extends AbstractFDBContainer {
   private File clusterFile;
 
   @BeforeAll
-  void deploy_verticle(Vertx vertx, VertxTestContext testContext) throws IOException, InterruptedException {
+  void deploy_verticle(Vertx vertx, VertxTestContext testContext)
+      throws IOException, InterruptedException {
 
     clusterFile = container.getClusterFile();
 
-    DeploymentOptions options = new DeploymentOptions()
-      .setConfig(new JsonObject()
-        .put(Constants.CONFIG_FDB_CLUSTER_FILE, clusterFile.getAbsolutePath())
-        .put(Constants.CONFIG_GRPC_LISTEN_PORT, port));
+    DeploymentOptions options =
+        new DeploymentOptions()
+            .setConfig(
+                new JsonObject()
+                    .put(Constants.CONFIG_FDB_CLUSTER_FILE, clusterFile.getAbsolutePath())
+                    .put(Constants.CONFIG_GRPC_LISTEN_PORT, port));
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
-    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT + "dsa", sealedBiscuit, this.getClass().getName());
+    BiscuitClientCredential credentials =
+        new BiscuitClientCredential(
+            DEFAULT_TENANT + "dsa", sealedBiscuit, this.getClass().getName());
 
     // deploy verticle
-    vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
-    ManagedChannel channel = VertxChannelBuilder
-      .forAddress(vertx, "localhost", port)
-      .usePlaintext(true)
-      .build();
+    vertx.deployVerticle(
+        new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
+    ManagedChannel channel =
+        VertxChannelBuilder.forAddress(vertx, "localhost", port).usePlaintext(true).build();
 
     adminServiceVertxStub = AdminServiceGrpc.newVertxStub(channel).withCallCredentials(credentials);
   }
@@ -73,13 +76,15 @@ public class GrpcVerticleTestUnauthorized extends AbstractFDBContainer {
   @Test
   public void testBadAuth(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    adminServiceVertxStub.ping(RecordStoreProtocol.EmptyRequest.newBuilder().build(), response -> {
-      if (response.succeeded()) {
-        testContext.failNow(response.cause());
-      } else {
-        testContext.completeNow();
-      }
-    });
+    adminServiceVertxStub.ping(
+        RecordStoreProtocol.EmptyRequest.newBuilder().build(),
+        response -> {
+          if (response.succeeded()) {
+            testContext.failNow(response.cause());
+          } else {
+            testContext.completeNow();
+          }
+        });
   }
 
   @AfterAll

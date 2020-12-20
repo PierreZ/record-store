@@ -16,12 +16,11 @@
 package org.testcontainers.containers;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import java.io.File;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.wait.strategy.Wait;
-
-import java.io.File;
-import java.io.IOException;
 
 public class FoundationDBContainer extends GenericContainer<FoundationDBContainer> {
   public static final int FDB_PORT = 4500;
@@ -43,7 +42,8 @@ public class FoundationDBContainer extends GenericContainer<FoundationDBContaine
   @Override
   protected void containerIsStarted(InspectContainerResponse containerInfo) {
     try {
-      Container.ExecResult initResult = execInContainer("fdbcli", "--exec", "configure new single memory");
+      Container.ExecResult initResult =
+          execInContainer("fdbcli", "--exec", "configure new single memory");
       String stdout = initResult.getStdout();
       log.debug("init FDB stdout: " + stdout);
       int exitCode = initResult.getExitCode();
@@ -74,9 +74,8 @@ public class FoundationDBContainer extends GenericContainer<FoundationDBContaine
   }
 
   /**
-   * A hook that is executed after the container is stopped with {@link #stop()}.
-   * Warning! This hook won't be executed if the container is terminated during
-   * the JVM's shutdown hook or by Ryuk.
+   * A hook that is executed after the container is stopped with {@link #stop()}. Warning! This hook
+   * won't be executed if the container is terminated during the JVM's shutdown hook or by Ryuk.
    *
    * @param containerInfo
    */
@@ -89,5 +88,4 @@ public class FoundationDBContainer extends GenericContainer<FoundationDBContaine
   public File getClusterFile() {
     return clusterFile;
   }
-
 }

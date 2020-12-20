@@ -15,24 +15,22 @@
  */
 package fr.pierrezemb.recordstore;
 
+import static fr.pierrezemb.recordstore.Constants.CONFIG_BISCUIT_KEY_DEFAULT;
 
 import fr.pierrezemb.recordstore.datasets.DatasetsLoader;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
 import fr.pierrezemb.recordstore.grpc.AdminService;
 import fr.pierrezemb.recordstore.grpc.AuthInterceptor;
+import fr.pierrezemb.recordstore.grpc.ManagedKVService;
 import fr.pierrezemb.recordstore.grpc.RecordService;
 import fr.pierrezemb.recordstore.grpc.SchemaService;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.grpc.VertxServer;
 import io.vertx.grpc.VertxServerBuilder;
+import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.crypto.spec.SecretKeySpec;
-
-import static fr.pierrezemb.recordstore.Constants.CONFIG_BISCUIT_KEY_DEFAULT;
-
 
 public class GrpcVerticle extends AbstractVerticle {
 
@@ -41,15 +39,30 @@ public class GrpcVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
 
-    String clusterFilePath = this.context.config().getString(Constants.CONFIG_FDB_CLUSTER_FILE, Constants.CONFIG_FDB_CLUSTER_FILE_DEFAULT);
-    System.out.println("connecting to fdb@" + clusterFilePath);
+    String clusterFilePath =
+        this.context
+            .config()
+            .getString(
+                Constants.CONFIG_FDB_CLUSTER_FILE, Constants.CONFIG_FDB_CLUSTER_FILE_DEFAULT);
+    LOGGER.info("connecting to fdb@" + clusterFilePath);
 
-    String tokenKey = this.context.config().getString(Constants.CONFIG_BISCUIT_KEY, CONFIG_BISCUIT_KEY_DEFAULT);
+    boolean enableManagedKV =
+        this.context
+            .config()
+            .getBoolean(
+                Constants.CONFIG_ENABLE_MANAGED_KV, Constants.CONFIG_ENABLE_MANAGED_KV_DEFAULT);
+
+    String tokenKey =
+        this.context.config().getString(Constants.CONFIG_BISCUIT_KEY, CONFIG_BISCUIT_KEY_DEFAULT);
     if (tokenKey.equals(CONFIG_BISCUIT_KEY_DEFAULT)) {
       LOGGER.warn("using default key for tokens");
     }
 
-    byte[] key = this.context.config().getString(Constants.CONFIG_ENCRYPTION_KEY, Constants.CONFIG_ENCRYPTION_KEY_DEFAULT).getBytes();
+    byte[] key =
+        this.context
+            .config()
+            .getString(Constants.CONFIG_ENCRYPTION_KEY, Constants.CONFIG_ENCRYPTION_KEY_DEFAULT)
+            .getBytes();
     if (new String(key).equals(Constants.CONFIG_ENCRYPTION_KEY_DEFAULT)) {
       LOGGER.warn("using default encryption key for records");
     }
@@ -60,25 +73,33 @@ public class GrpcVerticle extends AbstractVerticle {
     DatasetsLoader datasetsLoader = new DatasetsLoader(recordLayer);
     datasetsLoader.loadDataset(this.context.config().getString(Constants.CONFIG_LOAD_DEMO, ""));
 
-    VertxServerBuilder serverBuilder = VertxServerBuilder
-      .forAddress(vertx,
-        this.context.config().getString(Constants.CONFIG_GRPC_LISTEN_ADDRESS, "localhost"),
-        this.context.config().getInteger(Constants.CONFIG_GRPC_LISTEN_PORT, 8080))
-      .intercept(new AuthInterceptor(tokenKey))
-      .addService(new AdminService(recordLayer))
-      .addService(new SchemaService(recordLayer))
-      .addService(new RecordService(recordLayer));
+    VertxServerBuilder serverBuilder =
+        VertxServerBuilder.forAddress(
+                vertx,
+                this.context.config().getString(Constants.CONFIG_GRPC_LISTEN_ADDRESS, "localhost"),
+                this.context.config().getInteger(Constants.CONFIG_GRPC_LISTEN_PORT, 8080))
+            .intercept(new AuthInterceptor(tokenKey))
+            .addService(new AdminService(recordLayer))
+            .addService(new SchemaService(recordLayer))
+            .addService(new RecordService(recordLayer));
+
+    if (enableManagedKV) {
+      LOGGER.info("enabling ManagedKV");
+      serverBuilder.addService(new ManagedKVService(recordLayer));
+    }
 
     VertxServer server = serverBuilder.build();
 
-    server.start(ar -> {
-      if (ar.succeeded()) {
-        System.out.println("gRPC service started on " + this.context.config().getInteger("grpc-listen-port"));
-        startPromise.complete();
-      } else {
-        System.out.println("Could not start server " + ar.cause().getMessage());
-        startPromise.fail(ar.cause());
-      }
-    });
+    server.start(
+        ar -> {
+          if (ar.succeeded()) {
+            System.out.println(
+                "gRPC service started on " + this.context.config().getInteger("grpc-listen-port"));
+            startPromise.complete();
+          } else {
+            System.out.println("Could not start server " + ar.cause().getMessage());
+            startPromise.fail(ar.cause());
+          }
+        });
   }
 }

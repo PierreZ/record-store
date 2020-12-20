@@ -25,7 +25,6 @@ import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import fr.pierrezemb.recordstore.proto.SchemaServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -43,7 +42,8 @@ public class RecordStoreClient {
   private final AdminServiceGrpc.AdminServiceFutureStub asyncAdminStub;
   private final RecordServiceGrpc.RecordServiceBlockingStub syncRecordStub;
 
-  private RecordStoreClient(String tenant, String recordSpace, String address, String token) throws InterruptedException, ExecutionException, TimeoutException {
+  private RecordStoreClient(String tenant, String recordSpace, String address, String token)
+      throws InterruptedException, ExecutionException, TimeoutException {
     this.tenant = tenant;
     this.recordSpace = recordSpace;
     this.address = address;
@@ -70,7 +70,8 @@ public class RecordStoreClient {
     return this.asyncAdminStub.ping(RecordStoreProtocol.EmptyRequest.newBuilder().build());
   }
 
-  public ListenableFuture<RecordStoreProtocol.EmptyResponse> upsertSchema(RecordStoreProtocol.UpsertSchemaRequest request) {
+  public ListenableFuture<RecordStoreProtocol.EmptyResponse> upsertSchema(
+      RecordStoreProtocol.UpsertSchemaRequest request) {
     return this.asyncSchemaStub.upsert(request);
   }
 
@@ -78,18 +79,21 @@ public class RecordStoreClient {
     return this.putRecord(record.getClass().getSimpleName(), record.toByteArray());
   }
 
-  public ListenableFuture<RecordStoreProtocol.EmptyResponse> putRecord(String recordTypeName, byte[] message) {
-    return this.asyncRecordStub.put(RecordStoreProtocol.PutRecordRequest.newBuilder()
-      .setMessage(ByteString.copyFrom(message))
-      .setRecordTypeName(recordTypeName)
-      .build());
+  public ListenableFuture<RecordStoreProtocol.EmptyResponse> putRecord(
+      String recordTypeName, byte[] message) {
+    return this.asyncRecordStub.put(
+        RecordStoreProtocol.PutRecordRequest.newBuilder()
+            .setMessage(ByteString.copyFrom(message))
+            .setRecordTypeName(recordTypeName)
+            .build());
   }
 
   public ListenableFuture<RecordStoreProtocol.StatResponse> getStats() {
     return asyncSchemaStub.stat(RecordStoreProtocol.StatRequest.newBuilder().build());
   }
 
-  public Iterator<RecordStoreProtocol.QueryResponse> queryRecords(RecordStoreProtocol.QueryRequest request) {
+  public Iterator<RecordStoreProtocol.QueryResponse> queryRecords(
+      RecordStoreProtocol.QueryRequest request) {
     return syncRecordStub.query(request);
   }
 
@@ -120,7 +124,8 @@ public class RecordStoreClient {
       return this;
     }
 
-    public RecordStoreClient connect() throws InterruptedException, ExecutionException, TimeoutException {
+    public RecordStoreClient connect()
+        throws InterruptedException, ExecutionException, TimeoutException {
       return new RecordStoreClient(tenant, recordSpace, address, token);
     }
   }

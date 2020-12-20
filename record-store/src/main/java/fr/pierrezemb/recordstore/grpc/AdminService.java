@@ -21,10 +21,9 @@ import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
   private static final Logger LOGGER = LoggerFactory.getLogger(AdminService.class);
@@ -32,7 +31,6 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
 
   public AdminService(RecordLayer recordLayer) {
     this.recordLayer = recordLayer;
-
   }
 
   /**
@@ -40,7 +38,9 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
    * @param responseObserver
    */
   @Override
-  public void list(RecordStoreProtocol.ListContainerRequest request, StreamObserver<RecordStoreProtocol.ListContainerResponse> responseObserver) {
+  public void list(
+      RecordStoreProtocol.ListContainerRequest request,
+      StreamObserver<RecordStoreProtocol.ListContainerResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
 
     List<String> results;
@@ -51,9 +51,8 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
       throw new StatusRuntimeException(Status.INTERNAL.withCause(e));
     }
 
-    responseObserver.onNext(RecordStoreProtocol.ListContainerResponse.newBuilder()
-      .addAllContainers(results)
-      .build());
+    responseObserver.onNext(
+        RecordStoreProtocol.ListContainerResponse.newBuilder().addAllContainers(results).build());
     responseObserver.onCompleted();
   }
 
@@ -62,7 +61,9 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
    * @param responseObserver
    */
   @Override
-  public void delete(RecordStoreProtocol.DeleteContainerRequest request, StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
+  public void delete(
+      RecordStoreProtocol.DeleteContainerRequest request,
+      StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
 
     try {
@@ -71,16 +72,18 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
       }
     } catch (RuntimeException runtimeException) {
       LOGGER.error("could not delete recordSpace", runtimeException);
-      throw new StatusRuntimeException(Status.INTERNAL.withDescription(runtimeException.getMessage()));
+      throw new StatusRuntimeException(
+          Status.INTERNAL.withDescription(runtimeException.getMessage()));
     }
 
-    responseObserver.onNext(RecordStoreProtocol.EmptyResponse.newBuilder()
-      .build());
+    responseObserver.onNext(RecordStoreProtocol.EmptyResponse.newBuilder().build());
     responseObserver.onCompleted();
   }
 
   @Override
-  public void ping(RecordStoreProtocol.EmptyRequest request, StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
+  public void ping(
+      RecordStoreProtocol.EmptyRequest request,
+      StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
     GrpcContextKeys.getTenantIDOrFail();
     responseObserver.onNext(RecordStoreProtocol.EmptyResponse.newBuilder().build());
     responseObserver.onCompleted();

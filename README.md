@@ -79,3 +79,9 @@ To run your application:
 ```
 ./gradlew :record-store:run
 ```
+
+To format:
+```bash
+gradle :record-store:spotlessApply :java-client:spotlessApply :testcontainers-foundationdb:spotlessApply
+gradle :record-store:spotlessCheck :java-client:spotlessCheck :testcontainers-foundationdb:spotlessCheck
+```

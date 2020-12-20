@@ -25,7 +25,6 @@ import fr.pierrezemb.recordstore.utils.graphql.SchemaOptions;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.idl.SchemaPrinter;
-
 import java.util.stream.Collectors;
 
 public class GraphQLSchemaGenerator {
@@ -34,17 +33,19 @@ public class GraphQLSchemaGenerator {
     SchemaPrinter schemaPrinter = new SchemaPrinter();
 
     // Converting struct from protobuf to graphQL
-    String schema = recordMetaData.getRecordTypes().values().stream()
-      .map(e -> ProtoToGql.convert(e.getDescriptor(), SchemaOptions.defaultOptions()))
-      .map(schemaPrinter::print)
-      .collect(Collectors.joining("\n"));
+    String schema =
+        recordMetaData.getRecordTypes().values().stream()
+            .map(e -> ProtoToGql.convert(e.getDescriptor(), SchemaOptions.defaultOptions()))
+            .map(schemaPrinter::print)
+            .collect(Collectors.joining("\n"));
 
     schema += "\ntype Query {\n";
 
     // for each type, we can retrieve all the associated queries
-    schema += recordMetaData.getRecordTypes().values().stream()
-      .map(GraphQLSchemaGenerator::generateQueries)
-      .collect(Collectors.joining("\n"));
+    schema +=
+        recordMetaData.getRecordTypes().values().stream()
+            .map(GraphQLSchemaGenerator::generateQueries)
+            .collect(Collectors.joining("\n"));
 
     schema += "}\n";
 
@@ -54,9 +55,16 @@ public class GraphQLSchemaGenerator {
   private static String generateQueries(RecordType e) {
     StringBuilder stringBuilder = new StringBuilder();
 
-    stringBuilder.append("  # retrieve a list of ").append(e.getName()).append(". Use limit to retrieve only a number of records\n");
-    stringBuilder.append("  all").append(e.getName()).append("s(limit: Int): [").append(e.getName()).append("!]!\n\n");
-
+    stringBuilder
+        .append("  # retrieve a list of ")
+        .append(e.getName())
+        .append(". Use limit to retrieve only a number of records\n");
+    stringBuilder
+        .append("  all")
+        .append(e.getName())
+        .append("s(limit: Int): [")
+        .append(e.getName())
+        .append("!]!\n\n");
 
     for (Index index : e.getAllIndexes()) {
       generateQueryWithIndex(index, e, stringBuilder);
@@ -65,7 +73,8 @@ public class GraphQLSchemaGenerator {
     return stringBuilder.toString();
   }
 
-  private static void generateQueryWithIndex(Index i, RecordType recordType, StringBuilder stringBuilder) {
+  private static void generateQueryWithIndex(
+      Index i, RecordType recordType, StringBuilder stringBuilder) {
 
     if (i.getName().endsWith(RecordStoreProtocol.IndexType.VALUE.toString())) {
       String[] splits = i.getName().split("_");
@@ -82,7 +91,8 @@ public class GraphQLSchemaGenerator {
         return;
       }
 
-      GraphQLFieldDefinition graphqlField = ProtoToGql.convertField(protoField, SchemaOptions.defaultOptions());
+      GraphQLFieldDefinition graphqlField =
+          ProtoToGql.convertField(protoField, SchemaOptions.defaultOptions());
       if (graphqlField == null) {
         return;
       }
@@ -96,8 +106,23 @@ public class GraphQLSchemaGenerator {
       String fieldNameWithUpper = field.substring(0, 1).toUpperCase() + field.substring(1);
 
       stringBuilder
-        .append("  # get a ").append(type).append(" using the ").append(field).append(" field\n")
-        .append("  get").append(type).append("By").append(fieldNameWithUpper).append("(").append(field).append(": ").append(graphQLType).append(")").append(": ").append(type).append("!\n\n");
+          .append("  # get a ")
+          .append(type)
+          .append(" using the ")
+          .append(field)
+          .append(" field\n")
+          .append("  get")
+          .append(type)
+          .append("By")
+          .append(fieldNameWithUpper)
+          .append("(")
+          .append(field)
+          .append(": ")
+          .append(graphQLType)
+          .append(")")
+          .append(": ")
+          .append(type)
+          .append("!\n\n");
     }
   }
 }

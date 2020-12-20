@@ -16,13 +16,11 @@
 package fr.pierrezemb.recordstore.client;
 
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
+import javax.annotation.Nonnull;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
-
 public class RecordField {
-  @Nonnull
-  private final String fieldName;
+  @Nonnull private final String fieldName;
 
   public RecordField(@NotNull String fieldName) {
     this.fieldName = fieldName;
@@ -92,16 +90,19 @@ public class RecordField {
     return createQueryFilter(RecordStoreProtocol.FilterOperation.GREATER_THAN_OR_EQUALS, value);
   }
 
-  private RecordStoreProtocol.QueryFilterNode createQueryFilter(RecordStoreProtocol.FilterOperation fieldOperation, Object value) {
+  private RecordStoreProtocol.QueryFilterNode createQueryFilter(
+      RecordStoreProtocol.FilterOperation fieldOperation, Object value) {
     return RecordStoreProtocol.QueryFilterNode.newBuilder()
-      .setFieldNode(createQueryFilterFieldNode(fieldOperation, value))
-      .build();
+        .setFieldNode(createQueryFilterFieldNode(fieldOperation, value))
+        .build();
   }
 
-  private RecordStoreProtocol.QueryFilterFieldNode createQueryFilterFieldNode(RecordStoreProtocol.FilterOperation fieldOperation, Object value) {
-    RecordStoreProtocol.QueryFilterFieldNode.Builder builder = RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
-      .setField(fieldName)
-      .setOperation(fieldOperation);
+  private RecordStoreProtocol.QueryFilterFieldNode createQueryFilterFieldNode(
+      RecordStoreProtocol.FilterOperation fieldOperation, Object value) {
+    RecordStoreProtocol.QueryFilterFieldNode.Builder builder =
+        RecordStoreProtocol.QueryFilterFieldNode.newBuilder()
+            .setField(fieldName)
+            .setOperation(fieldOperation);
 
     if (value instanceof Integer) {
       builder.setInt32Value((Integer) value);
@@ -121,5 +122,4 @@ public class RecordField {
 
     return builder.build();
   }
-
 }

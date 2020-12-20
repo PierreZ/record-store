@@ -27,10 +27,9 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandler;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions;
+import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.crypto.spec.SecretKeySpec;
 
 public class GraphQLVerticle extends AbstractVerticle {
   private static final Logger LOGGER = LoggerFactory.getLogger(GraphQLVerticle.class);
@@ -44,13 +43,23 @@ public class GraphQLVerticle extends AbstractVerticle {
   public void start(Promise<Void> startPromise) throws Exception {
 
     Integer port = this.context.config().getInteger(Constants.CONFIG_GRAPHQL_LISTEN_PORT, 8081);
-    GraphiQLHandlerOptions options = new GraphiQLHandlerOptions()
-      .setQuery("{ allRecords { name } }")
-      .setHeaders(ImmutableMap.of("tenant", "my-tenant", "recordSpace", "my-recordSpace"))
-      .setEnabled(true);
+    GraphiQLHandlerOptions options =
+        new GraphiQLHandlerOptions()
+            .setQuery("{ allRecords { name } }")
+            .setHeaders(ImmutableMap.of("tenant", "my-tenant", "recordSpace", "my-recordSpace"))
+            .setEnabled(true);
 
-    String clusterFilePath = this.context.config().getString(Constants.CONFIG_FDB_CLUSTER_FILE, Constants.CONFIG_FDB_CLUSTER_FILE_DEFAULT);
-    byte[] key = this.context.config().getString(Constants.CONFIG_ENCRYPTION_KEY_DEFAULT, Constants.CONFIG_ENCRYPTION_KEY_DEFAULT).getBytes();
+    String clusterFilePath =
+        this.context
+            .config()
+            .getString(
+                Constants.CONFIG_FDB_CLUSTER_FILE, Constants.CONFIG_FDB_CLUSTER_FILE_DEFAULT);
+    byte[] key =
+        this.context
+            .config()
+            .getString(
+                Constants.CONFIG_ENCRYPTION_KEY_DEFAULT, Constants.CONFIG_ENCRYPTION_KEY_DEFAULT)
+            .getBytes();
     SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
 
     recordLayer = new RecordLayer(clusterFilePath, vertx.isMetricsEnabled(), secretKey);
@@ -65,9 +74,7 @@ public class GraphQLVerticle extends AbstractVerticle {
 
     LOGGER.info("starting graphQL server on {}", port);
 
-    vertx.createHttpServer()
-      .requestHandler(router)
-      .listen(port);
+    vertx.createHttpServer().requestHandler(router).listen(port);
 
     startPromise.complete();
   }
@@ -85,7 +92,11 @@ public class GraphQLVerticle extends AbstractVerticle {
     try {
       RecordMetaData metadata = this.recordLayer.getSchema(tenant, recordSpace);
       String schema = GraphQLSchemaGenerator.generate(metadata);
-      routingContext.response().putHeader("Content-Type", "text/plain").setStatusCode(200).end(schema);
+      routingContext
+          .response()
+          .putHeader("Content-Type", "text/plain")
+          .setStatusCode(200)
+          .end(schema);
     } catch (RuntimeException e) {
       LOGGER.error(e.getMessage());
       routingContext.response().setStatusCode(500).end(e.getMessage());

@@ -18,9 +18,8 @@ package fr.pierrezemb.recordstore.fdb.metrics;
 import com.apple.foundationdb.record.provider.foundationdb.FDBStoreTimer;
 import io.micrometer.core.instrument.Metrics;
 import io.vertx.micrometer.backends.BackendRegistries;
-
-import javax.annotation.Nonnull;
 import java.util.Set;
+import javax.annotation.Nonnull;
 
 public class FDBMetricsStoreTimer extends FDBStoreTimer {
 
@@ -36,41 +35,42 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
   }
 
   /**
-   * Record the amount of time each element in a set of events took to run.
-   * This applies the same time difference to each event in the set.
+   * Record the amount of time each element in a set of events took to run. This applies the same
+   * time difference to each event in the set.
    *
-   * @param events              the set of events being recorded
+   * @param events the set of events being recorded
    * @param timeDifferenceNanos the time that the instrumented events took to run
    */
   @Override
   public void record(Set<Event> events, long timeDifferenceNanos) {
     if (export) {
       for (Event count : events) {
-        Metrics.counter(buildClassname(count.name() + "_ns"), "log_key", count.logKey()).increment(timeDifferenceNanos);
+        Metrics.counter(buildClassname(count.name() + "_ns"), "log_key", count.logKey())
+            .increment(timeDifferenceNanos);
       }
     }
     super.record(events, timeDifferenceNanos);
   }
 
   /**
-   * Record the amount of time an event took to run.
-   * Subclasses can extend this to also update metrics aggregation or
-   * monitoring services.
+   * Record the amount of time an event took to run. Subclasses can extend this to also update
+   * metrics aggregation or monitoring services.
    *
-   * @param event               the event being recorded
+   * @param event the event being recorded
    * @param timeDifferenceNanos the time that instrumented event took to run
    */
   @Override
   public void record(Event event, long timeDifferenceNanos) {
     if (export) {
-      Metrics.counter(buildClassname(event.name() + "_ns"), "log_key", event.logKey()).increment(timeDifferenceNanos);
+      Metrics.counter(buildClassname(event.name() + "_ns"), "log_key", event.logKey())
+          .increment(timeDifferenceNanos);
     }
     super.record(event, timeDifferenceNanos);
   }
 
   /**
-   * Record that each event in a set occurred once. This increments
-   * the counters associated with each event.
+   * Record that each event in a set occurred once. This increments the counters associated with
+   * each event.
    *
    * @param events the set of events being recorded
    */
@@ -85,8 +85,8 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
   }
 
   /**
-   * Record that an event occurred once. This increments the counter associated
-   * with the given event.
+   * Record that an event occurred once. This increments the counter associated with the given
+   * event.
    *
    * @param event the event being recorded
    */
@@ -103,8 +103,8 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
   }
 
   /**
-   * Record that each event occurred one or more times. This increments
-   * the counters associated with each event by <code>amount</code>.
+   * Record that each event occurred one or more times. This increments the counters associated with
+   * each event by <code>amount</code>.
    *
    * @param events the set of events being recorded
    * @param amount the number of times each event occurred
@@ -120,10 +120,10 @@ public class FDBMetricsStoreTimer extends FDBStoreTimer {
   }
 
   /**
-   * Record that an event occurred one or more times. This increments the
-   * counter associated with the given event by <code>amount</code>.
+   * Record that an event occurred one or more times. This increments the counter associated with
+   * the given event by <code>amount</code>.
    *
-   * @param event  the event being recorded
+   * @param event the event being recorded
    * @param amount the number of times the event occurred
    */
   @Override

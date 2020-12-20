@@ -1,15 +1,18 @@
 plugins {
-  id "com.github.hierynomus.license" version"0.15.0"
+  id "com.diffplug.spotless" version "5.8.2"
 }
 
 allprojects {
-  apply plugin: 'com.github.hierynomus.license'
+  apply plugin: 'com.diffplug.spotless'
   repositories {
     mavenCentral()
   }
-  license {
-    header rootProject.file('HEADER')
-    include "**/*.java"
+  spotless {
+    java {
+      removeUnusedImports()
+      googleJavaFormat()
+      licenseHeaderFile "$rootDir/license.header"
+    }
   }
 }
 ext {

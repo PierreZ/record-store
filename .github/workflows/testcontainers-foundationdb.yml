@@ -26,4 +26,4 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew :testcontainers-foundationdb:build
+        run: ./gradlew :testcontainers-foundationdb:spotlessCheck :testcontainers-foundationdb:build

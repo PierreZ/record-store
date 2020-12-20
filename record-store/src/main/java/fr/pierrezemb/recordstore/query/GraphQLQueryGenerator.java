@@ -20,8 +20,7 @@ import graphql.schema.DataFetchingEnvironment;
 
 public class GraphQLQueryGenerator {
   public static RecordQuery generate(DataFetchingEnvironment env) {
-    RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()
-      .setRecordType("User");
+    RecordQuery.Builder queryBuilder = RecordQuery.newBuilder().setRecordType("User");
     return queryBuilder.build();
   }
 }

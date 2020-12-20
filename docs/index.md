@@ -18,6 +18,9 @@ A light, multi-model, user-defined place for your data.
     * [gRPC](https://grpc.io)
     * *very experimental* [GraphQL](https://graphql.org)
 
+* **Battery included**
+    * Additionally to `RecordSpaces`, the Record-Store is offering dedicated developer experiences, such as *Key-Value*
+
 * **Scalable** We are based on the same tech behind [CloudKit](https://www.foundationdb.org/files/record-layer-paper.pdf) called the [Record Layer](https://github.com/foundationdb/fdb-record-layer/). CloudKit uses the Record Layer to host billions of independent databases. The name of this project itself is a tribute to the Record Layer as we are exposing the layer within a gRPC interface.
 
 * **Transactional** We are running on top of [FoundationDB](https://www.foundationdb.org/). FoundationDB gives you the power of ACID transactions in a distributed database.
