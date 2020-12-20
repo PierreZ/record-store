@@ -18,11 +18,10 @@ package fr.pierrezemb.recordstore.datasets;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatasetsLoader {
   public static final String DEFAULT_DEMO_TENANT = "demo";
@@ -35,7 +34,8 @@ public class DatasetsLoader {
     nbrRecords = 100;
   }
 
-  public void loadDataset(List<DemoDatasetEnum> datasets) throws InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
+  public void loadDataset(List<DemoDatasetEnum> datasets)
+      throws InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
     List<String> alreadyLoadedDatasets = this.recordLayer.listContainers(DEFAULT_DEMO_TENANT);
     for (DemoDatasetEnum d : datasets) {
       Dataset dataset;
@@ -55,7 +55,8 @@ public class DatasetsLoader {
     }
   }
 
-  public void loadDataset(String datasetsToLoad) throws InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
+  public void loadDataset(String datasetsToLoad)
+      throws InvalidProtocolBufferException, Descriptors.DescriptorValidationException {
 
     if (datasetsToLoad == null) {
       return;

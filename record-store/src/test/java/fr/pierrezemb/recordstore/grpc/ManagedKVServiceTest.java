@@ -15,6 +15,9 @@
  */
 package fr.pierrezemb.recordstore.grpc;
 
+import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_TENANT;
+import static org.junit.Assert.assertEquals;
+
 import com.google.protobuf.ByteString;
 import fr.pierrezemb.recordstore.GrpcVerticle;
 import fr.pierrezemb.recordstore.PortManager;
@@ -29,6 +32,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.grpc.VertxChannelBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import java.io.File;
+import java.nio.charset.Charset;
+import java.util.Collections;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -37,13 +43,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.AbstractFDBContainer;
-
-import java.io.File;
-import java.nio.charset.Charset;
-import java.util.Collections;
-
-import static fr.pierrezemb.recordstore.GrpcVerticleTest.DEFAULT_TENANT;
-import static org.junit.Assert.assertEquals;
 
 @ExtendWith(VertxExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -59,22 +58,23 @@ public class ManagedKVServiceTest extends AbstractFDBContainer {
 
     clusterFile = container.getClusterFile();
 
-    DeploymentOptions options = new DeploymentOptions()
-      .setConfig(new JsonObject()
-        .put("fdb-cluster-file", clusterFile.getAbsolutePath())
-        .put("grpc-listen-port", port));
-
+    DeploymentOptions options =
+        new DeploymentOptions()
+            .setConfig(
+                new JsonObject()
+                    .put("fdb-cluster-file", clusterFile.getAbsolutePath())
+                    .put("grpc-listen-port", port));
 
     BiscuitManager biscuitManager = new BiscuitManager();
     String sealedBiscuit = biscuitManager.create(DEFAULT_TENANT, Collections.emptyList());
-    BiscuitClientCredential credentials = new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, this.getClass().getName());
+    BiscuitClientCredential credentials =
+        new BiscuitClientCredential(DEFAULT_TENANT, sealedBiscuit, this.getClass().getName());
 
     // deploy verticle
-    vertx.deployVerticle(new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
-    ManagedChannel channel = VertxChannelBuilder
-      .forAddress(vertx, "localhost", port)
-      .usePlaintext(true)
-      .build();
+    vertx.deployVerticle(
+        new GrpcVerticle(), options, testContext.succeeding(id -> testContext.completeNow()));
+    ManagedChannel channel =
+        VertxChannelBuilder.forAddress(vertx, "localhost", port).usePlaintext(true).build();
 
     managedKVVertxStub = ManagedKVGrpc.newVertxStub(channel).withCallCredentials(credentials);
   }
@@ -83,54 +83,66 @@ public class ManagedKVServiceTest extends AbstractFDBContainer {
   @Order(1)
   public void testPut(Vertx vertx, VertxTestContext testContext) throws Exception {
 
-    managedKVVertxStub.put(ManagedKVProto.KeyValue.newBuilder()
-      .setKey(ByteString.copyFrom("b", Charset.defaultCharset()))
-      .setValue(ByteString.copyFrom("toto", Charset.defaultCharset()))
-      .build(), response -> {
-      if (response.succeeded()) {
-        testContext.completeNow();
-      } else {
-        testContext.failNow(response.cause());
-      }
-    });
+    managedKVVertxStub.put(
+        ManagedKVProto.KeyValue.newBuilder()
+            .setKey(ByteString.copyFrom("b", Charset.defaultCharset()))
+            .setValue(ByteString.copyFrom("toto", Charset.defaultCharset()))
+            .build(),
+        response -> {
+          if (response.succeeded()) {
+            testContext.completeNow();
+          } else {
+            testContext.failNow(response.cause());
+          }
+        });
   }
 
   @Test
   @Order(2)
   public void testGet(Vertx vertx, VertxTestContext testContext) throws Exception {
-    managedKVVertxStub.scan(ManagedKVProto.ScanRequest.newBuilder()
-      .setStartKey(ByteString.copyFrom("b", Charset.defaultCharset()))
-      .build(), keyValueGrpcReadStream -> keyValueGrpcReadStream.handler(keyValue -> {
-      assertEquals(1, keyValue.getKey().size());
-      assertEquals(4, keyValue.getValue().size());
-      testContext.completeNow();
-    }));
+    managedKVVertxStub.scan(
+        ManagedKVProto.ScanRequest.newBuilder()
+            .setStartKey(ByteString.copyFrom("b", Charset.defaultCharset()))
+            .build(),
+        keyValueGrpcReadStream ->
+            keyValueGrpcReadStream.handler(
+                keyValue -> {
+                  assertEquals(1, keyValue.getKey().size());
+                  assertEquals(4, keyValue.getValue().size());
+                  testContext.completeNow();
+                }));
   }
 
   @Test
   @Order(3)
   public void testScan(Vertx vertx, VertxTestContext testContext) throws Exception {
-    managedKVVertxStub.scan(ManagedKVProto.ScanRequest.newBuilder()
-      .setStartKey(ByteString.copyFrom("a", Charset.defaultCharset()))
-      .setEndKey(ByteString.copyFrom("c", Charset.defaultCharset()))
-      .build(), keyValueGrpcReadStream -> keyValueGrpcReadStream.handler(keyValue -> {
-      assertEquals(1, keyValue.getKey().size());
-      assertEquals(4, keyValue.getValue().size());
-      testContext.completeNow();
-    }));
+    managedKVVertxStub.scan(
+        ManagedKVProto.ScanRequest.newBuilder()
+            .setStartKey(ByteString.copyFrom("a", Charset.defaultCharset()))
+            .setEndKey(ByteString.copyFrom("c", Charset.defaultCharset()))
+            .build(),
+        keyValueGrpcReadStream ->
+            keyValueGrpcReadStream.handler(
+                keyValue -> {
+                  assertEquals(1, keyValue.getKey().size());
+                  assertEquals(4, keyValue.getValue().size());
+                  testContext.completeNow();
+                }));
   }
 
   @Test
   @Order(4)
   public void testDelete(Vertx vertx, VertxTestContext testContext) throws Exception {
-    managedKVVertxStub.delete(ManagedKVProto.DeleteRequest.newBuilder()
-      .setKeyToDelete(ByteString.copyFrom("b", Charset.defaultCharset()))
-      .build(), response -> {
-      if (response.succeeded()) {
-        testContext.completeNow();
-      } else {
-        testContext.failNow(response.cause());
-      }
-    });
+    managedKVVertxStub.delete(
+        ManagedKVProto.DeleteRequest.newBuilder()
+            .setKeyToDelete(ByteString.copyFrom("b", Charset.defaultCharset()))
+            .build(),
+        response -> {
+          if (response.succeeded()) {
+            testContext.completeNow();
+          } else {
+            testContext.failNow(response.cause());
+          }
+        });
   }
 }

@@ -23,24 +23,32 @@ import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpacePath
 public class ManagedSchemaKeySpace {
   public static final String APPLICATION_NAME = "record-store";
   public static final KeySpace RS_KEY_SPACE =
-    new KeySpace(
-      new DirectoryLayerDirectory("application")
-        .addSubdirectory(new KeySpaceDirectory("tenant", KeySpaceDirectory.KeyType.STRING)
-          .addSubdirectory(new KeySpaceDirectory("managedSchemaType", KeySpaceDirectory.KeyType.STRING)
-            .addSubdirectory(new KeySpaceDirectory("managedSchema", KeySpaceDirectory.KeyType.STRING)
-            .addSubdirectory(new KeySpaceDirectory("data", KeySpaceDirectory.KeyType.STRING, "d"))
-          ))));
+      new KeySpace(
+          new DirectoryLayerDirectory("application")
+              .addSubdirectory(
+                  new KeySpaceDirectory("tenant", KeySpaceDirectory.KeyType.STRING)
+                      .addSubdirectory(
+                          new KeySpaceDirectory(
+                                  "managedSchemaType", KeySpaceDirectory.KeyType.STRING)
+                              .addSubdirectory(
+                                  new KeySpaceDirectory(
+                                          "managedSchema", KeySpaceDirectory.KeyType.STRING)
+                                      .addSubdirectory(
+                                          new KeySpaceDirectory(
+                                              "data", KeySpaceDirectory.KeyType.STRING, "d"))))));
 
-  public static KeySpacePath openDataKeySpacePath(String tenant, String managedSchemaType, String managedSchema) {
+  public static KeySpacePath openDataKeySpacePath(
+      String tenant, String managedSchemaType, String managedSchema) {
     return openKeySpacePath(tenant, managedSchemaType, managedSchema);
   }
 
-  private static KeySpacePath openKeySpacePath(String tenant, String managedSchemaType, String managedSchema) {
+  private static KeySpacePath openKeySpacePath(
+      String tenant, String managedSchemaType, String managedSchema) {
     return RS_KEY_SPACE
-      .path("application", APPLICATION_NAME)
-      .add("tenant", tenant)
-      .add("managedSchemaType", managedSchemaType)
-      .add("managedSchema", managedSchema)
-      .add("data");
+        .path("application", APPLICATION_NAME)
+        .add("tenant", tenant)
+        .add("managedSchemaType", managedSchemaType)
+        .add("managedSchema", managedSchema)
+        .add("data");
   }
 }

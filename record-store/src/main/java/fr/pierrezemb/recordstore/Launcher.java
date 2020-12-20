@@ -29,14 +29,15 @@ public class Launcher extends io.vertx.core.Launcher {
   @Override
   public void beforeStartingVertx(VertxOptions options) {
     options.setMetricsOptions(
-      new MicrometerMetricsOptions()
-        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true)
-          .setStartEmbeddedServer(true)
-          .setEmbeddedServerOptions(new HttpServerOptions()
-            .setHost("127.0.0.1")
-            .setPort(9098))
-          .setEmbeddedServerEndpoint("/metrics"))
-        .setEnabled(true));
+        new MicrometerMetricsOptions()
+            .setPrometheusOptions(
+                new VertxPrometheusOptions()
+                    .setEnabled(true)
+                    .setStartEmbeddedServer(true)
+                    .setEmbeddedServerOptions(
+                        new HttpServerOptions().setHost("127.0.0.1").setPort(9098))
+                    .setEmbeddedServerEndpoint("/metrics"))
+            .setEnabled(true));
     System.out.println("starting metrics on 9098");
   }
 }

@@ -15,14 +15,13 @@
  */
 package fr.pierrezemb.recordstore.auth;
 
-import io.grpc.Metadata;
-import io.grpc.Status;
-
-import java.util.concurrent.Executor;
-
 import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.AUTHORIZATION_METADATA_KEY;
 import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.RECORDSPACE_METADATA_KEY;
 import static fr.pierrezemb.recordstore.grpc.GrpcMetadataKeys.TENANT_METADATA_KEY;
+
+import io.grpc.Metadata;
+import io.grpc.Status;
+import java.util.concurrent.Executor;
 
 public class BiscuitClientCredential extends io.grpc.CallCredentials {
   static final String BEARER_TYPE = "Bearer";
@@ -38,22 +37,24 @@ public class BiscuitClientCredential extends io.grpc.CallCredentials {
   }
 
   @Override
-  public void applyRequestMetadata(RequestInfo requestInfo, Executor appExecutor, MetadataApplier applier) {
-    appExecutor.execute(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          Metadata headers = new Metadata();
-          headers.put(AUTHORIZATION_METADATA_KEY, String.format("%s %s", BEARER_TYPE, biscuit));
-          headers.put(RECORDSPACE_METADATA_KEY, recordSpace);
-          headers.put(TENANT_METADATA_KEY, tenant);
-          applier.apply(headers);
+  public void applyRequestMetadata(
+      RequestInfo requestInfo, Executor appExecutor, MetadataApplier applier) {
+    appExecutor.execute(
+        new Runnable() {
+          @Override
+          public void run() {
+            try {
+              Metadata headers = new Metadata();
+              headers.put(AUTHORIZATION_METADATA_KEY, String.format("%s %s", BEARER_TYPE, biscuit));
+              headers.put(RECORDSPACE_METADATA_KEY, recordSpace);
+              headers.put(TENANT_METADATA_KEY, tenant);
+              applier.apply(headers);
 
-        } catch (Throwable e) {
-          applier.fail(Status.UNAUTHENTICATED.withCause(e));
-        }
-      }
-    });
+            } catch (Throwable e) {
+              applier.fail(Status.UNAUTHENTICATED.withCause(e));
+            }
+          }
+        });
   }
 
   /**

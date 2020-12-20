@@ -24,27 +24,27 @@ import com.apple.foundationdb.record.query.expressions.QueryComponent;
 import fr.pierrezemb.recordstore.proto.RecordStoreProtocol;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GrpcQueryGenerator {
   private static final Logger LOGGER = LoggerFactory.getLogger(GrpcQueryGenerator.class);
 
   public static RecordQuery generate(RecordStoreProtocol.QueryRequest request) {
-    RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()
-      .setRecordType(request.getRecordTypeName());
+    RecordQuery.Builder queryBuilder =
+        RecordQuery.newBuilder().setRecordType(request.getRecordTypeName());
 
     if (request.getFieldsToReturnCount() > 0) {
-      queryBuilder.setRequiredResults(request.getFieldsToReturnList().asByteStringList()
-        .stream()
-        .map(e -> Key.Expressions.field(String.valueOf(e.toString()))).collect(Collectors.toList()));
+      queryBuilder.setRequiredResults(
+          request.getFieldsToReturnList().asByteStringList().stream()
+              .map(e -> Key.Expressions.field(String.valueOf(e.toString())))
+              .collect(Collectors.toList()));
     }
 
     if (request.hasSortBy()) {
@@ -65,7 +65,8 @@ public class GrpcQueryGenerator {
           queryBuilder.setSort(Key.Expressions.field(request.getSortBy().getField()), true);
           break;
         case UNRECOGNIZED:
-          throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("cannot recognize sortBy"));
+          throw new StatusRuntimeException(
+              Status.INVALID_ARGUMENT.withDescription("cannot recognize sortBy"));
       }
     }
 
@@ -78,8 +79,8 @@ public class GrpcQueryGenerator {
   }
 
   public static RecordQuery generate(RecordStoreProtocol.DeleteRecordRequest request) {
-    RecordQuery.Builder queryBuilder = RecordQuery.newBuilder()
-      .setRecordType(request.getRecordTypeName());
+    RecordQuery.Builder queryBuilder =
+        RecordQuery.newBuilder().setRecordType(request.getRecordTypeName());
 
     try {
       QueryComponent queryComponents = parseNode(request.getFilter());
@@ -92,14 +93,14 @@ public class GrpcQueryGenerator {
     return queryBuilder.build();
   }
 
-  public static QueryComponent parseNode(RecordStoreProtocol.QueryFilterNode node) throws ParseException {
+  public static QueryComponent parseNode(RecordStoreProtocol.QueryFilterNode node)
+      throws ParseException {
 
     if (node == null) {
       return null;
     }
 
     switch (node.getContentCase()) {
-
       case FIELD_NODE:
         return parseFieldNode(node.getFieldNode());
       case AND_NODE:
@@ -115,20 +116,23 @@ public class GrpcQueryGenerator {
   private static QueryComponent handleMapNode(RecordStoreProtocol.QueryFilterMapNode mapNode) {
 
     if (mapNode.hasKey() && !mapNode.hasValue()) {
-      return Query.field(mapNode.getField()).mapMatches(constructFunctionMatcher(mapNode.getKey()), null);
+      return Query.field(mapNode.getField())
+          .mapMatches(constructFunctionMatcher(mapNode.getKey()), null);
     }
 
     if (!mapNode.hasKey() && mapNode.hasValue()) {
-      return Query.field(mapNode.getField()).mapMatches(null, constructFunctionMatcher(mapNode.getValue()));
+      return Query.field(mapNode.getField())
+          .mapMatches(null, constructFunctionMatcher(mapNode.getValue()));
     }
 
-    return Query.field(mapNode.getField()).mapMatches(
-      constructFunctionMatcher(mapNode.getKey()),
-      constructFunctionMatcher(mapNode.getValue())
-    );
+    return Query.field(mapNode.getField())
+        .mapMatches(
+            constructFunctionMatcher(mapNode.getKey()),
+            constructFunctionMatcher(mapNode.getValue()));
   }
 
-  private static Function<Field, QueryComponent> constructFunctionMatcher(RecordStoreProtocol.QueryFilterFieldNode node) {
+  private static Function<Field, QueryComponent> constructFunctionMatcher(
+      RecordStoreProtocol.QueryFilterFieldNode node) {
     return k -> {
       try {
         return switchOnOperations(k, node);
@@ -139,8 +143,8 @@ public class GrpcQueryGenerator {
     };
   }
 
-
-  private static List<QueryComponent> parseChildrenNodes(RecordStoreProtocol.QueryFilterOrNode node) throws ParseException {
+  private static List<QueryComponent> parseChildrenNodes(RecordStoreProtocol.QueryFilterOrNode node)
+      throws ParseException {
     List<QueryComponent> queryComponents = new ArrayList<>();
     for (RecordStoreProtocol.QueryFilterNode children : node.getNodesList()) {
       queryComponents.add(parseNode(children));
@@ -148,7 +152,8 @@ public class GrpcQueryGenerator {
     return queryComponents;
   }
 
-  private static List<QueryComponent> parseChildrenNodes(RecordStoreProtocol.QueryFilterAndNode node) throws ParseException {
+  private static List<QueryComponent> parseChildrenNodes(
+      RecordStoreProtocol.QueryFilterAndNode node) throws ParseException {
     List<QueryComponent> queryComponents = new ArrayList<>();
     for (RecordStoreProtocol.QueryFilterNode children : node.getNodesList()) {
       queryComponents.add(parseNode(children));
@@ -156,7 +161,8 @@ public class GrpcQueryGenerator {
     return queryComponents;
   }
 
-  private static QueryComponent parseFieldNode(RecordStoreProtocol.QueryFilterFieldNode node) throws ParseException {
+  private static QueryComponent parseFieldNode(RecordStoreProtocol.QueryFilterFieldNode node)
+      throws ParseException {
     if (node == null) {
       throw new ParseException("node is null", 0);
     }
@@ -166,47 +172,49 @@ public class GrpcQueryGenerator {
     return switchOnOperations(temporaryQuery, node);
   }
 
-  private static QueryComponent switchOnOperations(Field temporaryQuery, RecordStoreProtocol.QueryFilterFieldNode node) throws ParseException {
+  private static QueryComponent switchOnOperations(
+      Field temporaryQuery, RecordStoreProtocol.QueryFilterFieldNode node) throws ParseException {
     switch (node.getOperation()) {
       case GREATER_THAN_OR_EQUALS:
-        return node.getIsFieldDefinedAsRepeated() ?
-          temporaryQuery.oneOfThem().greaterThanOrEquals(parseValue(node)) :
-          temporaryQuery.greaterThanOrEquals(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated()
+            ? temporaryQuery.oneOfThem().greaterThanOrEquals(parseValue(node))
+            : temporaryQuery.greaterThanOrEquals(parseValue(node));
       case LESS_THAN_OR_EQUALS:
-        return node.getIsFieldDefinedAsRepeated() ?
-          temporaryQuery.oneOfThem().lessThanOrEquals(parseValue(node)) :
-          temporaryQuery.lessThanOrEquals(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated()
+            ? temporaryQuery.oneOfThem().lessThanOrEquals(parseValue(node))
+            : temporaryQuery.lessThanOrEquals(parseValue(node));
       case GREATER_THAN:
-        return node.getIsFieldDefinedAsRepeated() ?
-          temporaryQuery.oneOfThem().greaterThan(parseValue(node)) :
-          temporaryQuery.greaterThan(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated()
+            ? temporaryQuery.oneOfThem().greaterThan(parseValue(node))
+            : temporaryQuery.greaterThan(parseValue(node));
       case LESS_THAN:
-        return node.getIsFieldDefinedAsRepeated() ?
-          temporaryQuery.oneOfThem().lessThan(parseValue(node)) :
-          temporaryQuery.lessThan(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated()
+            ? temporaryQuery.oneOfThem().lessThan(parseValue(node))
+            : temporaryQuery.lessThan(parseValue(node));
       case START_WITH:
-        return node.getIsFieldDefinedAsRepeated() ?
-          temporaryQuery.oneOfThem().startsWith(String.valueOf(parseValue(node))) :
-          temporaryQuery.startsWith(String.valueOf(parseValue(node)));
+        return node.getIsFieldDefinedAsRepeated()
+            ? temporaryQuery.oneOfThem().startsWith(String.valueOf(parseValue(node)))
+            : temporaryQuery.startsWith(String.valueOf(parseValue(node)));
       case IS_EMPTY:
         return Query.field(node.getField()).isEmpty();
       case IS_NULL:
         return Query.field(node.getField()).isNull();
       case EQUALS:
-        return node.getIsFieldDefinedAsRepeated() ?
-          temporaryQuery.oneOfThem().equalsValue(parseValue(node)) :
-          temporaryQuery.equalsValue(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated()
+            ? temporaryQuery.oneOfThem().equalsValue(parseValue(node))
+            : temporaryQuery.equalsValue(parseValue(node));
       case NOT_EQUALS:
-        return node.getIsFieldDefinedAsRepeated() ?
-          temporaryQuery.oneOfThem().notEquals(parseValue(node)) :
-          temporaryQuery.notEquals(parseValue(node));
+        return node.getIsFieldDefinedAsRepeated()
+            ? temporaryQuery.oneOfThem().notEquals(parseValue(node))
+            : temporaryQuery.notEquals(parseValue(node));
       case NOT_NULL:
         return Query.field(node.getField()).notNull();
       case MATCHES:
         if (node.getValueCase() != RecordStoreProtocol.QueryFilterFieldNode.ValueCase.FIELDNODE) {
           throw new ParseException("Matches onl accept a nested FieldValue", 0);
         }
-        return Query.field(node.getField()).matches(Objects.requireNonNull(parseFieldNode(node.getFieldNode())));
+        return Query.field(node.getField())
+            .matches(Objects.requireNonNull(parseFieldNode(node.getFieldNode())));
       case TEXT_CONTAINS_ANY:
         return Query.field(node.getField()).text().containsAny(node.getTokensList());
       case TEXT_CONTAINS_ALL:
@@ -218,7 +226,8 @@ public class GrpcQueryGenerator {
     }
   }
 
-  private static Object parseValue(RecordStoreProtocol.QueryFilterFieldNode node) throws ParseException {
+  private static Object parseValue(RecordStoreProtocol.QueryFilterFieldNode node)
+      throws ParseException {
     switch (node.getValueCase()) {
       case STRING_VALUE:
         return node.getStringValue();

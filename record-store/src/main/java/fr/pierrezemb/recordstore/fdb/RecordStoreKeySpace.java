@@ -23,22 +23,25 @@ import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpacePath
 public class RecordStoreKeySpace {
   public static final String APPLICATION_NAME = "record-store";
   public static final KeySpace RS_KEY_SPACE =
-    new KeySpace(
-      new DirectoryLayerDirectory("application")
-        .addSubdirectory(new KeySpaceDirectory("tenant", KeySpaceDirectory.KeyType.STRING)
-          .addSubdirectory(new KeySpaceDirectory("recordSpace", KeySpaceDirectory.KeyType.STRING)
-            .addSubdirectory(new KeySpaceDirectory("metadata", KeySpaceDirectory.KeyType.STRING, "m"))
-            .addSubdirectory(new KeySpaceDirectory("data", KeySpaceDirectory.KeyType.STRING, "d"))
-          )));
+      new KeySpace(
+          new DirectoryLayerDirectory("application")
+              .addSubdirectory(
+                  new KeySpaceDirectory("tenant", KeySpaceDirectory.KeyType.STRING)
+                      .addSubdirectory(
+                          new KeySpaceDirectory("recordSpace", KeySpaceDirectory.KeyType.STRING)
+                              .addSubdirectory(
+                                  new KeySpaceDirectory(
+                                      "metadata", KeySpaceDirectory.KeyType.STRING, "m"))
+                              .addSubdirectory(
+                                  new KeySpaceDirectory(
+                                      "data", KeySpaceDirectory.KeyType.STRING, "d")))));
 
   public static KeySpacePath openMetaDataKeySpacePath(String tenant, String recordSpace) {
     return openKeySpacePath(tenant, recordSpace, "metadata");
   }
 
   public static KeySpacePath openKeySpacePath(String tenant) {
-    return RS_KEY_SPACE
-      .path("application", APPLICATION_NAME)
-      .add("tenant", tenant);
+    return RS_KEY_SPACE.path("application", APPLICATION_NAME).add("tenant", tenant);
   }
 
   public static KeySpacePath openDataKeySpacePath(String tenant, String recordSpace) {
@@ -47,9 +50,9 @@ public class RecordStoreKeySpace {
 
   private static KeySpacePath openKeySpacePath(String tenant, String env, String subDirectory) {
     return RS_KEY_SPACE
-      .path("application", APPLICATION_NAME)
-      .add("tenant", tenant)
-      .add("recordSpace", env)
-      .add(subDirectory);
+        .path("application", APPLICATION_NAME)
+        .add("tenant", tenant)
+        .add("recordSpace", env)
+        .add(subDirectory);
   }
 }

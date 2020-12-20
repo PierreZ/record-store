@@ -27,11 +27,10 @@ import fr.pierrezemb.recordstore.utils.protobuf.ProtobufReflectionUtil;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
   private static final Logger log = LoggerFactory.getLogger(SchemaService.class);
@@ -46,33 +45,47 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
    * @param responseObserver
    */
   @Override
-  public void get(RecordStoreProtocol.GetSchemaRequest request, StreamObserver<RecordStoreProtocol.GetSchemaResponse> responseObserver) {
+  public void get(
+      RecordStoreProtocol.GetSchemaRequest request,
+      StreamObserver<RecordStoreProtocol.GetSchemaResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     try {
 
-      List<RecordStoreProtocol.IndexDescription> indexes = recordLayer.getIndexes(tenantID, recordSpace);
+      List<RecordStoreProtocol.IndexDescription> indexes =
+          recordLayer.getIndexes(tenantID, recordSpace);
 
       RecordMetaData metadataStore = recordLayer.getSchema(tenantID, recordSpace);
 
       List<RecordStoreProtocol.SchemaDescription> records =
-        ImmutableMap.of(request.getRecordTypeName(), metadataStore.getRecordMetaData().getRecordType(request.getRecordTypeName()))
-          .entrySet()
-          .stream()
-          .map(e -> RecordStoreProtocol.SchemaDescription.newBuilder()
-            .setName(e.getKey())
-            .addAllIndexes(indexes)
-            .addPrimaryKeyField(e.getValue().getPrimaryKey().toKeyExpression().getField().getFieldName())
-            .setSchema(ProtobufReflectionUtil.protoFileDescriptorSet(e.getValue().getDescriptor()))
-            .build())
-          .collect(Collectors.toList());
+          ImmutableMap.of(
+                  request.getRecordTypeName(),
+                  metadataStore.getRecordMetaData().getRecordType(request.getRecordTypeName()))
+              .entrySet()
+              .stream()
+              .map(
+                  e ->
+                      RecordStoreProtocol.SchemaDescription.newBuilder()
+                          .setName(e.getKey())
+                          .addAllIndexes(indexes)
+                          .addPrimaryKeyField(
+                              e.getValue()
+                                  .getPrimaryKey()
+                                  .toKeyExpression()
+                                  .getField()
+                                  .getFieldName())
+                          .setSchema(
+                              ProtobufReflectionUtil.protoFileDescriptorSet(
+                                  e.getValue().getDescriptor()))
+                          .build())
+              .collect(Collectors.toList());
 
-
-      responseObserver.onNext(RecordStoreProtocol.GetSchemaResponse.newBuilder()
-        .setSchemas(records.get(0))
-        .setVersion(metadataStore.getRecordMetaData().getVersion())
-        .build());
+      responseObserver.onNext(
+          RecordStoreProtocol.GetSchemaResponse.newBuilder()
+              .setSchemas(records.get(0))
+              .setVersion(metadataStore.getRecordMetaData().getVersion())
+              .build());
       responseObserver.onCompleted();
     } catch (RuntimeException e) {
       log.error(e.getMessage());
@@ -80,18 +93,20 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     }
   }
 
-
   /**
    * @param request
    * @param responseObserver
    */
   @Override
-  public void upsert(RecordStoreProtocol.UpsertSchemaRequest request, StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
+  public void upsert(
+      RecordStoreProtocol.UpsertSchemaRequest request,
+      StreamObserver<RecordStoreProtocol.EmptyResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     try {
-      recordLayer.upsertSchema(tenantID, recordSpace, request.getSchema(), request.getRecordTypeIndexDefinitionsList());
+      recordLayer.upsertSchema(
+          tenantID, recordSpace, request.getSchema(), request.getRecordTypeIndexDefinitionsList());
     } catch (MetaDataException | Descriptors.DescriptorValidationException e) {
       log.error(e.getMessage());
       throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
@@ -101,22 +116,24 @@ public class SchemaService extends SchemaServiceGrpc.SchemaServiceImplBase {
     responseObserver.onCompleted();
   }
 
-
   /**
    * @param request
    * @param responseObserver
    */
   @Override
-  public void stat(RecordStoreProtocol.StatRequest request, StreamObserver<RecordStoreProtocol.StatResponse> responseObserver) {
+  public void stat(
+      RecordStoreProtocol.StatRequest request,
+      StreamObserver<RecordStoreProtocol.StatResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     try {
       Tuple result = recordLayer.getCountAndCountUpdates(tenantID, recordSpace);
-      responseObserver.onNext(RecordStoreProtocol.StatResponse.newBuilder()
-        .setCount(result.getLong(0))
-        .setCountUpdates(result.getLong(1))
-        .build());
+      responseObserver.onNext(
+          RecordStoreProtocol.StatResponse.newBuilder()
+              .setCount(result.getLong(0))
+              .setCountUpdates(result.getLong(1))
+              .build());
       responseObserver.onCompleted();
     } catch (RuntimeException e) {
       log.error(e.getMessage());

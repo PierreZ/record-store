@@ -38,18 +38,22 @@ public class ManagedKVService extends ManagedKVGrpc.ManagedKVImplBase {
 
   public ManagedKVService(RecordLayer recordLayer) {
     this.recordLayer = recordLayer;
-    RecordMetaDataBuilder recordMetaDataBuilder = RecordMetaData.newBuilder().setRecords(ManagedKVProto.getDescriptor());
+    RecordMetaDataBuilder recordMetaDataBuilder =
+        RecordMetaData.newBuilder().setRecords(ManagedKVProto.getDescriptor());
     recordMetaDataBuilder.getRecordType("KeyValue").setPrimaryKey(Key.Expressions.field("key"));
     this.recordMetaData = recordMetaDataBuilder.build();
   }
 
   @Override
-  public void put(ManagedKVProto.KeyValue request, StreamObserver<ManagedKVProto.EmptyResponse> responseObserver) {
+  public void put(
+      ManagedKVProto.KeyValue request,
+      StreamObserver<ManagedKVProto.EmptyResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     try {
-      this.recordLayer.putRecord(tenantID, MANAGED_KV_NAME,recordSpace, this.recordMetaData, request);
+      this.recordLayer.putRecord(
+          tenantID, MANAGED_KV_NAME, recordSpace, this.recordMetaData, request);
     } catch (RuntimeException e) {
       LOGGER.error(e.getMessage());
       throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
@@ -60,14 +64,18 @@ public class ManagedKVService extends ManagedKVGrpc.ManagedKVImplBase {
   }
 
   @Override
-  public void delete(ManagedKVProto.DeleteRequest request, StreamObserver<ManagedKVProto.EmptyResponse> responseObserver) {
+  public void delete(
+      ManagedKVProto.DeleteRequest request,
+      StreamObserver<ManagedKVProto.EmptyResponse> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     Tuple primaryKey = Tuple.from(request.getKeyToDelete().toByteArray());
 
     try {
-      boolean deleted = this.recordLayer.deleteRecord(tenantID, MANAGED_KV_NAME, recordSpace, this.recordMetaData, primaryKey);
+      boolean deleted =
+          this.recordLayer.deleteRecord(
+              tenantID, MANAGED_KV_NAME, recordSpace, this.recordMetaData, primaryKey);
       LOGGER.debug("delete({})={}", primaryKey.toString(), deleted);
       responseObserver.onNext(ManagedKVProto.EmptyResponse.newBuilder().build());
     } catch (RuntimeException e) {
@@ -77,36 +85,36 @@ public class ManagedKVService extends ManagedKVGrpc.ManagedKVImplBase {
     responseObserver.onCompleted();
   }
 
-
   @Override
-  public void scan(ManagedKVProto.ScanRequest request, StreamObserver<ManagedKVProto.KeyValue> responseObserver) {
+  public void scan(
+      ManagedKVProto.ScanRequest request,
+      StreamObserver<ManagedKVProto.KeyValue> responseObserver) {
     String tenantID = GrpcContextKeys.getTenantIDOrFail();
     String recordSpace = GrpcContextKeys.getContainerOrFail();
 
-    RecordQuery query = RecordQuery
-      .newBuilder()
-      .setRecordType("KeyValue")
-      .setFilter(
-        request.getEndKey().isEmpty() ?
-          Query.field("key").equalsValue(request.getStartKey().toByteArray())
-          :
-          Query.and(
-            Query.field("key").greaterThanOrEquals(request.getStartKey().toByteArray()),
-            Query.field("key").lessThanOrEquals(request.getEndKey().toByteArray())
-          )
-      )
-      .build();
+    RecordQuery query =
+        RecordQuery.newBuilder()
+            .setRecordType("KeyValue")
+            .setFilter(
+                request.getEndKey().isEmpty()
+                    ? Query.field("key").equalsValue(request.getStartKey().toByteArray())
+                    : Query.and(
+                        Query.field("key").greaterThanOrEquals(request.getStartKey().toByteArray()),
+                        Query.field("key").lessThanOrEquals(request.getEndKey().toByteArray())))
+            .build();
 
     try {
-      this.recordLayer.scanRecords(tenantID, MANAGED_KV_NAME, recordSpace, this.recordMetaData, query)
-        .stream()
-        .map(queriedRecord -> ManagedKVProto.KeyValue.newBuilder().mergeFrom(queriedRecord).build())
-        .forEach(responseObserver::onNext);
+      this.recordLayer
+          .scanRecords(tenantID, MANAGED_KV_NAME, recordSpace, this.recordMetaData, query)
+          .stream()
+          .map(
+              queriedRecord ->
+                  ManagedKVProto.KeyValue.newBuilder().mergeFrom(queriedRecord).build())
+          .forEach(responseObserver::onNext);
     } catch (RuntimeException e) {
       LOGGER.error(e.getMessage());
       throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
     }
     responseObserver.onCompleted();
   }
-
 }

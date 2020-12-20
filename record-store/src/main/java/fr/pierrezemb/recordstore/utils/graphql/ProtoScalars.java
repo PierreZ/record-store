@@ -36,98 +36,97 @@ import graphql.schema.GraphQLScalarType;
 public final class ProtoScalars {
 
   public static final GraphQLScalarType UINT_32 =
-    GraphQLScalarType.newScalar(Scalars.GraphQLInt)
-      .name("UInt32")
-      .description("Scalar for proto type uint32. Uses variable-length encoding.")
-      .build();
+      GraphQLScalarType.newScalar(Scalars.GraphQLInt)
+          .name("UInt32")
+          .description("Scalar for proto type uint32. Uses variable-length encoding.")
+          .build();
   public static final GraphQLScalarType UINT_64 =
-    GraphQLScalarType.newScalar(Scalars.GraphQLLong)
-      .name("UInt64")
-      .description("Scalar for proto type uint64. Uses variable-length encoding.")
-      .build();
+      GraphQLScalarType.newScalar(Scalars.GraphQLLong)
+          .name("UInt64")
+          .description("Scalar for proto type uint64. Uses variable-length encoding.")
+          .build();
   public static final GraphQLScalarType SINT_32 =
-    GraphQLScalarType.newScalar(Scalars.GraphQLInt)
-      .name("SInt32")
-      .description(
-        "Scalar for proto type sint32. Uses variable-length encoding."
-          + " Signed int value. These more efficiently encode negative numbers than regular int32s.")
-      .build();
+      GraphQLScalarType.newScalar(Scalars.GraphQLInt)
+          .name("SInt32")
+          .description(
+              "Scalar for proto type sint32. Uses variable-length encoding."
+                  + " Signed int value. These more efficiently encode negative numbers than regular int32s.")
+          .build();
   public static final GraphQLScalarType SINT_64 =
-    GraphQLScalarType.newScalar(Scalars.GraphQLLong)
-      .name("SInt64")
-      .description(
-        "Scalar for proto type sint64. Uses variable-length encoding. Signed int value."
-          + " These more efficiently encode negative numbers than regular int64s.")
-      .build();
+      GraphQLScalarType.newScalar(Scalars.GraphQLLong)
+          .name("SInt64")
+          .description(
+              "Scalar for proto type sint64. Uses variable-length encoding. Signed int value."
+                  + " These more efficiently encode negative numbers than regular int64s.")
+          .build();
   public static final GraphQLScalarType FIXED_32 =
-    GraphQLScalarType.newScalar(Scalars.GraphQLLong)
-      .name("Fixed32")
-      .description(
-        "Scalar for proto type fixed32. Always four bytes."
-          + " More efficient than uint32 if values are often greater than 2^28.")
-      .build();
+      GraphQLScalarType.newScalar(Scalars.GraphQLLong)
+          .name("Fixed32")
+          .description(
+              "Scalar for proto type fixed32. Always four bytes."
+                  + " More efficient than uint32 if values are often greater than 2^28.")
+          .build();
   public static final GraphQLScalarType FIXED_64 =
-    GraphQLScalarType.newScalar(Scalars.GraphQLLong)
-      .name("Fixed64")
-      .description(
-        "Scalar for proto type fixed64. Always eight bytes."
-          + " More efficient than uint64 if values are often greater than 2^56.")
-      .build();
+      GraphQLScalarType.newScalar(Scalars.GraphQLLong)
+          .name("Fixed64")
+          .description(
+              "Scalar for proto type fixed64. Always eight bytes."
+                  + " More efficient than uint64 if values are often greater than 2^56.")
+          .build();
   public static final GraphQLScalarType S_FIXED_32 =
-    GraphQLScalarType.newScalar(Scalars.GraphQLInt)
-      .name("SFixed32")
-      .description("Scalar for proto type sfixed32. Always four bytes.")
-      .build();
+      GraphQLScalarType.newScalar(Scalars.GraphQLInt)
+          .name("SFixed32")
+          .description("Scalar for proto type sfixed32. Always four bytes.")
+          .build();
   public static final GraphQLScalarType S_FIXED_64 =
-    GraphQLScalarType.newScalar(Scalars.GraphQLLong)
-      .name("SFixed64")
-      .description("Scalar for proto type sfixed64. Always eight bytes.")
-      .build();
+      GraphQLScalarType.newScalar(Scalars.GraphQLLong)
+          .name("SFixed64")
+          .description("Scalar for proto type sfixed64. Always eight bytes.")
+          .build();
   public static final GraphQLScalarType BYTES =
-    GraphQLScalarType.newScalar()
-      .coercing(
-        new Coercing<ByteString, ByteString>() {
-          @Override
-          public ByteString serialize(Object dataFetcherResult)
-            throws CoercingSerializeException {
-            if (dataFetcherResult instanceof ByteString) {
-              return (ByteString) dataFetcherResult;
-            } else {
-              throw new CoercingSerializeException(
-                "Invalid value '" + dataFetcherResult + "' for Bytes");
-            }
-          }
+      GraphQLScalarType.newScalar()
+          .coercing(
+              new Coercing<ByteString, ByteString>() {
+                @Override
+                public ByteString serialize(Object dataFetcherResult)
+                    throws CoercingSerializeException {
+                  if (dataFetcherResult instanceof ByteString) {
+                    return (ByteString) dataFetcherResult;
+                  } else {
+                    throw new CoercingSerializeException(
+                        "Invalid value '" + dataFetcherResult + "' for Bytes");
+                  }
+                }
 
-          @Override
-          public ByteString parseValue(Object input) throws CoercingParseValueException {
-            if (input instanceof String) {
-              ByteString result = ByteString.copyFromUtf8((String) input);
-              if (result == null) {
-                throw new CoercingParseValueException(
-                  "Invalid value '" + input + "' for Bytes");
-              }
-              return result;
-            }
-            if (input instanceof ByteString) {
-              return (ByteString) input;
-            }
-            throw new CoercingParseValueException("Invalid value '" + input + "' for Bytes");
-          }
+                @Override
+                public ByteString parseValue(Object input) throws CoercingParseValueException {
+                  if (input instanceof String) {
+                    ByteString result = ByteString.copyFromUtf8((String) input);
+                    if (result == null) {
+                      throw new CoercingParseValueException(
+                          "Invalid value '" + input + "' for Bytes");
+                    }
+                    return result;
+                  }
+                  if (input instanceof ByteString) {
+                    return (ByteString) input;
+                  }
+                  throw new CoercingParseValueException("Invalid value '" + input + "' for Bytes");
+                }
 
-          @Override
-          public ByteString parseLiteral(Object input) throws CoercingParseLiteralException {
-            if (input instanceof StringValue) {
-              return ByteString.copyFromUtf8(((StringValue) input).getValue());
-            }
-            return null;
-          }
-        })
-      .name("Bytes")
-      .description(
-        "Scalar for proto type bytes."
-          + " May contain any arbitrary sequence of bytes no longer than 2^32.")
-      .build();
+                @Override
+                public ByteString parseLiteral(Object input) throws CoercingParseLiteralException {
+                  if (input instanceof StringValue) {
+                    return ByteString.copyFromUtf8(((StringValue) input).getValue());
+                  }
+                  return null;
+                }
+              })
+          .name("Bytes")
+          .description(
+              "Scalar for proto type bytes."
+                  + " May contain any arbitrary sequence of bytes no longer than 2^32.")
+          .build();
 
-  private ProtoScalars() {
-  }
+  private ProtoScalars() {}
 }

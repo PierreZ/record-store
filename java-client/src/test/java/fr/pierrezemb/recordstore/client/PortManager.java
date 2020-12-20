@@ -26,7 +26,7 @@ public class PortManager {
       int port = nextPort++;
       try (ServerSocket ss = new ServerSocket(port)) {
         ss.close();
-        //Give it some time to truly close the connection
+        // Give it some time to truly close the connection
         Thread.sleep(100);
         return port;
       } catch (Exception e) {

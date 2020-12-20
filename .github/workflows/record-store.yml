@@ -35,4 +35,4 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew :record-store:build
+        run: ./gradlew :java-client:spotlessCheck :record-store:build

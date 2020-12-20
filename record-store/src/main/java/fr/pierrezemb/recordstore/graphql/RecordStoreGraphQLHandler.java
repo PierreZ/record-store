@@ -15,6 +15,12 @@
  */
 package fr.pierrezemb.recordstore.graphql;
 
+import static fr.pierrezemb.recordstore.datasets.DatasetsLoader.DEFAULT_DEMO_TENANT;
+import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
+import static io.vertx.core.http.HttpMethod.GET;
+import static io.vertx.core.http.HttpMethod.POST;
+import static java.util.stream.Collectors.toList;
+
 import com.apple.foundationdb.record.RecordMetaData;
 import com.apple.foundationdb.record.query.RecordQuery;
 import fr.pierrezemb.recordstore.fdb.RecordLayer;
@@ -42,36 +48,32 @@ import io.vertx.ext.web.handler.graphql.VertxDataFetcher;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLBatch;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLInput;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLQuery;
-import org.dataloader.DataLoaderRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
-
-import static fr.pierrezemb.recordstore.datasets.DatasetsLoader.DEFAULT_DEMO_TENANT;
-import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
-import static io.vertx.core.http.HttpMethod.GET;
-import static io.vertx.core.http.HttpMethod.POST;
-import static java.util.stream.Collectors.toList;
+import org.dataloader.DataLoaderRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Taken from https://github.com/vert-x3/vertx-web/blob/3.9/vertx-web-graphql/src/main/java/io/vertx/ext/web/handler/graphql/impl/GraphQLHandlerImpl.java
+ * Taken from
+ * https://github.com/vert-x3/vertx-web/blob/3.9/vertx-web-graphql/src/main/java/io/vertx/ext/web/handler/graphql/impl/GraphQLHandlerImpl.java
  */
 public class RecordStoreGraphQLHandler implements GraphQLHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(RecordStoreGraphQLHandler.class);
 
   private static final Function<RoutingContext, Object> DEFAULT_QUERY_CONTEXT_FACTORY = rc -> rc;
-  private static final Function<RoutingContext, DataLoaderRegistry> DEFAULT_DATA_LOADER_REGISTRY_FACTORY = rc -> null;
+  private static final Function<RoutingContext, DataLoaderRegistry>
+      DEFAULT_DATA_LOADER_REGISTRY_FACTORY = rc -> null;
   private static final Function<RoutingContext, Locale> DEFAULT_LOCALE_FACTORY = rc -> null;
   private final RecordLayer recordLayer;
 
   private Function<RoutingContext, Object> queryContextFactory = DEFAULT_QUERY_CONTEXT_FACTORY;
-  private Function<RoutingContext, DataLoaderRegistry> dataLoaderRegistryFactory = DEFAULT_DATA_LOADER_REGISTRY_FACTORY;
+  private Function<RoutingContext, DataLoaderRegistry> dataLoaderRegistryFactory =
+      DEFAULT_DATA_LOADER_REGISTRY_FACTORY;
   private Function<RoutingContext, Locale> localeFactory = DEFAULT_LOCALE_FACTORY;
 
   public RecordStoreGraphQLHandler(RecordLayer recordLayer) {
@@ -85,7 +87,8 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
   }
 
   @Override
-  public synchronized GraphQLHandler dataLoaderRegistry(Function<RoutingContext, DataLoaderRegistry> factory) {
+  public synchronized GraphQLHandler dataLoaderRegistry(
+      Function<RoutingContext, DataLoaderRegistry> factory) {
     dataLoaderRegistryFactory = factory != null ? factory : DEFAULT_DATA_LOADER_REGISTRY_FACTORY;
     return this;
   }
@@ -149,14 +152,17 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
         handlePostJson(rc, body, rc.queryParams().get("operationName"), variables);
         break;
       case "application/graphql":
-        executeOne(rc, new GraphQLQuery(body.toString(), rc.queryParams().get("operationName"), variables));
+        executeOne(
+            rc,
+            new GraphQLQuery(body.toString(), rc.queryParams().get("operationName"), variables));
         break;
       default:
         rc.fail(415);
     }
   }
 
-  private void handlePostJson(RoutingContext rc, Buffer body, String operationName, Map<String, Object> variables) {
+  private void handlePostJson(
+      RoutingContext rc, Buffer body, String operationName, Map<String, Object> variables) {
     GraphQLInput graphQLInput;
     try {
       graphQLInput = JsonCodec.INSTANCE.fromBuffer(body, GraphQLInput.class);
@@ -173,11 +179,9 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
     }
   }
 
-  private void handlePostBatch(RoutingContext rc, GraphQLBatch batch, String operationName, Map<String, Object> variables) {
-    /**if (!options.isRequestBatchingEnabled()) {
-     rc.fail(400);
-     return;
-     }*/
+  private void handlePostBatch(
+      RoutingContext rc, GraphQLBatch batch, String operationName, Map<String, Object> variables) {
+    /** if (!options.isRequestBatchingEnabled()) { rc.fail(400); return; } */
     for (GraphQLQuery query : batch) {
       if (query.getQuery() == null) {
         failQueryMissing(rc);
@@ -194,20 +198,22 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
   }
 
   private void executeBatch(RoutingContext rc, GraphQLBatch batch) {
-    List<CompletableFuture<JsonObject>> results = batch.stream()
-      .map(q -> execute(rc, q))
-      .collect(toList());
+    List<CompletableFuture<JsonObject>> results =
+        batch.stream().map(q -> execute(rc, q)).collect(toList());
     CompletableFuture.allOf(results.toArray(new CompletableFuture<?>[0]))
-      .thenApply(v -> {
-        JsonArray jsonArray = results.stream()
-          .map(CompletableFuture::join)
-          .collect(JsonArray::new, JsonArray::add, JsonArray::addAll);
-        return jsonArray.toBuffer();
-      })
-      .whenComplete((buffer, throwable) -> sendResponse(rc, buffer, throwable));
+        .thenApply(
+            v -> {
+              JsonArray jsonArray =
+                  results.stream()
+                      .map(CompletableFuture::join)
+                      .collect(JsonArray::new, JsonArray::add, JsonArray::addAll);
+              return jsonArray.toBuffer();
+            })
+        .whenComplete((buffer, throwable) -> sendResponse(rc, buffer, throwable));
   }
 
-  private void handlePostQuery(RoutingContext rc, GraphQLQuery query, String operationName, Map<String, Object> variables) {
+  private void handlePostQuery(
+      RoutingContext rc, GraphQLQuery query, String operationName, Map<String, Object> variables) {
     if (query.getQuery() == null) {
       failQueryMissing(rc);
       return;
@@ -223,8 +229,8 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
 
   private void executeOne(RoutingContext rc, GraphQLQuery query) {
     execute(rc, query)
-      .thenApply(JsonObject::toBuffer)
-      .whenComplete((buffer, throwable) -> sendResponse(rc, buffer, throwable));
+        .thenApply(JsonObject::toBuffer)
+        .whenComplete((buffer, throwable) -> sendResponse(rc, buffer, throwable));
   }
 
   private CompletableFuture<JsonObject> execute(RoutingContext rc, GraphQLQuery query) {
@@ -266,11 +272,14 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
 
     GraphQL graphQL = createGraphQL(DEFAULT_DEMO_TENANT, "USER");
 
-    return graphQL.executeAsync(builder.build()).thenApplyAsync(executionResult -> {
-      return new JsonObject(executionResult.toSpecification());
-    }, contextExecutor(rc));
+    return graphQL
+        .executeAsync(builder.build())
+        .thenApplyAsync(
+            executionResult -> {
+              return new JsonObject(executionResult.toSpecification());
+            },
+            contextExecutor(rc));
   }
-
 
   private String getContentType(RoutingContext rc) {
     String contentType = rc.parsedHeaders().contentType().value();
@@ -318,21 +327,26 @@ public class RecordStoreGraphQLHandler implements GraphQLHandler {
     SchemaParser schemaParser = new SchemaParser();
     TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
 
-    RuntimeWiring runtimeWiring = newRuntimeWiring()
-      .type("Query", builder -> {
-        VertxDataFetcher<List<Map<String, Object>>> getAllRecords = new VertxDataFetcher<>(this::getAllRecords);
-        return builder.dataFetcher("allUsers", getAllRecords);
-      })
-      .build();
+    RuntimeWiring runtimeWiring =
+        newRuntimeWiring()
+            .type(
+                "Query",
+                builder -> {
+                  VertxDataFetcher<List<Map<String, Object>>> getAllRecords =
+                      new VertxDataFetcher<>(this::getAllRecords);
+                  return builder.dataFetcher("allUsers", getAllRecords);
+                })
+            .build();
 
     SchemaGenerator schemaGenerator = new SchemaGenerator();
-    GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+    GraphQLSchema graphQLSchema =
+        schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
 
-    return GraphQL.newGraphQL(graphQLSchema)
-      .build();
+    return GraphQL.newGraphQL(graphQLSchema).build();
   }
 
-  private void getAllRecords(DataFetchingEnvironment env, Promise<List<Map<String, Object>>> future) {
+  private void getAllRecords(
+      DataFetchingEnvironment env, Promise<List<Map<String, Object>>> future) {
     RecordQuery query = GraphQLQueryGenerator.generate(env);
     this.recordLayer.queryRecords("demo", "USER", query, future);
   }

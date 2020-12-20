@@ -23,15 +23,14 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLType;
-
 import java.lang.reflect.Method;
 import java.util.Map;
 
 final class ProtoDataFetcher implements DataFetcher<Object> {
   private static final Converter<String, String> UNDERSCORE_TO_CAMEL =
-    CaseFormat.LOWER_UNDERSCORE.converterTo(CaseFormat.LOWER_CAMEL);
+      CaseFormat.LOWER_UNDERSCORE.converterTo(CaseFormat.LOWER_CAMEL);
   private static final Converter<String, String> LOWER_CAMEL_TO_UPPER =
-    CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_CAMEL);
+      CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_CAMEL);
 
   private final Descriptors.FieldDescriptor fieldDescriptor;
   private final String convertedFieldName;
@@ -41,7 +40,7 @@ final class ProtoDataFetcher implements DataFetcher<Object> {
     this.fieldDescriptor = fieldDescriptor;
     final String fieldName = fieldDescriptor.getName();
     convertedFieldName =
-      fieldName.contains("_") ? UNDERSCORE_TO_CAMEL.convert(fieldName) : fieldName;
+        fieldName.contains("_") ? UNDERSCORE_TO_CAMEL.convert(fieldName) : fieldName;
   }
 
   @Override
@@ -66,9 +65,9 @@ final class ProtoDataFetcher implements DataFetcher<Object> {
     if (method == null) {
       // no synchronization necessary because this line is idempotent
       final String methodNameSuffix =
-        fieldDescriptor.isMapField() ? "Map" : fieldDescriptor.isRepeated() ? "List" : "";
+          fieldDescriptor.isMapField() ? "Map" : fieldDescriptor.isRepeated() ? "List" : "";
       final String methodName =
-        "get" + LOWER_CAMEL_TO_UPPER.convert(convertedFieldName) + methodNameSuffix;
+          "get" + LOWER_CAMEL_TO_UPPER.convert(convertedFieldName) + methodNameSuffix;
       method = source.getClass().getMethod(methodName);
     }
     return method.invoke(source);
