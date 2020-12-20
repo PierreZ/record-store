@@ -42,7 +42,6 @@ import com.apple.foundationdb.record.provider.foundationdb.FDBRecordStore;
 import com.apple.foundationdb.record.provider.foundationdb.keyspace.KeySpacePath;
 import com.apple.foundationdb.record.provider.foundationdb.keyspace.ResolvedKeySpacePath;
 import com.apple.foundationdb.record.query.RecordQuery;
-import com.apple.foundationdb.record.query.plan.plans.RecordQueryPlan;
 import com.apple.foundationdb.tuple.Tuple;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
@@ -95,7 +94,7 @@ public class RecordLayer {
    */
   public List<String> listContainers(String tenantID) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    KeySpacePath tenantKeySpace = RecordStoreKeySpace.getManagedKeySpacePath(tenantID);
+    KeySpacePath tenantKeySpace = RecordStoreKeySpace.openKeySpacePath(tenantID);
     List<ResolvedKeySpacePath> recordSpaces = tenantKeySpace
       .listSubdirectory(context, "recordSpace", ScanProperties.FORWARD_SCAN);
     return recordSpaces.stream()
@@ -108,8 +107,8 @@ public class RecordLayer {
    */
   public void deleteContainer(String tenantID, String recordSpace) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getUnManagedDataKeySpacePath(tenantID, recordSpace));
-    FDBRecordStore.deleteStore(context, RecordStoreKeySpace.getMetaDataKeySpacePath(tenantID, recordSpace));
+    FDBRecordStore.deleteStore(context, RecordStoreKeySpace.openDataKeySpacePath(tenantID, recordSpace));
+    FDBRecordStore.deleteStore(context, RecordStoreKeySpace.openMetaDataKeySpacePath(tenantID, recordSpace));
     context.commit();
   }
 
@@ -378,45 +377,44 @@ public class RecordLayer {
     context.commit();
   }
 
-
   public void putRecord(String tenantID, String recordSpace, String table, byte[] record) throws InvalidProtocolBufferException {
     putRecord(tenantID, recordSpace, table, record, defaultKey);
   }
 
-  public void putRecord(String tenantID, String recordSpace, RecordMetaData recordMetaData, Message message) {
-    putRecord(tenantID, recordSpace, recordMetaData, message, defaultKey);
+  public void putRecord(String tenantID, String managedSchemaType, String managedSchema, RecordMetaData recordMetaData, Message message) {
+    putRecord(tenantID, managedSchemaType, managedSchema, recordMetaData, message, defaultKey);
   }
 
-  public void putRecord(String tenantID, String recordSpace, RecordMetaData recordMetaData, Message message, SecretKey secretKey) {
+  public void putRecord(String tenantID, String managedSchemaType, String managedSchema, RecordMetaData recordMetaData, Message message, SecretKey secretKey) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore r = createFDBRecordStore(context, recordMetaData, secretKey, tenantID, recordSpace);
+    FDBRecordStore r = createFDBRecordStore(context, recordMetaData, secretKey, tenantID, managedSchemaType, managedSchema);
 
-    LOGGER.info("saving {} for {}/{}", r.saveRecord(message).toString(), tenantID, recordSpace);
+    LOGGER.info("saving {} for {}/{}/{}", r.saveRecord(message).toString(), tenantID, managedSchemaType, managedSchema);
     context.commit();
   }
 
-  public List<Message> scanRecords(String tenantID, String recordSpace, RecordMetaData recordMetaData, RecordQuery query) {
-    return scanRecords(tenantID, recordSpace, recordMetaData, query, defaultKey);
+  public List<Message> scanRecords(String tenantID, String managedSchemaType, String managedSchema, RecordMetaData recordMetaData, RecordQuery query) {
+    return scanRecords(tenantID, managedSchemaType, managedSchema, recordMetaData, query, defaultKey);
   }
 
-  public List<Message> scanRecords(String tenantID, String recordSpace, RecordMetaData recordMetaData, RecordQuery query, SecretKey secretKey) {
+  public List<Message> scanRecords(String tenantID, String managedSchemaType, String managedSchema, RecordMetaData recordMetaData, RecordQuery query, SecretKey secretKey) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore r = createFDBRecordStore(context, recordMetaData, secretKey, tenantID, recordSpace);
+    FDBRecordStore r = createFDBRecordStore(context, recordMetaData, secretKey, tenantID, managedSchemaType, managedSchema);
 
-    return this.executeQuery(r, query, tenantID, recordSpace)
+    return this.executeQuery(r, query)
       .map(FDBRecord::getRecord)
       .filter(Objects::nonNull)
       .asList()
       .join();
   }
 
-  public boolean deleteRecord(String tenantID, String recordSpace, RecordMetaData recordMetaData, Tuple primaryKey) {
-    return deleteRecord(tenantID, recordSpace, recordMetaData, primaryKey, defaultKey);
+  public boolean deleteRecord(String tenantID, String managedSchemaType, String managedSchema, RecordMetaData recordMetaData, Tuple primaryKey) {
+    return deleteRecord(tenantID, managedSchemaType, managedSchema, recordMetaData, primaryKey, defaultKey);
   }
 
-  public boolean deleteRecord(String tenantID, String recordSpace, RecordMetaData recordMetaData, Tuple primaryKey, SecretKey secretKey) {
+  public boolean deleteRecord(String tenantID, String managedSchemaType, String managedSchema, RecordMetaData recordMetaData, Tuple primaryKey, SecretKey secretKey) {
     FDBRecordContext context = db.openContext(Collections.singletonMap("tenant", tenantID), timer);
-    FDBRecordStore r = createFDBRecordStore(context, recordMetaData, secretKey, tenantID, recordSpace);
+    FDBRecordStore r = createFDBRecordStore(context, recordMetaData, secretKey, tenantID, managedSchemaType, managedSchema);
 
     return r.deleteRecord(primaryKey);
   }
@@ -430,7 +428,7 @@ public class RecordLayer {
     FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, recordSpace);
     FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, recordSpace);
 
-    return this.executeQuery(r, query, tenantID, recordSpace)
+    return this.executeQuery(r, query)
       .map(e -> {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, recordSpace);
@@ -451,7 +449,7 @@ public class RecordLayer {
     FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
     FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
 
-    this.executeQuery(r, query, isolationLevel, tenantID, container)
+    this.executeQuery(r, query, isolationLevel)
       .map(e -> {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
@@ -477,7 +475,7 @@ public class RecordLayer {
 
     List<Map<String, Object>> result = null;
     try {
-      result = this.executeQuery(r, query, tenantID, container)
+      result = this.executeQuery(r, query)
         .map(e -> {
           if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("found record '{}' from {}/{}", e.getPrimaryKey(), tenantID, container);
@@ -506,11 +504,11 @@ public class RecordLayer {
     }
   }
 
-  private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query, String tenantID, String container) {
-    return this.executeQuery(r, query, IsolationLevel.SERIALIZABLE, tenantID, container);
+  private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query) {
+    return this.executeQuery(r, query, IsolationLevel.SERIALIZABLE);
   }
 
-  private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query, IsolationLevel isolationLevel, String tenantID, String container) {
+  private RecordCursor<FDBQueriedRecord<Message>> executeQuery(FDBRecordStore r, RecordQuery query, IsolationLevel isolationLevel) {
     // TODO: handle errors instead of throwing null
     if (query == null) {
       LOGGER.error("query is null, skipping");
@@ -518,9 +516,6 @@ public class RecordLayer {
     }
 
     LOGGER.info(query.toString());
-
-    RecordQueryPlan plan = r.planQuery(query);
-    LOGGER.info("running query for {}/{}: '{}'", tenantID, container, plan);
 
     ExecuteProperties.Builder executeProperties = ExecuteProperties.newBuilder()
       .setIsolationLevel(isolationLevel)
@@ -553,7 +548,7 @@ public class RecordLayer {
     FDBMetaDataStore metadataStore = RecordStoreMetaDataStore.createMetadataStore(context, tenantID, container);
     FDBRecordStore r = createFDBRecordStore(context, metadataStore, key, tenantID, container);
 
-    Integer count = this.executeQuery(r, query, tenantID, container)
+    Integer count = this.executeQuery(r, query)
       .map(e -> {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("deleting {} from {}/{}", e.getPrimaryKey(), tenantID, container);
@@ -591,13 +586,13 @@ public class RecordLayer {
       .setMetaDataProvider(metaDataStore)
       .setContext(context)
       .setSerializer(serializer)
-      .setKeySpacePath(RecordStoreKeySpace.getUnManagedDataKeySpacePath(tenantID, container))
+      .setKeySpacePath(RecordStoreKeySpace.openDataKeySpacePath(tenantID, container))
       .createOrOpen();
   }
 
   private FDBRecordStore createFDBRecordStore(FDBRecordContext context,
                                               RecordMetaData recordMetaData,
-                                              SecretKey key, String tenantID, String container) {
+                                              SecretKey key, String tenantID, String managedSchemaType, String managedSchema) {
 
     TransformedRecordSerializer<Message> serializer = TransformedRecordSerializerJCE.newDefaultBuilder()
       .setEncryptWhenSerializing(true)
@@ -609,7 +604,7 @@ public class RecordLayer {
       .setMetaDataProvider(recordMetaData)
       .setContext(context)
       .setSerializer(serializer)
-      .setKeySpacePath(RecordStoreKeySpace.getManagedDataKeySpacePath(tenantID, container))
+      .setKeySpacePath(ManagedSchemaKeySpace.openDataKeySpacePath(tenantID, managedSchemaType, managedSchema))
       .createOrOpen();
   }
 

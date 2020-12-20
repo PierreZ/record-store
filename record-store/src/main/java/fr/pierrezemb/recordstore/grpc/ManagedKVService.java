@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 public class ManagedKVService extends ManagedKVGrpc.ManagedKVImplBase {
   private static final Logger LOGGER = LoggerFactory.getLogger(ManagedKVService.class);
+  private static final String MANAGED_KV_NAME = "managedKV";
   private final RecordLayer recordLayer;
   private final RecordMetaData recordMetaData;
 
@@ -48,7 +49,7 @@ public class ManagedKVService extends ManagedKVGrpc.ManagedKVImplBase {
     String recordSpace = GrpcContextKeys.getContainerOrFail();
 
     try {
-      this.recordLayer.putRecord(tenantID, recordSpace, this.recordMetaData, request);
+      this.recordLayer.putRecord(tenantID, MANAGED_KV_NAME,recordSpace, this.recordMetaData, request);
     } catch (RuntimeException e) {
       LOGGER.error(e.getMessage());
       throw new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage()));
@@ -66,7 +67,7 @@ public class ManagedKVService extends ManagedKVGrpc.ManagedKVImplBase {
     Tuple primaryKey = Tuple.from(request.getKeyToDelete().toByteArray());
 
     try {
-      boolean deleted = this.recordLayer.deleteRecord(tenantID, recordSpace, this.recordMetaData, primaryKey);
+      boolean deleted = this.recordLayer.deleteRecord(tenantID, MANAGED_KV_NAME, recordSpace, this.recordMetaData, primaryKey);
       LOGGER.debug("delete({})={}", primaryKey.toString(), deleted);
       responseObserver.onNext(ManagedKVProto.EmptyResponse.newBuilder().build());
     } catch (RuntimeException e) {
@@ -97,7 +98,7 @@ public class ManagedKVService extends ManagedKVGrpc.ManagedKVImplBase {
       .build();
 
     try {
-      this.recordLayer.scanRecords(tenantID, recordSpace, this.recordMetaData, query)
+      this.recordLayer.scanRecords(tenantID, MANAGED_KV_NAME, recordSpace, this.recordMetaData, query)
         .stream()
         .map(queriedRecord -> ManagedKVProto.KeyValue.newBuilder().mergeFrom(queriedRecord).build())
         .forEach(responseObserver::onNext);
