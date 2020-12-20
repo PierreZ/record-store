@@ -2,13 +2,11 @@
 title: Managed schemas
 ---
 
-Record-Store is great to handle customers defined schema, but sometimes you may need to store something simple.
-
-We are now providing dedicated `recordSpace` where the schema is directly handled by the Record-Store, lowering the difficulty to use the Record-Store. Under the hood, you will still open a `recordSpace`, but you will not be able to manipulate the schema.
+In addition to the `recordSpaces` which allow you to define your own schemas, you also have the possibility to use `managedSchemas`. They are offering their own APIs and gRPC endpoints with a fixed schemas provided by the Record-Store.
 
 ## Managed KeyValue
 
-You want to use a simple key/value? We got you covered! We even offer a simplified gRPC service:
+Do you need a Key/Value experience? You can easily use this dedicated gRPC endpoint:
 
 ```grpc
 service ManagedKV {
