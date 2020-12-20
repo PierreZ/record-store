@@ -82,5 +82,6 @@ To run your application:
 
 To format:
 ```bash
-gradle :java:spotlessApply
+gradle :record-store:spotlessApply :java-client:spotlessApply :testcontainers-foundationdb:spotlessApply
+gradle :record-store:spotlessCheck :java-client:spotlessCheck :testcontainers-foundationdb:spotlessCheck
 ```
